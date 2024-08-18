@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="Heroes:jar">
+    <output-path>$USER_HOME$/OneDrive/Desktop/Heroes Server/plugins</output-path>
+    <root id="archive" name="Heroes.jar">
+      <element id="module-output" name="Heroes" />
+    </root>
+  </artifact>
+</component>

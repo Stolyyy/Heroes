@@ -1,159 +1,136 @@
 package me.stolyy.heroes.Games;
 
+import me.stolyy.heroes.Game.GameEnums;
 import me.stolyy.heroes.Heroes;
-import me.stolyy.heroes.heros.HeroManager;
+import me.stolyy.heroes.HeroManager;
+import me.stolyy.heroes.Party.PartyManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class GameManager {
-    private final Heroes plugin;
     private final HeroManager heroManager;
-    private final Map<String, Game> games;
+    private final PartyManager partyManager;
+    private final MapManager mapManager;
+    private final Map<String, Game> activeGames;
     private final Map<UUID, String> playerGames;
 
-    public GameManager(Heroes plugin, HeroManager heroManager) {
-        this.plugin = plugin;
+    public GameManager(HeroManager heroManager, PartyManager partyManager) {
         this.heroManager = heroManager;
-        this.games = new HashMap<>();
-        this.playerGames = new HashMap<>();
+        this.partyManager = partyManager;
+        this.mapManager = new MapManager();
+        this.activeGames = new ConcurrentHashMap<>();
+        this.playerGames = new ConcurrentHashMap<>();
     }
 
-    public Game createGame(GameEnums.GameMode gameMode, List<Player> players) {
-        String gameId = UUID.randomUUID().toString();
-        Game game = new Game(plugin, heroManager, gameId, gameMode, players);
-        games.put(gameId, game);
-
-        for (Player player : players) {
-            game.addPlayer(player); // This should add the player with no team assigned initially
-            playerGames.put(player.getUniqueId(), gameId);
-            player.sendMessage("You have joined a " + gameMode.name() + " game.");
-        }
-
-        // If it's a party game, open the GUI for the party leader
-        if (gameMode == GameEnums.GameMode.PARTY && !players.isEmpty()) {
-            game.getGameGUI().openInventory(players.get(0));
-        }
-
-        return game;
-    }
-
-    // This overload can be used for creating games with a single player (e.g., for 1v1 mode)
-    public Game createGame(GameEnums.GameMode gameMode) {
-        return createGame(gameMode, new ArrayList<>());
-    }
-
-    public boolean joinGame(Player player, GameEnums.GameMode gameMode) {
-        // Check if player is already in a game
-        if (isPlayerInGame(player)) {
-            player.sendMessage("You are already in a game. Leave your current game first.");
-            return false;
-        }
-
-        PartyManager partyManager = plugin.getPartyManager();
-        UUID partyLeaderUUID = partyManager.getPartyLeader(player.getUniqueId());
-
-        // Check party requirements
-        if (!checkPartyRequirements(player, gameMode)) {
-            return false;
-        }
-
-        // For 2v2 and party modes, only the party leader can join
-        if ((gameMode == GameEnums.GameMode.TWO_V_TWO || gameMode == GameEnums.GameMode.PARTY)
-                && !partyManager.isPartyLeader(player.getUniqueId())) {
-            player.sendMessage("Only the party leader can join a game.");
-            return false;
-        }
-
-        Game availableGame = findAvailableGame(gameMode);
-        if (availableGame == null) {
-            List<Player> playersToAdd = new ArrayList<>();
-            if (gameMode == GameEnums.GameMode.ONE_V_ONE) {
-                playersToAdd.add(player);
-            } else {
-                Set<UUID> partyMembers = partyManager.getPartyMembers(partyLeaderUUID);
-                for (UUID memberUUID : partyMembers) {
-                    Player member = Bukkit.getPlayer(memberUUID);
-                    if (member != null) {
-                        playersToAdd.add(member);
-                    }
-                }
-            }
-            availableGame = createGame(gameMode, playersToAdd);
-        } else if (gameMode == GameEnums.GameMode.ONE_V_ONE) {
-            if (!availableGame.addPlayer(player)) {
-                return false;
-            }
-        } else {
-            Set<UUID> partyMembers = partyManager.getPartyMembers(partyLeaderUUID);
-            for (UUID memberUUID : partyMembers) {
-                Player member = Bukkit.getPlayer(memberUUID);
-                if (member != null) {
-                    if (!availableGame.addPlayer(member)) {
-                        // If we can't add a party member, remove all added members and return false
-                        for (Player addedMember : availableGame.getPlayers().keySet()) {
-                            if (partyMembers.contains(addedMember.getUniqueId())) {
-                                availableGame.removePlayer(addedMember);
-                                playerGames.remove(addedMember.getUniqueId());
-                            }
-                        }
-                        player.sendMessage("Unable to add all party members to the game.");
-                        return false;
-                    }
-                    playerGames.put(memberUUID, availableGame.getGameId());
-                }
-            }
-        }
-
-
-        // Open the game GUI for the party leader
-        if (gameMode == GameEnums.GameMode.PARTY && partyManager.isPartyLeader(player.getUniqueId())) {
-            availableGame.getGameGUI().openInventory(player);
-        }
-
-        // If the game is now full, start it
-        if (isGameFull(availableGame)) {
-            availableGame.startGame();
-        }
-
-        return true;
-    }
-
-    private boolean checkPartyRequirements(Player player, GameEnums.GameMode gameMode) {
-        PartyManager partyManager = plugin.getPartyManager();
-        int partySize = partyManager.getPartySize(player.getUniqueId());
-
+    private boolean isValidPartySize(GameEnums.GameMode gameMode, int partySize) {
         switch (gameMode) {
             case ONE_V_ONE:
-                if (partySize > 1) {
-                    player.sendMessage("You can't join 1v1 mode while in a party.");
-                    return false;
-                }
-                break;
+                return partySize == 1;
             case TWO_V_TWO:
-                if (partySize != 2) {
-                    player.sendMessage("You need to be in a party of 2 to join 2v2 mode.");
-                    return false;
-                }
-                break;
+                return partySize == 2;
             case PARTY:
-                if (partySize < 2 || partySize > 18) {
-                    player.sendMessage("Party mode requires a party of 2 to 18 players.");
-                    return false;
-                }
-                break;
+                return partySize >= 2 && partySize <= 18;
+            default:
+                return false;
         }
-        return true;
     }
 
-    private Game findAvailableGame(GameEnums.GameMode gameMode) {
-        for (Game game : games.values()) {
+    private Game findOrCreateGame(GameEnums.GameMode gameMode) {
+        // Try to find an existing game
+        for (Game game : activeGames.values()) {
             if (game.getGameMode() == gameMode && game.getGameState() == GameEnums.GameState.WAITING && !isGameFull(game)) {
                 return game;
             }
         }
-        return null;
+
+        // Create a new game if none found
+        String gameId = UUID.randomUUID().toString();
+        MapData mapData = mapManager.getRandomMap();
+        if (mapData == null) {
+            Heroes.getInstance().getLogger().severe("Failed to get a random map. Cannot create a new game.");
+            return null;
+        }
+
+        Game newGame = new Game(Heroes.getInstance(), heroManager, gameId, gameMode, mapData);
+        activeGames.put(gameId, newGame);
+        return newGame;
+    }
+
+    public boolean joinGame(Player player, GameEnums.GameMode gameMode) {
+        if (isPlayerInGame(player)) {
+            player.sendMessage("You are already in a game.");
+            return false;
+        }
+
+        if (!partyManager.isPartyLeader(player.getUniqueId())) {
+            player.sendMessage("Only party leaders can join games.");
+            return false;
+        }
+
+        Set<UUID> partyMembers = partyManager.getPartyMembers(player.getUniqueId());
+        int partySize = (partyMembers != null) ? partyMembers.size() : 1;
+
+        if (!isValidPartySize(gameMode, partySize)) {
+            player.sendMessage("Invalid party size for this game mode.");
+            return false;
+        }
+
+        Game game = findOrCreateGame(gameMode);
+        if (game == null) {
+            player.sendMessage("Unable to find or create a game. Please try again later.");
+            return false;
+        }
+
+        addPlayersToGame(game, partyMembers != null ? partyMembers : Collections.singleton(player.getUniqueId()));
+        return true;
+    }
+
+    private void addPlayersToGame(Game game, Set<UUID> players) {
+        List<GameEnums.GameTeam> availableTeams = new ArrayList<>(Arrays.asList(GameEnums.GameTeam.values()));
+        Collections.shuffle(availableTeams);
+        int teamIndex = 0;
+
+        for (UUID playerId : players) {
+            Player player = Bukkit.getPlayer(playerId);
+            if (player != null) {
+                GameEnums.GameTeam team = null;
+                if (game.getGameMode() != GameEnums.GameMode.PARTY) {
+                    // Assign teams for non-party games
+                    team = availableTeams.get(teamIndex % availableTeams.size());
+                    teamIndex++;
+                }
+
+                if (game.addPlayer(player)) {
+                    playerGames.put(playerId, game.getGameId());
+                    if (team != null) {
+                        game.setPlayerTeam(player, team);
+                    }
+                    player.sendMessage("You have joined a " + game.getGameMode().name() + " game.");
+                } else {
+                    player.sendMessage("Failed to join the game.");
+                }
+            }
+        }
+
+        if (game.getGameMode() == GameEnums.GameMode.PARTY) {
+            openPartyGameGUI(game);
+        } else if (isGameFull(game)) {
+            game.startGame();
+        }
+    }
+
+
+
+    private void openPartyGameGUI(Game game) {
+        for (UUID playerId : game.getPlayers().keySet()) {
+            Player player = Bukkit.getPlayer(playerId);
+            if (player != null && playerId.equals(partyManager.getPartyByPlayer(playerId).getLeader())) {
+                game.getGameGUI().openInventory(player);
+            }
+        }
     }
 
     private boolean isGameFull(Game game) {
@@ -164,7 +141,7 @@ public class GameManager {
             case TWO_V_TWO:
                 return playerCount >= 4;
             case PARTY:
-                return playerCount >= 18;
+                return false; // Party games start manually
             default:
                 return false;
         }
@@ -173,105 +150,125 @@ public class GameManager {
     public void leaveGame(Player player) {
         String gameId = playerGames.remove(player.getUniqueId());
         if (gameId != null) {
-            Game game = games.get(gameId);
+            Game game = activeGames.get(gameId);
             if (game != null) {
                 game.removePlayer(player);
                 if (game.getPlayers().isEmpty()) {
-                    games.remove(gameId);
+                    endGame(gameId);
                 }
             }
-            plugin.teleportToSpawn(player);
+        }
+        Heroes.getInstance().teleportToLobby(player);
+    }
+
+    public void endGame(String gameId) {
+        Game game = activeGames.remove(gameId);
+        if (game != null) {
+            for (UUID playerId : game.getPlayers().keySet()) {
+                playerGames.remove(playerId);
+                Player player = Bukkit.getPlayer(playerId);
+                if (player != null) {
+                    Heroes.getInstance().teleportToLobby(player);
+                }
+            }
+            for (UUID spectatorId : game.getSpectators()) {
+                Player spectator = Bukkit.getPlayer(spectatorId);
+                if (spectator != null) {
+                    Heroes.getInstance().teleportToLobby(spectator);
+                }
+            }
         }
     }
 
-    public Game getPlayerGame(Player player) {
-        String gameId = playerGames.get(player.getUniqueId());
-        return gameId != null ? games.get(gameId) : null;
+    public void cancelGame(String gameId, Player canceler) {
+        Game game = activeGames.get(gameId);
+        if (game != null) {
+            // Check if the canceler is the party leader
+            if (!partyManager.isPartyLeader(canceler.getUniqueId())) {
+                canceler.sendMessage("Only the party leader can cancel the game setup.");
+                return;
+            }
+
+            for (UUID playerId : new ArrayList<>(game.getPlayers().keySet())) {
+                Player player = Bukkit.getPlayer(playerId);
+                if (player != null) {
+                    leaveGame(player);
+                    player.sendMessage("The game setup has been canceled by the party leader.");
+                }
+            }
+            endGame(gameId);
+        }
     }
 
     public boolean isPlayerInGame(Player player) {
         return playerGames.containsKey(player.getUniqueId());
     }
 
-    public void endGame(String gameId) {
-        Game game = games.remove(gameId);
-        if (game != null) {
-            for (Player player : game.getPlayers().keySet()) {
-                playerGames.remove(player.getUniqueId());
-                plugin.teleportToSpawn(player);
+    public Game getPlayerGame(Player player) {
+        String gameId = playerGames.get(player.getUniqueId());
+        return gameId != null ? activeGames.get(gameId) : null;
+    }
+
+    public void cleanupGames() {
+        List<String> gamesToRemove = new ArrayList<>();
+        for (Map.Entry<String, Game> entry : activeGames.entrySet()) {
+            Game game = entry.getValue();
+            if (game.getPlayers().isEmpty() && game.getGameState() != GameEnums.GameState.IN_PROGRESS) {
+                gamesToRemove.add(entry.getKey());
             }
-            for (Player spectator : game.getSpectators()) {
-                plugin.teleportToSpawn(spectator);
-            }
+        }
+        for (String gameId : gamesToRemove) {
+            endGame(gameId);
         }
     }
 
+    public Map<String, Game> getActiveGames() {
+        return new HashMap<>(activeGames);
+    }
+
+    public List<MapData> getAllMaps() {
+        return mapManager.getAllMaps();
+    }
+
+    public void clearGames() {
+        for (String gameId : new ArrayList<>(activeGames.keySet())) {
+            endGame(gameId);
+        }
+        activeGames.clear();
+        playerGames.clear();
+    }
+
+
+    // New method to handle player movement in GUI
+    public void handlePlayerMove(Player player, Player movedPlayer, GameEnums.GameTeam newTeam) {
+        Game game = getPlayerGame(player);
+        if (game != null && game.getGameState() == GameEnums.GameState.WAITING) {
+            game.setPlayerTeam(movedPlayer, newTeam);
+            game.getGameGUI().updateInventory();
+        }
+    }
+
+    // New method to start a game
     public void startGame(String gameId) {
-        Game game = games.get(gameId);
+        Game game = activeGames.get(gameId);
         if (game != null && game.getGameState() == GameEnums.GameState.WAITING) {
             game.startGame();
         }
     }
 
-    public boolean addSpectator(Player player, String gameId) {
-        Game game = games.get(gameId);
-        if (game != null && game.getGameState() == GameEnums.GameState.IN_PROGRESS) {
-            if (game.addSpectator(player)) {
-                playerGames.put(player.getUniqueId(), gameId);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public void removeSpectator(Player player) {
-        String gameId = playerGames.remove(player.getUniqueId());
-        if (gameId != null) {
-            Game game = games.get(gameId);
-            if (game != null) {
-                game.getSpectators().remove(player);
-            }
-            plugin.teleportToSpawn(player);
-        }
-    }
-
-    public void handlePlayerDeath(Player player) {
-        Game game = getPlayerGame(player);
+    // New method to change game settings
+    public void updateGameSettings(String gameId, GameSettingsManager newSettings) {
+        Game game = activeGames.get(gameId);
         if (game != null) {
-            game.playerDied(player);
+            game.getSettings().updateFrom(newSettings);
         }
     }
 
-    public void broadcastToGame(String gameId, String message) {
-        Game game = games.get(gameId);
-        if (game != null) {
-            game.broadcastMessage(message);
+    // New method to change game map
+    public void changeGameMap(String gameId, MapData newMap) {
+        Game game = activeGames.get(gameId);
+        if (game != null && game.getGameState() == GameEnums.GameState.WAITING) {
+            game.setMap(newMap);
         }
-    }
-
-    public void updateGameSettings(String gameId, boolean friendlyFire, boolean randomHeroes, boolean ultimateAbilities) {
-        Game game = games.get(gameId);
-        if (game != null) {
-            game.setFriendlyFire(friendlyFire);
-            game.setRandomHeroes(randomHeroes);
-            game.setUltimateAbilities(ultimateAbilities);
-        }
-    }
-
-    public Map<String, Game> getActiveGames() {
-        return new HashMap<>(games);
-    }
-
-    public void cleanupGames() {
-        games.entrySet().removeIf(entry -> {
-            Game game = entry.getValue();
-            if (game.getPlayers().isEmpty() && game.getGameState() != GameEnums.GameState.IN_PROGRESS) {
-                for (Player spectator : game.getSpectators()) {
-                    removeSpectator(spectator);
-                }
-                return true;
-            }
-            return false;
-        });
     }
 }

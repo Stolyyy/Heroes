@@ -1,9 +1,7 @@
 package me.stolyy.heroes.heros;
 
-import me.stolyy.heroes.Games.GameManager;
-import me.stolyy.heroes.Hero;
 import me.stolyy.heroes.Heroes;
-import me.stolyy.heroes.Interactions;
+import me.stolyy.heroes.Utility.Interactions;
 import me.stolyy.heroes.WallDetection;
 import org.bukkit.*;
 import org.bukkit.entity.ArmorStand;
@@ -16,12 +14,11 @@ import org.bukkit.util.Vector;
 
 import java.util.List;
 
-import static org.bukkit.Material.PURPLE_WOOL;
-
-public class Shoop extends Hero implements Projectile, Hitscan, Listener {
+public class Shoop extends Hero implements Projectile, Hitscan, Listener, Energy {
 
     Player player;
     final double weight = 3;
+    Cooldowns cooldowns;
     @Override
     public double getWeight() {
         return weight;
@@ -29,48 +26,47 @@ public class Shoop extends Hero implements Projectile, Hitscan, Listener {
     public HeroType getHeroType() {
         return HeroType.RANGED;
     }
-    boolean inPrimary = false;
     double primaryDMG = 1.5;
     double primaryKB = 1;
-    double primaryCD = 0.4;
+    double primaryCD = 0.3;
     double secondaryDMG = 7;
     double secondaryRange = 75;
     double secondaryKB = 1;
     double secondaryCD = 0;
     Color secondaryColor = Color.YELLOW;
-    boolean inUltimate = false;
     double ultimateKB = 3.5;
     double ultimateDMG = 8;
     double passiveKB = 1.1;
     double passiveDMG = 5;
-    double energy = 100;
-    boolean increaseEnergy = true;
+    boolean isOnProjectile = false;
     int ultTime = 4;
 
     public Shoop(Player player) {
         this.player = player;
+        this.cooldowns = new Cooldowns(player, HeroType.RANGED, 100);
+        initializeEnergy(player, 0.25);
     }
 
     @Override
     public void usePrimaryAbility(Player player) {
-        if(inPrimary) {
-            return;
+        if(cooldowns.isPrimaryReady()) {
+            Projectile.projectile(player, 2.6, false, 14003, 1, this, AbilityType.PRIMARY);
+            cooldowns.usePrimaryAbility(primaryCD);
+            player.playSound(player.getLocation(), "shoopdawhoop.active", SoundCategory.MASTER, 1.0f, 1.0f);
         }
-        inPrimary = true;
-        Projectile.projectile(player, 2.3, false, PURPLE_WOOL, 1, this, AbilityType.PRIMARY);
-        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> inPrimary = false, (long) (primaryCD * 20L));
     }
 
     @Override
     public void onProjectileHit(Player target, Location location, AbilityType abilityType) {
         if (secondaryCD < 5) {
             secondaryCD++;
-
         }
+        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
         player.sendMessage("Secondary Charge: " + secondaryCD);
         switch (abilityType) {
             case PRIMARY:
                 Interactions.handleInteractions(player.getLocation(), primaryKB, primaryDMG, player, target);
+                cooldowns.reduceUltimateCooldown(1);
                 break;
             case PASSIVE:
                 Interactions.handleInteractions(player.getLocation(), passiveKB, passiveDMG, player, target);
@@ -88,7 +84,6 @@ public class Shoop extends Hero implements Projectile, Hitscan, Listener {
         Vector direction = eyeLocation.getDirection();
         Location targetLocation = eyeLocation.clone();
         Bukkit.getLogger().info("Secondary CD: " + secondaryCD);
-
         if (secondaryCD == 0) {
             return;
         } else if (secondaryCD == 1) {
@@ -117,7 +112,7 @@ public class Shoop extends Hero implements Projectile, Hitscan, Listener {
                     break;
                 }
                 targetLocation = nextLocation;
-
+                player.playSound(player.getLocation(), "shoopdawhoop.chargedbeam.big", SoundCategory.MASTER, 2.5f, 1.0f);
                 int numParticles = 16;
                 for (int j = 0; j < numParticles; j++) {
                     double angle = 2 * Math.PI * j / numParticles;
@@ -139,10 +134,12 @@ public class Shoop extends Hero implements Projectile, Hitscan, Listener {
         }
         secondaryCD = 0;
         Hitscan.hitscan(100, eyeLocation, direction, Particle.DUST, secondaryColor, player, this, AbilityType.SECONDARY);
+        player.playSound(player.getLocation(), "shoopdawhoop.chargedbeam.small", SoundCategory.MASTER, 2.0f, 1.0f);
     }
 
     @Override
     public void onHitscanHit(Player target, Location location, AbilityType abilityType) {
+        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
         switch (abilityType) {
             case SECONDARY:
                 Interactions.handleInteractions(player.getLocation().getDirection(), secondaryKB, secondaryDMG, player, target);
@@ -160,40 +157,40 @@ public class Shoop extends Hero implements Projectile, Hitscan, Listener {
 
     @Override
     public void useUltimateAbility(Player player) {
-        if (inUltimate) {
-            return;
-        }
-        inUltimate = true;
-        Hero h = this;
-        new UltTimer(player, ultTime).runTaskTimer(Heroes.getInstance(), 0L, 20L);
-        new BukkitRunnable() {
-            private int count = 0;
-            @Override
-            public void run() {
-                count++;
-                if (count >= 20) {
-                    inUltimate = false;
-                    this.cancel();
-                    return;
+        if (cooldowns.getUltimateCooldown() == 0) {
+            cooldowns.useUltimateAbility();
+            Hero h = this;
+            player.playSound(player.getLocation(), "shoopdawhoop.crystal", SoundCategory.MASTER, 5.0f, 1.0f);
+            Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> player.playSound(player.getLocation(), Sound.ENTITY_WITHER_DEATH, 1.0f, 0.0f), (20L));
+
+            new UltTimer(player, ultTime).runTaskTimer(Heroes.getInstance(), 0L, 20L);
+            new BukkitRunnable() {
+                private int count = 0;
+                @Override
+                public void run() {
+                    count++;
+                    if (count >= 20) {
+                        this.cancel();
+                        return;
+                    }
+                    Hitscan.hitscan(50, player.getEyeLocation(), player.getLocation().getDirection(), 14004, player, h, AbilityType.ULTIMATE);
                 }
-                Hitscan.hitscan(50, player.getEyeLocation(), player.getLocation().getDirection(), Material.DEAD_BUSH, player, h, AbilityType.ULTIMATE);
-            }
-        }.runTaskTimer(Heroes.getInstance(), 0L, 4L);
+            }.runTaskTimer(Heroes.getInstance(), 20L, 5L);
+        } else {
+            player.sendMessage(ChatColor.RED + "Ultimate ability is on cooldown! " + cooldowns.getUltimateCooldown() + " seconds remaining.");
+        }
+
     }
 
 
-    int xpLevels = (int) energy;
-    float xpProgress = (float) energy / 100.0f;
-    boolean isOnProjectile = false;
-
     @Override
     public void passiveAbility1(Player player) {
-
-        if (energy > 55) {
-            energy -= 55;
-            increaseEnergy = false;
-            ArmorStand armorStand = Projectile.projectile(player, 1.75, false, Material.PURPLE_WOOL, 2, this, AbilityType.PASSIVE);
+        if (getEnergy(player) > 55) {
+            removeEnergy(player, 55);
+            setCanIncreaseEnergy(player, false);
+            ArmorStand armorStand = Projectile.projectile(player, 1.9, false, 14003, 2, this, AbilityType.PASSIVE);
             armorStand.addPassenger(player);
+            player.playSound(player.getLocation(), "shoopdawhoop.active", SoundCategory.MASTER, 3.0f, 1.0f);
             isOnProjectile = true;
             new BukkitRunnable() {
                 @Override
@@ -206,32 +203,27 @@ public class Shoop extends Hero implements Projectile, Hitscan, Listener {
 
                 @Override
                 public void run() {
-                    if (armorStand.isDead() || !armorStand.isValid() || energy <= 0) {
+                    if (armorStand.isDead() || !armorStand.isValid() || getEnergy(player) <= 0) {
                         player.leaveVehicle();
-                        increaseEnergy = true;
+                        setCanIncreaseEnergy(player, true);
                         this.cancel();
                         return;
                     }
                     if (player.isInsideVehicle()) {
                         Location currentLocation = armorStand.getLocation();
                         double distance = lastLocation.distance(currentLocation);
-                        energy -= distance;
-                        xpLevels = (int) energy;
-                        xpProgress = (float) (energy / 100.0f);
-                        xpProgress = Math.max(0.0f, Math.min(1.0f, xpProgress));
-                        player.setLevel(xpLevels);
-                        player.setExp(xpProgress);
-                        if (energy <= 0) {
+                        removeEnergy(player, distance);
+                        updateXpBar(player);
+                        if (getEnergy(player) <= 0) {
                             player.leaveVehicle();
-                            increaseEnergy = true;
+                            setCanIncreaseEnergy(player, true);
                             this.cancel();
                             return;
                         }
                         lastLocation = currentLocation;
                     } else {
-                        increaseEnergy = true;
+                        setCanIncreaseEnergy(player, true);
                         this.cancel();
-                        return;
                     }
                 }
             }.runTaskTimer(Heroes.getInstance(), 0L, 1L);
@@ -241,39 +233,15 @@ public class Shoop extends Hero implements Projectile, Hitscan, Listener {
     @EventHandler
     public void onEntityDismount(EntityDismountEvent event) {
         if (event.getEntity() == player) {
-            if (isOnProjectile && energy >10) {
+            if (isOnProjectile && getEnergy(player) > 10) {
                 event.setCancelled(true);
             }
             Location newLocation = player.getLocation().add(0, 0.75, 0);
             player.teleport(newLocation);
-
         }
     }
 
     @Override
-    public void passiveAbility2(Player player) {
-
-    }
-
-    void updateEnergy() {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (energy < 100 && increaseEnergy) {
-                    energy += 0.75;
-                }
-                if (energy > 100) {
-                    energy = 100; // Ensure energy does not exceed 100
-                }
-                xpLevels = (int) energy;
-                xpProgress = (float) (energy / 100.0f);
-
-                // Clamp xpProgress to the range [0.0, 1.0]
-                xpProgress = Math.max(0.0f, Math.min(1.0f, xpProgress));
-
-                player.setLevel(xpLevels);
-                player.setExp(xpProgress);
-            }
-        }.runTaskTimer(Heroes.getInstance(), 0L, 1L);
+    public void passiveAbility2(Player player){
     }
 }

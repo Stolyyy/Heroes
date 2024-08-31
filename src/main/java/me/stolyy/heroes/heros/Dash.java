@@ -1,6 +1,5 @@
 package me.stolyy.heroes.heros;
 
-import me.stolyy.heroes.Hero;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.WallDetection;
 import org.bukkit.Location;
@@ -39,12 +38,12 @@ public interface Dash {
                 }
 
                 // Check for wall collision
-                if (WallDetection.detectWall(lastLocation, currentLocation, 0.5)) {
-                    endDash();
-                    return;
-                }
+                //if (WallDetection.detectWall(lastLocation, currentLocation, 0.5)) {
+                    //endDash();
+                    //return;
+                //}
 
-                List<Player> nearbyPlayers = (List<Player>) player.getWorld().getNearbyPlayers(currentLocation, 1.5);
+                List<Player> nearbyPlayers = (List<Player>) player.getWorld().getNearbyPlayers(currentLocation, 2);
                 for (Player nearbyPlayer : nearbyPlayers) {
                     if (nearbyPlayer != player && !hitPlayer.getOrDefault(nearbyPlayer, false)) {
                         ((Dash) hero).onDashHit(nearbyPlayer, currentLocation, abilityType);

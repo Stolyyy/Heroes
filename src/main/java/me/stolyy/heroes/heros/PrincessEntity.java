@@ -1,5 +1,6 @@
 package me.stolyy.heroes.heros;
 
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.attribute.Attribute;
@@ -55,7 +56,8 @@ public class PrincessEntity {
                     if (entity.getLocation().distance(nearestPlayer.getLocation()) < 15 && attackCooldown == 0) {
                         sonicBoomAttack(nearestPlayer);
                     }
-                } else if (entity.getLocation().distance(owner.getLocation()) > 35) {
+                }
+                if (entity.getLocation().distance(owner.getLocation()) > 30) {
                     entity.teleport(owner.getLocation());
                 }
 
@@ -67,7 +69,7 @@ public class PrincessEntity {
 
     private Player findNearestEnemyPlayer() {
         return entity.getWorld().getNearbyPlayers(entity.getLocation(), 60).stream()
-                .filter(p -> !p.getUniqueId().equals(owner.getUniqueId()))
+                .filter(p -> !p.getUniqueId().equals(owner.getUniqueId()) && p.getGameMode().equals(GameMode.ADVENTURE))
                 .min((p1, p2) -> Double.compare(p1.getLocation().distanceSquared(entity.getLocation()),
                         p2.getLocation().distanceSquared(entity.getLocation())))
                 .orElse(null);

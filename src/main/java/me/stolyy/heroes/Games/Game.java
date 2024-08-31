@@ -1,18 +1,19 @@
 package me.stolyy.heroes.Games;
 
+import me.stolyy.heroes.Game.GameEnums;
 import me.stolyy.heroes.Heroes;
-import me.stolyy.heroes.heros.HeroManager;
+import me.stolyy.heroes.HeroManager;
+import me.stolyy.heroes.Utility.Equipment;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.*;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeInstance;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.DisplaySlot;
 
 import java.util.*;
 
@@ -22,154 +23,225 @@ public class Game {
     private final String gameId;
     private final GameEnums.GameMode gameMode;
     private GameEnums.GameState gameState;
-    public final Map<Player, GameEnums.GameTeam> players;
-    private final List<Player> spectators;
-    private final Map<GameEnums.GameTeam, Location> spawnPoints;
-    private boolean friendlyFire;
-    private boolean randomHeroes;
-    private boolean ultimateAbilities;
+    private final Map<UUID, GameEnums.GameTeam> players;
+    private final Set<UUID> spectators;
+    private final Map<GameEnums.GameTeam, List<Location>> spawnPoints;
+    private final Map<UUID, Integer> lives;
+    private final GameSettingsManager settings;
     private Scoreboard scoreboard;
-    private final Map<Player, Integer> lives;
-    private final int maxLives = 3;
-    private GameGUI gameGUI;
     private Objective sidebarObjective;
-    private Objective healthObjective;
-    private Set<UUID> restrictedPlayers = new HashSet<>();
-    private Set<UUID> playersInGUI = new HashSet<>();
+    private Objective tabHealthObjective;
+    private Objective belowNameHealthObjective;
+    private final GameGUI gameGUI;
+    private MapData currentMap;
 
-
-    public Game(Heroes plugin, HeroManager heroManager, String gameId, GameEnums.GameMode gameMode, List<Player> players) {
+    public Game(Heroes plugin, HeroManager heroManager, String gameId, GameEnums.GameMode gameMode, MapData initialMap) {
         this.plugin = plugin;
         this.heroManager = heroManager;
         this.gameId = gameId;
         this.gameMode = gameMode;
         this.gameState = GameEnums.GameState.WAITING;
         this.players = new HashMap<>();
-        this.spectators = new ArrayList<>();
-        this.spawnPoints = new HashMap<>();
-        this.friendlyFire = false;
-        this.randomHeroes = false;
-        this.ultimateAbilities = true;
+        this.spectators = new HashSet<>();
+        this.spawnPoints = new EnumMap<>(GameEnums.GameTeam.class);
         this.lives = new HashMap<>();
-        initializeSpawnPoints();
+        this.settings = new GameSettingsManager();
+        this.gameGUI = new GameGUI(this);
+        this.currentMap = initialMap;
+
         initializeScoreboard();
-        this.gameGUI = new GameGUI(plugin, this);
-        if (gameMode == GameEnums.GameMode.TWO_V_TWO || gameMode == GameEnums.GameMode.PARTY) {
-            for (Player player : players) {
-                addPlayer(player);
-            }
-        }
+        initializeSpawnPoints();
     }
 
     private void initializeScoreboard() {
         ScoreboardManager manager = Bukkit.getScoreboardManager();
-        scoreboard = manager.getNewScoreboard();
+        this.scoreboard = manager.getNewScoreboard();
 
-        // Create teams
+        this.sidebarObjective = scoreboard.registerNewObjective("gameInfo", "dummy", ChatColor.GOLD + "Game Info");
+        this.sidebarObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
+
+        this.tabHealthObjective = scoreboard.registerNewObjective("tabHealth", "health", "❤");
+        this.tabHealthObjective.setDisplaySlot(DisplaySlot.PLAYER_LIST);
+
+        // Initialize the health objective for below player names
+        this.belowNameHealthObjective = scoreboard.registerNewObjective("belowNameHealth", "health", "❤");
+        this.belowNameHealthObjective.setDisplaySlot(DisplaySlot.BELOW_NAME);
+
         for (GameEnums.GameTeam team : GameEnums.GameTeam.values()) {
             Team scoreboardTeam = scoreboard.registerNewTeam(team.name());
             scoreboardTeam.setColor(team.getChatColor());
-            scoreboardTeam.setAllowFriendlyFire(friendlyFire);
-        }
-
-        // Create sidebar objective
-        sidebarObjective = scoreboard.registerNewObjective("gameInfo", "dummy", ChatColor.GOLD + "Game Info");
-        sidebarObjective.setDisplaySlot(DisplaySlot.SIDEBAR);
-        healthObjective = scoreboard.registerNewObjective("health", "dummy", "❤");
-        healthObjective.setDisplaySlot(DisplaySlot.PLAYER_LIST);
-        updateScoreboard();
-    }
-
-    public void updateScoreboard() {
-        // Clear existing scores
-        for (String entry : scoreboard.getEntries()) {
-            scoreboard.resetScores(entry);
-        }
-
-        // Add header
-        sidebarObjective.getScore(ChatColor.YELLOW + "Players:").setScore(players.size() + 1);
-
-        // Add players and their life counts
-        int score = players.size();
-        for (Map.Entry<Player, GameEnums.GameTeam> entry : players.entrySet()) {
-            Player player = entry.getKey();
-            GameEnums.GameTeam team = entry.getValue();
-            int lives = this.lives.getOrDefault(player, maxLives);
-
-            if (team != null) {
-                String playerInfo = team.getChatColor() + player.getName() + ChatColor.WHITE + ": " + lives + " lives";
-                sidebarObjective.getScore(playerInfo).setScore(score);
-                score--;
-            }
-        }
-
-        // Set the scoreboard for all players
-        for (Player player : players.keySet()) {
-            player.setScoreboard(scoreboard);
+            scoreboardTeam.setAllowFriendlyFire(settings.isFriendlyFire());
         }
     }
 
     private void initializeSpawnPoints() {
-        spawnPoints.put(GameEnums.GameTeam.RED, new Location(Bukkit.getWorld("world"), 300, -13, 151));
-        spawnPoints.put(GameEnums.GameTeam.BLUE, new Location(Bukkit.getWorld("world"), 318, -13, 151));
-        spawnPoints.put(GameEnums.GameTeam.GREEN, new Location(Bukkit.getWorld("world"), 318, -13, 184));
-        spawnPoints.put(GameEnums.GameTeam.YELLOW, new Location(Bukkit.getWorld("world"), 300, -13, 184));
+        for (GameEnums.GameTeam team : GameEnums.GameTeam.values()) {
+            spawnPoints.put(team, new ArrayList<>());
+        }
+        updateSpawnPoints();
     }
 
-    public Map<GameEnums.GameTeam, Location> getSpawnPoints() {
-        return new HashMap<>(spawnPoints);
+    public void updateSpawnPoints() {
+        Map<GameEnums.GameTeam, List<Location>> newSpawnPoints = currentMap.getTeamSpawnPoints();
+        for (GameEnums.GameTeam team : GameEnums.GameTeam.values()) {
+            spawnPoints.put(team, newSpawnPoints.getOrDefault(team, new ArrayList<>()));
+        }
     }
 
     public boolean addPlayer(Player player) {
         if (gameState != GameEnums.GameState.WAITING) {
             return false;
         }
+        UUID playerUUID = player.getUniqueId();
+        GameEnums.GameTeam team = assignTeam();
+        players.put(playerUUID, team);
+        lives.put(playerUUID, 3);
 
-        if (gameMode != GameEnums.GameMode.PARTY) {
-            GameEnums.GameTeam team = assignTeam();
-            players.put(player, team);
+        player.setGameMode(GameMode.ADVENTURE);
+        if (team != null) {
+            teleportPlayerToTeamSpawn(player, team);
         } else {
-            players.put(player, null);  // No team assigned for party mode initially
+            teleportPlayerToWaitingArea(player);
         }
-
-        lives.put(player, maxLives);
-
-
-        // Set max health to 100
-        AttributeInstance maxHealthAttribute = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
-        if (maxHealthAttribute != null) {
-            maxHealthAttribute.setBaseValue(100.0);
-        }
-
-        // Set health to max
-        player.setHealth(100.0);
-
-        // Make health appear as 10 hearts
-        player.setHealthScale(20.0);
-        player.setHealthScaled(true);
-
-        if (gameMode == GameEnums.GameMode.PARTY) {
-            teleportToWaitingArea(player);
-        } else {
-            teleportPlayerToSpawnPoint(player);
-        }
-        // Restrict player movement
         restrictPlayerMovement(player);
-        updatePlayerListHealth(player);
-        updateScoreboard();
-        gameGUI.updateInventory();
 
+        setPlayerAttributes(player);
+        Equipment.equip(player);
+        updateScoreboard();
+        player.setScoreboard(scoreboard);
         return true;
     }
 
-    void teleportToWaitingArea(Player player) {
-        Location waitingArea = new Location(player.getWorld(), 300, -13, 151);  // Example coordinates
-        player.teleport(waitingArea);
+    private GameEnums.GameTeam assignTeam() {
+        Map<GameEnums.GameTeam, Integer> teamCounts = new EnumMap<>(GameEnums.GameTeam.class);
+        for (GameEnums.GameTeam team : GameEnums.GameTeam.values()) {
+            teamCounts.put(team, 0);
+        }
+        for (GameEnums.GameTeam team : players.values()) {
+            teamCounts.put(team, teamCounts.get(team) + 1);
+        }
+        return Collections.min(teamCounts.entrySet(), Map.Entry.comparingByValue()).getKey();
     }
 
-    public void playerDied(Player player) {
-        int remainingLives = lives.getOrDefault(player, 0) - 1;
-        lives.put(player, remainingLives);
+    private void setPlayerAttributes(Player player) {
+        player.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(100.0);
+        player.setHealth(100.0);
+        player.setHealthScale(20.0);
+        player.setHealthScaled(true);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, Integer.MAX_VALUE, 1));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SATURATION, Integer.MAX_VALUE, 0));
+    }
+
+    public void removePlayer(Player player) {
+        UUID playerUUID = player.getUniqueId();
+        GameEnums.GameTeam team = players.remove(playerUUID);
+        lives.remove(playerUUID);
+        if (team != null) {
+            scoreboard.getTeam(team.name()).removeEntry(player.getName());
+        }
+        tabHealthObjective.getScoreboard().resetScores(player.getName());
+        belowNameHealthObjective.getScoreboard().resetScores(player.getName());
+        player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
+        resetPlayerAttributes(player);
+        unrestrictPlayerMovement(player);
+        updateScoreboard();
+        checkWinCondition();
+    }
+
+    private void resetPlayerAttributes(Player player) {
+        player.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(20.0);
+        player.setHealth(20.0);
+        player.setHealthScale(20.0);
+        player.setHealthScaled(false);
+        player.removePotionEffect(PotionEffectType.SPEED);
+        player.removePotionEffect(PotionEffectType.JUMP_BOOST);
+        player.removePotionEffect(PotionEffectType.SATURATION);
+    }
+
+    public void startGame() {
+        if (gameState != GameEnums.GameState.WAITING || !canStart()) {
+            return;
+        }
+        gameState = GameEnums.GameState.STARTING;
+        startCountdown();
+    }
+
+    private void startCountdown() {
+        new BukkitRunnable() {
+            int countdown = 10;
+
+            @Override
+            public void run() {
+                if (countdown > 0) {
+                    broadcastMessage("Game starting in " + countdown + " seconds!");
+                    countdown--;
+                } else {
+                    broadcastMessage("Game started!");
+                    gameState = GameEnums.GameState.IN_PROGRESS;
+                    teleportPlayersToSpawns();
+                    unrestrictAllPlayers();
+                    this.cancel();
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 20L);
+    }
+
+    public void setPlayerTeam(Player player, GameEnums.GameTeam newTeam) {
+        UUID playerUUID = player.getUniqueId();
+        GameEnums.GameTeam oldTeam = players.get(playerUUID);
+
+        if (oldTeam != null) {
+            scoreboard.getTeam(oldTeam.name()).removeEntry(player.getName());
+        }
+
+        players.put(playerUUID, newTeam);
+
+        if (newTeam != null) {
+            scoreboard.getTeam(newTeam.name()).addEntry(player.getName());
+            if (gameState == GameEnums.GameState.IN_PROGRESS) {
+                player.teleport(currentMap.getRandomSpawnPoint(newTeam));
+            }
+        }
+
+        updateScoreboard();
+        player.sendMessage(ChatColor.GREEN + "You have been moved to " + (newTeam != null ? newTeam.name() : "Spectators"));
+    }
+
+    private void teleportPlayersToSpawns() {
+        for (Map.Entry<UUID, GameEnums.GameTeam> entry : players.entrySet()) {
+            Player player = Bukkit.getPlayer(entry.getKey());
+            if (player != null) {
+                GameEnums.GameTeam team = entry.getValue();
+                List<Location> teamSpawns = spawnPoints.get(team);
+                if (teamSpawns != null && !teamSpawns.isEmpty()) {
+                    Location spawn = teamSpawns.get(new Random().nextInt(teamSpawns.size()));
+                    player.teleport(spawn);
+                }
+            }
+        }
+    }
+
+    private void teleportPlayerToTeamSpawn(Player player, GameEnums.GameTeam team) {
+        List<Location> teamSpawns = spawnPoints.get(team);
+        if (teamSpawns != null && !teamSpawns.isEmpty()) {
+            Location spawn = teamSpawns.get(new Random().nextInt(teamSpawns.size()));
+            player.teleport(spawn);
+        } else {
+            // Fallback to waiting area if no spawn point is available
+            teleportPlayerToWaitingArea(player);
+        }
+    }
+
+    private void teleportPlayerToWaitingArea(Player player) {
+        player.teleport(getWaitingArea());
+        restrictPlayerMovement(player);
+    }
+
+    public void playerDeath(Player player) {
+        UUID playerUUID = player.getUniqueId();
+        int remainingLives = lives.get(playerUUID) - 1;
+        lives.put(playerUUID, remainingLives);
 
         if (remainingLives <= 0) {
             eliminatePlayer(player);
@@ -181,344 +253,244 @@ public class Game {
         checkWinCondition();
     }
 
-    private GameEnums.GameTeam assignTeam() {
-        if (gameMode == GameEnums.GameMode.ONE_V_ONE) {
-            return players.size() == 0 ? GameEnums.GameTeam.RED : GameEnums.GameTeam.BLUE;
-        } else {
-            // Implement logic for other game modes
-            // This is a simple round-robin assignment
-            return GameEnums.GameTeam.values()[players.size() % GameEnums.GameTeam.values().length];
-        }
-    }
-
-    public void updatePlayerListHealth(Player player) {
-        healthObjective.getScore(player.getName()).setScore((int) player.getHealth());
-    }
-
     private void eliminatePlayer(Player player) {
-        GameEnums.GameTeam team = players.remove(player);
-        lives.remove(player);
-        player.setGameMode(org.bukkit.GameMode.SPECTATOR);
-        player.sendMessage("You have been eliminated!");
-        addSpectator(player);
-
-        // Remove player from scoreboard team
+        UUID playerUUID = player.getUniqueId();
+        GameEnums.GameTeam team = players.remove(playerUUID);
         if (team != null) {
             scoreboard.getTeam(team.name()).removeEntry(player.getName());
         }
+        player.setGameMode(GameMode.SPECTATOR);
+        spectators.add(playerUUID);
+        broadcastMessage(player.getName() + " has been eliminated!");
     }
 
     private void respawnPlayer(Player player) {
-        GameEnums.GameTeam team = players.get(player);
-        player.teleport(spawnPoints.get(team));
-        player.sendMessage("You have " + lives.get(player) + " lives remaining.");
+        setPlayerAttributes(player);
+        GameEnums.GameTeam team = players.get(player.getUniqueId());
+        List<Location> teamSpawns = spawnPoints.get(team);
+        if (teamSpawns != null && !teamSpawns.isEmpty()) {
+            Location spawn = teamSpawns.get(new Random().nextInt(teamSpawns.size()));
+            player.teleport(spawn);
+        }
+        player.setGameMode(GameMode.ADVENTURE);
     }
 
     private void checkWinCondition() {
-        Map<GameEnums.GameTeam, Integer> teamPlayerCounts = new EnumMap<>(GameEnums.GameTeam.class);
-        for (GameEnums.GameTeam team : GameEnums.GameTeam.values()) {
-            teamPlayerCounts.put(team, 0);
+        List<GameEnums.GameTeam> remainingTeams = new ArrayList<>(new HashSet<>(players.values()));
+        if (remainingTeams.size() == 1) {
+            endGame(remainingTeams.get(0));
         }
-
-        for (Map.Entry<Player, GameEnums.GameTeam> entry : players.entrySet()) {
-            GameEnums.GameTeam team = entry.getValue();
-            if (team != null) {
-                teamPlayerCounts.put(team, teamPlayerCounts.get(team) + 1);
-            }
-        }
-
-        GameEnums.GameTeam winningTeam = null;
-        int teamsWithPlayers = 0;
-
-        for (Map.Entry<GameEnums.GameTeam, Integer> entry : teamPlayerCounts.entrySet()) {
-            if (entry.getValue() > 0) {
-                winningTeam = entry.getKey();
-                teamsWithPlayers++;
-            }
-        }
-
-        if (teamsWithPlayers == 1) {
-            endGame(winningTeam);
-        }
-    }
-
-    public void removePlayer(Player player) {
-        players.remove(player);
-        gameGUI.updateInventory();
-        lives.remove(player);
-        unfreezePlayer(player);
-
-        AttributeInstance maxHealthAttribute = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
-        if (maxHealthAttribute != null) {
-            maxHealthAttribute.setBaseValue(20.0);
-        }
-        player.setHealth(20.0);
-        player.setHealthScale(20.0);
-        player.setHealthScaled(false);
-
-        for (Team team : scoreboard.getTeams()) {
-            team.removeEntry(player.getName());
-        }
-        if (players.isEmpty()) {
-            endGame(null);
-        }
-        checkWinCondition();
-    }
-
-    public void startGame() {
-        if (gameState != GameEnums.GameState.WAITING) {
-            return;
-        }
-        gameState = GameEnums.GameState.STARTING;
-        startCountdown();
-        updateScoreboard();
-    }
-
-    void teleportPlayerToSpawnPoint(Player player) {
-        GameEnums.GameTeam team = players.get(player);
-        if (team != null && spawnPoints.containsKey(team)) {
-            player.teleport(spawnPoints.get(team));
-        } else {
-            // If the team doesn't have a spawn point, teleport to a default location
-            Location defaultSpawn = spawnPoints.values().iterator().next();
-            player.teleport(defaultSpawn);
-        }
-    }
-
-    private void startCountdown() {
-        new BukkitRunnable() {
-            int countdown = 10;
-
-            @Override
-            public void run() {
-                if (countdown > 0) {
-                    for (Player player : players.keySet()) {
-                        player.sendTitle("Game starting in", countdown + " seconds", 0, 20, 0);
-                    }
-                    countdown--;
-                } else {
-                    for (Player player : players.keySet()) {
-                        player.sendTitle("Game started!", "", 0, 20, 0);
-                    }
-                    gameState = GameEnums.GameState.IN_PROGRESS;
-                    unrestrictAllPlayers();
-                    this.cancel();
-                }
-            }
-        }.runTaskTimer(plugin, 0L, 20L);
-    }
-
-    public void unrestrictAllPlayers() {
-        for (UUID uuid : restrictedPlayers) {
-            Player player = Bukkit.getPlayer(uuid);
-            if (player != null) {
-                player.setGameMode(GameMode.SURVIVAL);
-                player.setWalkSpeed(0.2f);
-                player.setFlySpeed(0.1f);
-            }
-        }
-        restrictedPlayers.clear();
-    }
-
-    private void restrictPlayerMovement(Player player) {
-        restrictedPlayers.add(player.getUniqueId());
-        player.setGameMode(GameMode.ADVENTURE);
-        player.setWalkSpeed(0);
-        player.setFlySpeed(0);
-    }
-
-    private void unfreezePlayer(Player player) {
-        restrictedPlayers.remove(player.getUniqueId());
-        player.setGameMode(GameMode.SURVIVAL);
-        player.setWalkSpeed(0.2f);
-        player.setFlySpeed(0.1f);
-    }
-
-    public boolean isPlayerFrozen(Player player) {
-        return restrictedPlayers.contains(player.getUniqueId());
     }
 
     public void endGame(GameEnums.GameTeam winningTeam) {
         gameState = GameEnums.GameState.ENDED;
         String winMessage = winningTeam != null ? winningTeam.name() + " team wins!" : "Game Over!";
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (players.containsKey(player) || spectators.contains(player)) {
-                player.sendTitle("Game Over!", winMessage, 20, 60, 20);
-                player.setGameMode(org.bukkit.GameMode.SURVIVAL);
-                plugin.teleportToSpawn(player);
+        broadcastMessage(winMessage);
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (UUID uuid : new HashSet<>(players.keySet())) {
+                    Player player = Bukkit.getPlayer(uuid);
+                    if (player != null) {
+                        removePlayer(player);
+                        plugin.teleportToLobby(player);
+                    }
+                }
+                for (UUID uuid : new HashSet<>(spectators)) {
+                    Player spectator = Bukkit.getPlayer(uuid);
+                    if (spectator != null) {
+                        removeSpectator(spectator);
+                        plugin.teleportToLobby(spectator);
+                    }
+                }
             }
-        }
-        players.clear();
-        spectators.clear();
-        lives.clear();
-        ScoreboardManager manager = Bukkit.getScoreboardManager();
-        Scoreboard emptyScoreboard = manager.getNewScoreboard();
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (players.containsKey(player) || spectators.contains(player)) {
-                player.setScoreboard(emptyScoreboard);
-            }
-        }
-    }
-    public void updateAllPlayersHealth() {
-        for (Player player : players.keySet()) {
-            updatePlayerListHealth(player);
-        }
+        }.runTaskLater(plugin, 100); // 5 seconds delay
     }
 
+    private void updateScoreboard() {
+        // Clear all existing entries
+        for (String entry : scoreboard.getEntries()) {
+            scoreboard.resetScores(entry);
+        }
+
+        // Group players by team
+        Map<GameEnums.GameTeam, List<Player>> teamPlayers = new EnumMap<>(GameEnums.GameTeam.class);
+        for (GameEnums.GameTeam team : GameEnums.GameTeam.values()) {
+            teamPlayers.put(team, new ArrayList<>());
+        }
+        List<Player> spectators = new ArrayList<>();
+
+        // Populate team players and spectators
+        for (Map.Entry<UUID, GameEnums.GameTeam> entry : players.entrySet()) {
+            Player player = Bukkit.getPlayer(entry.getKey());
+            if (player != null && player.isOnline()) {
+                GameEnums.GameTeam team = entry.getValue();
+                if (team != null) {
+                    teamPlayers.get(team).add(player);
+                } else {
+                    spectators.add(player);
+                }
+            }
+        }
+
+        int score = teamPlayers.size() + spectators.size() + 10; // Ensure enough scores for all entries
+
+        // Display teams and players
+        for (GameEnums.GameTeam team : GameEnums.GameTeam.values()) {
+            List<Player> playersInTeam = teamPlayers.get(team);
+            if (!playersInTeam.isEmpty()) {
+                // Add team header
+                sidebarObjective.getScore(team.getChatColor() + "== " + team.name() + " TEAM ==").setScore(score--);
+
+                // Add players in the team
+                for (Player player : playersInTeam) {
+                    String playerInfo = team.getChatColor() + player.getName() + ": " + lives.get(player.getUniqueId()) + " lives";
+                    sidebarObjective.getScore(playerInfo).setScore(score--);
+                }
+
+                // Add a blank line after each team (if it's not the last team)
+                if (score > spectators.size() + 1) {
+                    sidebarObjective.getScore(ChatColor.RESET.toString() + ChatColor.STRIKETHROUGH + "----------------------").setScore(score--);
+                }
+            }
+        }
+
+        // Display spectators
+        if (!spectators.isEmpty()) {
+            sidebarObjective.getScore(ChatColor.GRAY + "== SPECTATORS ==").setScore(score--);
+            for (Player player : spectators) {
+                String playerInfo = ChatColor.GRAY + player.getName();
+                sidebarObjective.getScore(playerInfo).setScore(score--);
+            }
+        }
+
+        // Update player scoreboards
+        for (UUID uuid : players.keySet()) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null && player.isOnline()) {
+                player.setScoreboard(scoreboard);
+            }
+        }
+    }
 
     public boolean addSpectator(Player player) {
         if (gameState != GameEnums.GameState.IN_PROGRESS) {
             return false;
         }
-        spectators.add(player);
-        player.setGameMode(org.bukkit.GameMode.SPECTATOR);
-        player.teleport(getSpectatorLocation());
+        spectators.add(player.getUniqueId());
+        player.setGameMode(GameMode.SPECTATOR);
+        player.teleport(getWaitingArea());
         return true;
     }
 
-    public Location getSpectatorLocation() {
-        // This method should return a suitable location for spectators
-        // For example, you could return a location above the center of the map
-        Location center = new Location(spawnPoints.get(GameEnums.GameTeam.RED).getWorld(), 309, -13, 167.5);
-        return center.clone().add(0, 10, 0);
+    public void removeSpectator(Player player) {
+        spectators.remove(player.getUniqueId());
+        player.setGameMode(GameMode.ADVENTURE);
+        plugin.teleportToLobby(player);
     }
 
-    public GameEnums.GameState getGameState() {
-        return gameState;
-    }
-
-    public boolean isFriendlyFire() {
-        return friendlyFire;
-    }
-
-    public void setFriendlyFire(boolean friendlyFire) {
-        this.friendlyFire = friendlyFire;
-        for (Team team : scoreboard.getTeams()) {
-            team.setAllowFriendlyFire(friendlyFire);
+    public void checkPlayerPosition(Player player) {
+        if (!currentMap.getBoundingBox().contains(player.getLocation().toVector())) {
+            playerDeath(player);
+            player.sendMessage("You went out of bounds!");
         }
     }
 
-    public boolean isRandomHeroes() {
-        return randomHeroes;
-    }
-
-    public void setRandomHeroes(boolean randomHeroes) {
-        this.randomHeroes = randomHeroes;
-    }
-
-    public boolean isUltimateAbilities() {
-        return ultimateAbilities;
-    }
-
-    public void setUltimateAbilities(boolean ultimateAbilities) {
-        this.ultimateAbilities = ultimateAbilities;
-    }
-
-    public GameEnums.GameMode getGameMode() {
-        return gameMode;
-    }
-
-    public String getGameId() {
-        return gameId;
-    }
-
-    public Map<Player, GameEnums.GameTeam> getPlayers() {
-        return new HashMap<>(players); // Return a copy to prevent external modifications
-    }
-
-    public List<Player> getSpectators() {
-        return spectators;
-    }
-
-    public GameGUI getGameGUI() {
-        return gameGUI;
-    }
-
-    public int getPlayerLives(Player player) {
-        return lives.getOrDefault(player, 0);
-    }
-
-    public void broadcastMessage(String message) {
-        for (Player player : players.keySet()) {
-            player.sendMessage(message);
+    private void broadcastMessage(String message) {
+        for (UUID uuid : players.keySet()) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) {
+                player.sendMessage(message);
+            }
         }
-        for (Player spectator : spectators) {
-            spectator.sendMessage(message);
+        for (UUID uuid : spectators) {
+            Player spectator = Bukkit.getPlayer(uuid);
+            if (spectator != null) {
+                spectator.sendMessage(message);
+            }
+        }
+    }
+
+    private void restrictPlayerMovement(Player player) {
+        player.setWalkSpeed(0);
+        player.setFlySpeed(0);
+        player.setAllowFlight(false);
+    }
+
+    private void unrestrictPlayerMovement(Player player) {
+        player.setWalkSpeed(0.2f);
+        player.setFlySpeed(0.1f);
+        player.setAllowFlight(true);
+    }
+
+    private void unrestrictAllPlayers() {
+        for (UUID uuid : players.keySet()) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) {
+                unrestrictPlayerMovement(player);
+            }
         }
     }
 
     public boolean isPlayerInGame(Player player) {
-        return players.containsKey(player) || spectators.contains(player);
+        return players.containsKey(player.getUniqueId()) || spectators.contains(player.getUniqueId());
     }
 
-    public GameEnums.GameTeam getPlayerTeam(Player player) {
-        return players.get(player);
+    public boolean isPlayerAlive(Player player) {
+        return players.containsKey(player.getUniqueId());
     }
 
-    public void setPlayerTeam(Player player, GameEnums.GameTeam team) {
-        GameEnums.GameTeam currentTeam = players.get(player);
-        if (currentTeam != null) {
-            scoreboard.getTeam(currentTeam.name()).removeEntry(player.getName());
+    public void setMap(MapData newMap) {
+        if (newMap == null) {
+            throw new IllegalArgumentException("New map cannot be null");
         }
+        this.currentMap = newMap;
+        updateSpawnPoints();
+    }
 
-        players.put(player, team);
+    public Location getWaitingArea() {
+        return currentMap.getWaitingArea();
+    }
 
-        if (team != null) {
-            scoreboard.getTeam(team.name()).addEntry(player.getName());
-        }
+    public boolean canStart() {
+        Set<GameEnums.GameTeam> teamsWithPlayers = new HashSet<>(players.values());
+        return teamsWithPlayers.size() >= 2;
+    }
 
+    public void setPlayerAsSpectator(Player player) {
+        UUID playerUUID = player.getUniqueId();
+        players.put(playerUUID, null);
         updateScoreboard();
+    }
 
-        // Teleport the player to the new team's spawn point
-        if (team != null) {
-            teleportPlayerToSpawnPoint(player);
-        } else {
-            teleportToWaitingArea(player);
+    public boolean arePlayersOnSameTeam(Player player1, Player player2) {
+        Game game = plugin.getGameManager().getPlayerGame(player1);
+
+        // First, check if both players are in the same game
+        if (game == null || game != plugin.getGameManager().getPlayerGame(player2)) {
+            return false;
         }
 
-        // Reopen the GUI for the player
-        Bukkit.getScheduler().runTaskLater(plugin, () -> reopenGUIForPlayer(player), 1L);
+        // Get the teams of both players
+        GameEnums.GameTeam team1 = game.getPlayerTeam(player1);
+        GameEnums.GameTeam team2 = game.getPlayerTeam(player2);
+
+        // If both teams are null (spectators) or both teams are the same and not null, they're on the same team
+        return (team1 == null && team2 == null) || (team1 != null && team1 == team2);
     }
 
-    public void reopenGUIForPlayer(Player player) {
-        if (playersInGUI.contains(player.getUniqueId())) {
-            gameGUI.openInventory(player);
-        }
-    }
+    // Getters
+    public Heroes getPlugin() { return plugin; }
+    public String getGameId() { return gameId; }
+    public GameEnums.GameMode getGameMode() { return gameMode; }
+    public GameEnums.GameState getGameState() { return gameState; }
+    public Map<UUID, GameEnums.GameTeam> getPlayers() { return new HashMap<>(players); }
+    public Set<UUID> getSpectators() { return new HashSet<>(spectators); }
+    public GameSettingsManager getSettings() { return settings; }
+    public GameGUI getGameGUI() { return gameGUI; }
+    public int getPlayerLives(Player player) { return lives.getOrDefault(player.getUniqueId(), 0); }
+    public GameEnums.GameTeam getPlayerTeam(Player player) { return players.get(player.getUniqueId()); }
+    public MapData getCurrentMap() { return currentMap; }
 
-    public void playerOpenedGUI(Player player) {
-        playersInGUI.add(player.getUniqueId());
-    }
-
-    public void playerClosedGUI(Player player) {
-        playersInGUI.remove(player.getUniqueId());
-    }
-
-    public Set<Player> getTeamPlayers(GameEnums.GameTeam team) {
-        Set<Player> teamPlayers = new HashSet<>();
-        for (Map.Entry<Player, GameEnums.GameTeam> entry : players.entrySet()) {
-            if (entry.getValue() == team) {
-                teamPlayers.add(entry.getKey());
-            }
-        }
-        return teamPlayers;
-    }
-
-    public void resetPlayerStats(Player player) {
-        player.setHealth(player.getMaxHealth());
-        player.setFoodLevel(20);
-        player.setSaturation(20);
-        player.getInventory().clear();
-        player.setExp(0);
-        player.setLevel(0);
-    }
-
-    public void applyGameRules() {
-        for (Player player : players.keySet()) {
-            resetPlayerStats(player);
-            if (randomHeroes) {
-                // Implement logic to assign random heroes
-            }
-        }
-    }
 }

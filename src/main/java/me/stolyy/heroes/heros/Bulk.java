@@ -1,8 +1,7 @@
 package me.stolyy.heroes.heros;
 
-import me.stolyy.heroes.Hero;
 import me.stolyy.heroes.Heroes;
-import me.stolyy.heroes.Interactions;
+import me.stolyy.heroes.Utility.Interactions;
 import me.stolyy.heroes.WallDetection;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -14,8 +13,6 @@ import org.bukkit.util.Vector;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
-import static org.bukkit.Material.DARK_PRISMARINE;
 
 public class Bulk extends Hero implements Listener, Projectile {
     public Player player;
@@ -37,7 +34,7 @@ public class Bulk extends Hero implements Listener, Projectile {
 
     @Override
     public void usePrimaryAbility(Player player) {
-        Projectile.projectile(player, 2, true, DARK_PRISMARINE, 2, this, AbilityType.PRIMARY);
+        Projectile.projectile(player, 2, true, 1004, 2, this, AbilityType.PRIMARY);
     }
 
     @Override

@@ -1,35 +1,25 @@
 package me.stolyy.heroes.Games;
 
-import com.destroystokyo.paper.event.player.PlayerJumpEvent;
+import me.stolyy.heroes.Game.GameEnums;
 import me.stolyy.heroes.Heroes;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.Sound;
+import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.inventory.*;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
-import org.bukkit.event.player.PlayerToggleFlightEvent;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 public class GameListener implements Listener {
-    private final Heroes plugin;
     private final GameManager gameManager;
-    private final Map<UUID, ItemStack> selectedHeads = new HashMap<>();
 
-    public GameListener(Heroes plugin, GameManager gameManager) {
-        this.plugin = plugin;
+    public GameListener(GameManager gameManager) {
         this.gameManager = gameManager;
     }
 
@@ -51,10 +41,9 @@ public class GameListener implements Listener {
 
             Game game = gameManager.getPlayerGame(damager);
             if (game != null && game == gameManager.getPlayerGame(victim)) {
-                if (!game.isFriendlyFire() && game.getPlayerTeam(damager) == game.getPlayerTeam(victim)) {
+                if (!game.getSettings().isFriendlyFire() && game.getPlayerTeam(damager) == game.getPlayerTeam(victim)) {
                     event.setCancelled(true);
                 }
-                // You can add additional game-specific damage handling here
             }
         }
     }
@@ -66,63 +55,33 @@ public class GameListener implements Listener {
         Game game = gameManager.getPlayerGame(player);
         if (game == null) return;
 
-        if (event.getView().getTitle().equals("Party Game Setup")) {
-            event.setCancelled(true);
-            int slot = event.getRawSlot();
-            ItemStack clickedItem = event.getCurrentItem();
+        String inventoryTitle = event.getView().getTitle();
+        int slot = event.getRawSlot();
 
-            if (clickedItem != null && clickedItem.getType() == Material.PLAYER_HEAD) {
-                selectedHeads.put(player.getUniqueId(), clickedItem);
-                player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
-            } else if (selectedHeads.containsKey(player.getUniqueId())) {
-                ItemStack selectedHead = selectedHeads.remove(player.getUniqueId());
-                game.getGameGUI().handlePlayerMove(player, selectedHead, slot);
-            } else {
-                game.getGameGUI().handleInventoryClick(player, slot);
-            }
-        }
-    }
+        event.setCancelled(true); // Cancel all clicks by default
 
-    @EventHandler
-    public void onPlayerMove(PlayerMoveEvent event) {
-        Game game = gameManager.getPlayerGame(event.getPlayer());
-        if (game != null && game.isPlayerFrozen(event.getPlayer())) {
-            // Cancel the event if the player has actually moved
-            if (event.getTo().getX() != event.getFrom().getX() ||
-                    event.getTo().getY() != event.getFrom().getY() ||
-                    event.getTo().getZ() != event.getFrom().getZ()) {
-                event.setTo(event.getFrom());
-            }
-        }
-    }
-
-    @EventHandler
-    public void onPlayerJump(PlayerJumpEvent event) {
-        Game game = gameManager.getPlayerGame(event.getPlayer());
-        if (game != null && game.isPlayerFrozen(event.getPlayer())) {
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    public void onPlayerToggleFlight(PlayerToggleFlightEvent event) {
-        Game game = gameManager.getPlayerGame(event.getPlayer());
-        if (game != null && game.isPlayerFrozen(event.getPlayer())) {
-            event.setCancelled(true);
+        if (inventoryTitle.equals("Party Game Setup")) {
+            game.getGameGUI().handleClick(player, slot);
+        } else if (inventoryTitle.equals("Game Settings")) {
+            new GameSettingsGUI(game).handleClick(player, slot);
+        } else if (inventoryTitle.equals("Select GameMap")) {
+            new MapGUI(game).handleClick(player, slot);
         }
     }
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
-        if (event.getPlayer() instanceof Player) {
-            Player player = (Player) event.getPlayer();
-            Game game = gameManager.getPlayerGame(player);
-            if (game != null && game.getGameMode() == GameEnums.GameMode.PARTY && game.getGameState() == GameEnums.GameState.WAITING) {
-                game.playerClosedGUI(player);
-                // Reopen the GUI after a short delay, unless the player used the cancel button
+        if (!(event.getPlayer() instanceof Player)) return;
+        Player player = (Player) event.getPlayer();
+        Game game = gameManager.getPlayerGame(player);
+        if (game == null) return;
+
+        if (event.getView().getTitle().equals("Party Game Setup") && game.getGameState() == GameEnums.GameState.WAITING) {
+            // Only reopen for the party leader
+            if (player.getUniqueId().equals(Heroes.getInstance().getPartyManager().getPartyByPlayer(player.getUniqueId()).getLeader())) {
                 Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
-                    if (game.getPlayers().containsKey(player)) {
-                        game.reopenGUIForPlayer(player);
+                    if (game.getPlayers().containsKey(player.getUniqueId())) {
+                        game.getGameGUI().openInventory(player);
                     }
                 }, 1L);
             }
@@ -130,12 +89,15 @@ public class GameListener implements Listener {
     }
 
     @EventHandler
-    public void onInventoryOpen(InventoryOpenEvent event) {
-        if (event.getPlayer() instanceof Player) {
-            Player player = (Player) event.getPlayer();
-            Game game = gameManager.getPlayerGame(player);
-            if (game != null && game.getGameMode() == GameEnums.GameMode.PARTY && game.getGameState() == GameEnums.GameState.WAITING) {
-                game.playerOpenedGUI(player);
+    public void onPlayerMove(PlayerMoveEvent event) {
+        Player player = event.getPlayer();
+        Game game = gameManager.getPlayerGame(player);
+        if (game != null) {
+            if (game.getGameState() == GameEnums.GameState.WAITING) {
+                // Cancel movement during waiting period
+                event.setCancelled(true);
+            } else if (game.getGameState() == GameEnums.GameState.IN_PROGRESS) {
+                game.checkPlayerPosition(player);
             }
         }
     }
@@ -149,7 +111,7 @@ public class GameListener implements Listener {
             event.setKeepLevel(true);
             event.getDrops().clear();
             event.setDroppedExp(0);
-            game.playerDied(player);
+            game.playerDeath(player);
         }
     }
 
@@ -159,11 +121,23 @@ public class GameListener implements Listener {
         Game game = gameManager.getPlayerGame(player);
         if (game != null && game.getGameState() == GameEnums.GameState.IN_PROGRESS) {
             if (game.getPlayerLives(player) > 0) {
-                event.setRespawnLocation(game.getSpawnPoints().get(game.getPlayerTeam(player)));
+                event.setRespawnLocation(game.getCurrentMap().getRandomSpawnPoint(game.getPlayerTeam(player)));
+                player.setGameMode(GameMode.ADVENTURE);
             } else {
-                // Player is eliminated, set them as a spectator
-                player.setGameMode(org.bukkit.GameMode.SPECTATOR);
-                event.setRespawnLocation(game.getSpectatorLocation());
+                player.setGameMode(GameMode.SPECTATOR);
+                event.setRespawnLocation(game.getCurrentMap().getSpectatorSpawn());
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerOutOfBounds(PlayerMoveEvent event) {
+        Player player = event.getPlayer();
+        Game game = gameManager.getPlayerGame(player);
+        if (game != null && game.getGameState() == GameEnums.GameState.IN_PROGRESS) {
+            if (!game.getCurrentMap().getBoundingBox().contains(event.getTo().toVector())) {
+                player.setHealth(0); // This will trigger the PlayerDeathEvent
+                player.sendMessage("You went out of bounds!");
             }
         }
     }

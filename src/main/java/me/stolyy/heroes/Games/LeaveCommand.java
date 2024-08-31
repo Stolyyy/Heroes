@@ -36,7 +36,7 @@ public class LeaveCommand extends Command {
         }
 
         gameManager.leaveGame(player);
-        plugin.teleportToSpawn(player);
+        plugin.teleportToLobby(player);
         player.sendMessage("You have left the game and been teleported to spawn.");
 
         return true;

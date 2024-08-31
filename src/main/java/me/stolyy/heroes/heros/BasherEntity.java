@@ -1,5 +1,6 @@
 package me.stolyy.heroes.heros;
 
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Zombie;
@@ -52,7 +53,8 @@ public class BasherEntity {
                     if (entity.getLocation().distance(nearestPlayer.getLocation()) < 2 && attackCooldown == 0) {
                         dashAttack(nearestPlayer);
                     }
-                } else if (entity.getLocation().distance(owner.getLocation()) > 35) {
+                }
+                if (entity.getLocation().distance(owner.getLocation()) > 35) {
                     entity.teleport(owner.getLocation());
                 }
 
@@ -64,7 +66,7 @@ public class BasherEntity {
 
     private Player findNearestEnemyPlayer() {
         return entity.getWorld().getNearbyPlayers(entity.getLocation(), 60).stream()
-                .filter(p -> !p.getUniqueId().equals(owner.getUniqueId()))
+                .filter(p -> !p.getUniqueId().equals(owner.getUniqueId()) && p.getGameMode().equals(GameMode.ADVENTURE))
                 .min((p1, p2) -> Double.compare(p1.getLocation().distanceSquared(entity.getLocation()),
                         p2.getLocation().distanceSquared(entity.getLocation())))
                 .orElse(null);

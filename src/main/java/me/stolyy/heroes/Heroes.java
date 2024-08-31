@@ -1,25 +1,28 @@
 package me.stolyy.heroes;
 
+import me.stolyy.heroes.Game.GameEnums;
 import me.stolyy.heroes.Games.*;
-import me.stolyy.heroes.heros.AbilityListener;
-import me.stolyy.heroes.heros.HeroManager;
-import me.stolyy.heroes.heros.SetCharacterCommand;
+import me.stolyy.heroes.Party.PartyChatCommand;
+import me.stolyy.heroes.Party.PartyCommand;
+import me.stolyy.heroes.Party.PartyManager;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandMap;
 
 import java.lang.reflect.Field;
 import java.util.UUID;
+import java.util.logging.Level;
 
 public final class Heroes extends JavaPlugin implements Listener {
 
@@ -27,7 +30,7 @@ public final class Heroes extends JavaPlugin implements Listener {
     private HeroManager heroManager;
     private PartyManager partyManager;
     private GameManager gameManager;
-    private Location spawnLocation;
+    private Location lobbyLocation;
 
     public static Heroes getInstance() {
         return instance;
@@ -40,35 +43,26 @@ public final class Heroes extends JavaPlugin implements Listener {
         // Initialize managers
         heroManager = new HeroManager();
         partyManager = new PartyManager();
-        gameManager = new GameManager(this, heroManager);
+        gameManager = new GameManager(heroManager, partyManager);
 
-        // Set spawn location
+        // Set lobby location
         World world = Bukkit.getWorld("world");
         if (world != null) {
-            spawnLocation = new Location(world, -106.5, 0, 184.5);
+            this.lobbyLocation = new Location(world, 0.5, 0, 500.5);
         } else {
-            getLogger().warning("Default world not found. Spawn location not set.");
+            getLogger().warning("Default world not found. Lobby location not set.");
         }
 
         // Register event listeners
         Bukkit.getPluginManager().registerEvents(this, this);
         Bukkit.getPluginManager().registerEvents(new AbilityListener(heroManager, gameManager), this);
-        Bukkit.getPluginManager().registerEvents(new GameListener(this, gameManager), this);
-        Bukkit.getPluginManager().registerEvents(new PlayerHealthListener(this, gameManager), this);
+        Bukkit.getPluginManager().registerEvents(new GameListener(gameManager), this);
 
         // Register commands
         registerCommands();
 
         // Start periodic tasks
         startPeriodicTasks();
-
-        Bukkit.getScheduler().runTaskTimer(this, () -> {
-            for (Game game : gameManager.getActiveGames().values()) {
-                for (Player player : game.getPlayers().keySet()) {
-                    game.updatePlayerListHealth(player);
-                }
-            }
-        }, 20L, 20L);
 
         getLogger().info("Heroes plugin has been enabled!");
     }
@@ -80,24 +74,19 @@ public final class Heroes extends JavaPlugin implements Listener {
         registerCommand("p", new PartyCommand(partyManager));
         registerCommand("partychat", new PartyChatCommand(partyManager));
         registerCommand("pc", new PartyChatCommand(partyManager));
-        registerCommand("join", new JoinCommand(this, gameManager));
+        registerCommand("join", new JoinCommand(gameManager));
         registerCommand("spectate", new SpectateCommand(this, gameManager));
         registerCommand("leave", new LeaveCommand(this, gameManager));
-        registerCommand("spectate", new SpectateCommand(this, gameManager));
     }
 
     private void registerCommand(String name, Command command) {
         try {
-            Field commandMapField = getServer().getClass().getDeclaredField("commandMap");
-            commandMapField.setAccessible(true);
-            CommandMap commandMap = (CommandMap) commandMapField.get(getServer());
+            final Field bukkitCommandMap = Bukkit.getServer().getClass().getDeclaredField("commandMap");
+            bukkitCommandMap.setAccessible(true);
+            CommandMap commandMap = (CommandMap) bukkitCommandMap.get(Bukkit.getServer());
             commandMap.register(name, command);
-
-            for (String alias : command.getAliases()) {
-                commandMap.register(alias, command);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            getLogger().log(Level.SEVERE, "Failed to register command: " + name, e);
         }
     }
 
@@ -109,28 +98,58 @@ public final class Heroes extends JavaPlugin implements Listener {
                 gameManager.cleanupGames();
             }
         }.runTaskTimer(this, 20 * 60 * 5, 20 * 60 * 5); // Run every 5 minutes
+
+        // Task to update player health and check positions
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Game game : gameManager.getActiveGames().values()) {
+                    if (game.getGameState() == GameEnums.GameState.IN_PROGRESS) {
+                        for (UUID playerUUID : game.getPlayers().keySet()) {
+                            Player player = Bukkit.getPlayer(playerUUID);
+                            if (player != null) {
+                                //game.updateScoreboard();;
+                                game.checkPlayerPosition(player);
+                            }
+                        }
+                    }
+                }
+            }
+        }.runTaskTimer(this, 20L, 20L); // Run every second
     }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        // Any join-specific logic can go here
+        teleportToLobby(player);
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        UUID playerUUID = player.getUniqueId();
-
-        partyManager.handlePlayerLeave(player);
+        partyManager.leaveParty(player);
         gameManager.leaveGame(player);
+        heroManager.removePlayer(player);
     }
 
-    public void teleportToSpawn(Player player) {
-        if (spawnLocation != null) {
-            player.teleport(spawnLocation);
+    public void teleportToLobby(Player player) {
+        if (lobbyLocation != null) {
+            player.teleport(lobbyLocation);
+            player.setGameMode(GameMode.ADVENTURE);
+            player.getInventory().clear();
+            player.setHealth(player.getMaxHealth());
+            player.setFoodLevel(20);
+            player.setExp(0);
+            player.setLevel(0);
+
+            // Remove all potion effects
+            for (PotionEffect effect : player.getActivePotionEffects()) {
+                player.removePotionEffect(effect.getType());
+            }
+
+            player.sendMessage("You have been teleported to the lobby.");
         } else {
-            player.teleport(player.getWorld().getSpawnLocation());
+            getLogger().warning("Attempted to teleport player to lobby, but lobby location is not set.");
         }
     }
 
@@ -146,22 +165,20 @@ public final class Heroes extends JavaPlugin implements Listener {
         return gameManager;
     }
 
-    public Location getSpawnLocation() {
-        return spawnLocation;
-    }
-
     @Override
     public void onDisable() {
-        // Cleanup logic
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            Game game = gameManager.getPlayerGame(player);
-            if (game != null) {
-                gameManager.leaveGame(player);
-            }
-        }
-
         // Cancel all tasks
         Bukkit.getScheduler().cancelTasks(this);
+
+        // End all active games
+        for (Game game : gameManager.getActiveGames().values()) {
+            game.endGame(null);
+        }
+
+        // Clear data structures
+        heroManager.clear();
+        partyManager.clear();
+        gameManager.clearGames();
 
         getLogger().info("Heroes plugin has been disabled!");
     }

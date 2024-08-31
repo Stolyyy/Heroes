@@ -1,13 +1,14 @@
 package me.stolyy.heroes.heros;
 
-import me.stolyy.heroes.Hero;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.WallDetection;
 import org.bukkit.*;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -29,7 +30,7 @@ public interface Hitscan {
                 Particle.DustOptions dustOptions = new Particle.DustOptions(color, 1);
                 player.getWorld().spawnParticle(Particle.DUST, particleLocation, 1, dustOptions);
             } else {
-                player.getWorld().spawnParticle(particle, particleLocation, 1);
+                player.getWorld().spawnParticle(particle, particleLocation, 1, 0, 0, 0, 0);
             }
 
             List<Player> nearbyPlayers = (List<Player>) player.getWorld().getNearbyPlayers(particleLocation, 0.5);
@@ -46,7 +47,7 @@ public interface Hitscan {
         }
     }
 
-    static void hitscan(double range, Location location, Vector direction, Material blockMaterial, Player player, Hero hero, AbilityType abilityType) {
+    static void hitscan(double range, Location location, Vector direction, int customModelData, Player player, Hero hero, AbilityType abilityType) {
         Location startLocation = location.clone();
         Location endLocation = startLocation.clone().add(direction.clone().multiply(range));
 
@@ -58,23 +59,31 @@ public interface Hitscan {
         Vector normalizedDirection = direction.clone().normalize();
         World world = player.getWorld();
 
-        for (double i = 0; i <= distance; i += 0.4) {
+        for (double i = 0; i <= distance; i += 0.6) {
             Location spawnLocation = startLocation.clone().add(normalizedDirection.clone().multiply(i)).subtract(0, 2, 0);
 
             ArmorStand armorStand = (ArmorStand) world.spawnEntity(spawnLocation, EntityType.ARMOR_STAND);
             armorStand.setVisible(false);
             armorStand.setGravity(false);
             armorStand.setMarker(true);
-            armorStand.getEquipment().setHelmet(new ItemStack(blockMaterial));
+            ItemStack item = new ItemStack(Material.CARROT_ON_A_STICK);
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null) {
+                meta.setCustomModelData(customModelData);
+                meta.setUnbreakable(true);
+                meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+                item.setItemMeta(meta);
+            }
+            armorStand.getEquipment().setHelmet(item);
 
             new BukkitRunnable() {
                 @Override
                 public void run() {
                     armorStand.remove();
                 }
-            }.runTaskLater(Heroes.getInstance(), 4L);
+            }.runTaskLater(Heroes.getInstance(), 5L);
 
-            List<Player> nearbyPlayers = (List<Player>) world.getNearbyPlayers(spawnLocation.clone().add(0, 2, 0), 0.6);
+            List<Player> nearbyPlayers = (List<Player>) world.getNearbyPlayers(spawnLocation.clone().add(0, 2, 0), 0.5);
             for (Player nearbyPlayer : nearbyPlayers) {
                 if (nearbyPlayer != player) {
                     ((Hitscan) hero).onHitscanHit(nearbyPlayer, spawnLocation.clone().add(0, 2, 0), abilityType);

@@ -6,13 +6,17 @@ import java.util.List;
 
 public class GameManager {
     List<Game> activeGames;
+    List<Game> waitingGames;
 
     public void createNewGame(){
         //Random map not in use
-        //
+        //new game
     }
 
     public void join(Player player, GameEnums.GameMode gameMode){
+        //check if player is in a game already
+        //if they are, make them leave their game to join this one
+        //if in a party, do the same to the members of their party
         switch(gameMode){
             case PARTY:
                 //Create a new game
@@ -30,14 +34,25 @@ public class GameManager {
                 //find game
                 //if no game, make new game
                 //add both members of party
-                //
+                //start game if its full now
                 break;
         }
     }
 
-    public void leaveGame(Player player){}
+    public void leaveGame(Player player){
+        //maybe unnecessary, just call removePlayer in the game itself
+    }
 
-    public Game getPlayerGame(Player player){return null;}
+    public void cleanUpGames(){
+        //update activeGames list to only include games that are in progress
+        //update waitingGames to only have games that are waiting for players
+        //Clean up any games that have ended (idk)
+    }
+
+    public Game getPlayerGame(Player player){
+        //iterate through active games, and get playerlist for each one
+        //if playerlist has the player's game then add them
+        return null;}
 
 
     public List<Game> getActiveGames() {return activeGames;}

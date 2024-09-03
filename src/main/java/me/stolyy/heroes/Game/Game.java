@@ -18,8 +18,8 @@ import java.util.*;
 
 
 public class Game {
-    List<Player> playerList;
-    List<Player> alivePlayerList;
+    Set<Player> playerList;
+    Set<Player> alivePlayerList;
     GameMode gameMode;
     Map<Player, GameTeam> playerTeams;
     GameMap gameMap;
@@ -314,8 +314,8 @@ public class Game {
         }
     }
 
-    public List<Player> getPlayerList() {return playerList;}
-    public void setPlayerList(List<Player> playerList) {this.playerList = playerList;}
+    public Set<Player> getPlayerList() {return playerList;}
+    public void setPlayerList(Set<Player> playerList) {this.playerList = playerList;}
     public GameMode getGameMode() {return gameMode;}
     public void setGameMode(GameMode gameMode) {this.gameMode = gameMode;}
     public Map<Player, GameTeam> getPlayerTeams() {return playerTeams;}

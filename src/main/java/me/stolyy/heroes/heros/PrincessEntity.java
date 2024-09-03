@@ -12,6 +12,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 public class PrincessEntity {
+    //Princess entity is part of Pug's ultimate
     private final Plugin plugin;
     private final Player owner;
     private Skeleton entity;
@@ -62,7 +63,7 @@ public class PrincessEntity {
                 }
 
                 // Constantly reset target to prevent vanilla attacking
-                entity.setTarget(null);
+                //entity.setTarget(null);
             }
         }.runTaskTimer(plugin, 0L, 1L);
     }

@@ -15,9 +15,8 @@ public interface Dash {
         Location startLocation = player.getLocation();
         Vector direction = player.getEyeLocation().getDirection();
         double dashSpeed = 3.5; // Speed of the dash movement
-        int maxDurationTicks = 6; // Maximum duration of the dash in ticks (adjust as needed)
+        int maxDurationTicks = 6; // Maximum duration of the dash in ticks
 
-        // Set initial velocity to start the dash
         player.setVelocity(direction.multiply(dashSpeed));
 
         new BukkitRunnable() {
@@ -43,6 +42,7 @@ public interface Dash {
                     //return;
                 //}
 
+                //hitbox detection
                 List<Player> nearbyPlayers = (List<Player>) player.getWorld().getNearbyPlayers(currentLocation, 2);
                 for (Player nearbyPlayer : nearbyPlayers) {
                     if (nearbyPlayer != player && !hitPlayer.getOrDefault(nearbyPlayer, false)) {
@@ -56,7 +56,7 @@ public interface Dash {
 
             private void endDash() {
                 player.setVelocity(new Vector(0, 0, 0)); // Reset velocity
-                this.cancel(); // Stop the task
+                this.cancel();
             }
         }.runTaskTimer(Heroes.getInstance(), 0L, 1L);
     }

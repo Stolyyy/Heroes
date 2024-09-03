@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 public class Interactions {
-    //add hitbox detect in here
+    //TODO: add hitbox detect in here, add static KB (nonscaling with hp)
 
     public static void handleInteractions(Location sourceLocation, double knockback, double damage, Player damager, Player target) {
         handleInteractions(target.getLocation().subtract(sourceLocation).toVector().normalize(), knockback, damage, damager, target);

@@ -1,4 +1,4 @@
-package me.stolyy.heroes.Party;
+package me.stolyy.heroes.Games.Party;
 
 import java.util.HashSet;
 import java.util.Set;

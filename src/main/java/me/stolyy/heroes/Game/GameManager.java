@@ -1,12 +1,15 @@
 package me.stolyy.heroes.Game;
 
+import me.stolyy.heroes.Game.Party.PartyManager;
 import org.bukkit.entity.Player;
 
 import java.util.List;
+import java.util.Set;
 
 public class GameManager {
-    List<Game> activeGames;
-    List<Game> waitingGames;
+    Set<Game> activeGames;
+    Set<Game> waitingGames;
+
 
     public void createNewGame(){
         //Random map not in use
@@ -14,6 +17,7 @@ public class GameManager {
     }
 
     public void join(Player player, GameEnums.GameMode gameMode){
+
         //check if player is in a game already
         //if they are, make them leave their game to join this one
         //if in a party, do the same to the members of their party
@@ -55,6 +59,6 @@ public class GameManager {
         return null;}
 
 
-    public List<Game> getActiveGames() {return activeGames;}
-    public void setActiveGames(List<Game> activeGames) {this.activeGames = activeGames;}
+    public Set<Game> getActiveGames() {return activeGames;}
+    public void setActiveGames(Set<Game> activeGames) {this.activeGames = activeGames;}
 }

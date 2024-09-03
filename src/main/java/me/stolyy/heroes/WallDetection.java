@@ -9,7 +9,7 @@ public class WallDetection {
 
     public static boolean detectWall(Location start, Location end, double radius) {
         if (!isValidLocation(start) || !isValidLocation(end) || !isFinite(radius)) {
-            return false; // Invalid input, assume no wall detected
+            return false; //Input is invalid
         }
 
         World world = start.getWorld();
@@ -17,7 +17,7 @@ public class WallDetection {
         double distance = direction.length();
         direction.normalize();
 
-        double step = 0.1; // Smaller steps for more precise detection
+        double step = 0.1;
         for (double d = 0; d <= distance; d += step) {
             Location checkLoc = start.clone().add(direction.clone().multiply(d));
             if (isInSolid(checkLoc, radius)) {
@@ -29,7 +29,7 @@ public class WallDetection {
 
     private static boolean isInSolid(Location location, double radius) {
         if (!isValidLocation(location) || !isFinite(radius)) {
-            return false; // Invalid input, assume not in solid
+            return false; //Invalid input
         }
 
         World world = location.getWorld();
@@ -37,16 +37,16 @@ public class WallDetection {
         double y = location.getY();
         double z = location.getZ();
 
-        // Create a bounding box for the projectile
+        //Create a bounding box to detect blocks around a location
         BoundingBox projectileBox;
         try {
             projectileBox = BoundingBox.of(location, radius, radius, radius);
         } catch (IllegalArgumentException e) {
-            // If we can't create a valid bounding box, assume not in solid
+            //just in case bounding box doesn't work
             return false;
         }
 
-        // Determine the range of blocks to check based on the radius
+        // check blocks nearby using the input of a radius
         int range = (int) Math.ceil(radius);
 
         // Check surrounding blocks

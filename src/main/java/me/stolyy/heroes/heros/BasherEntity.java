@@ -11,6 +11,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 public class BasherEntity {
+    //Basher mob for pug's ultimate
     private final Plugin plugin;
     private final Player owner;
     private Zombie entity;
@@ -59,7 +60,7 @@ public class BasherEntity {
                 }
 
                 // Constantly reset target to prevent vanilla attacking
-                entity.setTarget(null);
+                //entity.setTarget(null); needed ?
             }
         }.runTaskTimer(plugin, 0L, 1L);
     }

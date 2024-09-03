@@ -68,7 +68,7 @@ public class Pug extends Hero implements Dash, Energy {
             player.playSound(player.getLocation(), Sound.ENTITY_WOLF_AMBIENT, 3.0f, 1.0f);
             new BukkitRunnable() {
                 int tick = 0;
-                final int totalTicks = 20; // Duration of the ability
+                final int totalTicks = 20;
                 @Override
                 public void run() {
                     if (tick >= totalTicks) {
@@ -76,8 +76,8 @@ public class Pug extends Hero implements Dash, Energy {
                         return;
                     }
                     for (int ring = 0; ring < 6; ring++) {
-                        double radius = 0.3 + (ring * 0.24); // 0.3 to 1.5 in 6 steps
-                        double distance = ring * 1.2; // Increased spacing (0.72 * 5 = 3.6 blocks total length)
+                        double radius = 0.3 + (ring * 0.24); // radius 0.3 to 1.5
+                        double distance = ring * 1.2; // Spacing of the rings
                         createRing(center, direction, radius, distance, ring);
                     }
                     tick++;
@@ -90,10 +90,10 @@ public class Pug extends Hero implements Dash, Energy {
 
                     for (int i = 0; i < particles; i++) {
                         double angle = 2 * Math.PI * i / particles;
-                        Vector offset = right.clone().multiply(radius * Math.cos(angle))
-                                .add(planeNormal.clone().crossProduct(right).multiply(radius * Math.sin(angle)));
+                        Vector offset = right.clone().multiply(radius * Math.cos(angle)).add(planeNormal.clone().crossProduct(right).multiply(radius * Math.sin(angle)));
                         Location particleLocation = center.clone().add(direction.clone().multiply(distance)).add(offset);
                         center.getWorld().spawnParticle(Particle.NOTE, particleLocation, 1, 0, 0, 0, 0);
+
                         // Check for players hit by particles
                         List<Player> nearbyPlayers = (List<Player>) player.getWorld().getNearbyPlayers(particleLocation, 1);
                         for (Player nearbyPlayer : nearbyPlayers) {
@@ -108,7 +108,7 @@ public class Pug extends Hero implements Dash, Energy {
 
                 private void hitPlayer(Player target, Player source, int ringIndex) {
                     // Calculate knockback based on ring index (0 is closest, 5 is farthest)
-                    double knockbackStrength = secondaryKB - (ringIndex * 0.5); // 3.5 - 1
+                    double knockbackStrength = secondaryKB - (ringIndex * 0.5); // 3.5 to 1
                     Vector knockbackDirection = source.getEyeLocation().getDirection();
                     Interactions.handleInteractions(knockbackDirection, knockbackStrength, secondaryDMG, source, target
                     );

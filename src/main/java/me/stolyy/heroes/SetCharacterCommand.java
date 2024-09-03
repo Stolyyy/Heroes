@@ -30,7 +30,7 @@ public class SetCharacterCommand extends Command {
                 String characterName = args[0];
                 Hero hero = null;
 
-                // Instantiate the appropriate character based on the name
+                // Initialize character based on arguments
                 if (characterName.equalsIgnoreCase("VoidCrawler")) {
                     hero = new VoidCrawler(player);
                     player.playSound(player.getLocation(), "duskcrawler.select", SoundCategory.MASTER, 2.0f, 1.0f);

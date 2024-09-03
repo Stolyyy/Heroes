@@ -2,9 +2,9 @@ package me.stolyy.heroes;
 
 import me.stolyy.heroes.Game.GameEnums;
 import me.stolyy.heroes.Games.*;
-import me.stolyy.heroes.Party.PartyChatCommand;
-import me.stolyy.heroes.Party.PartyCommand;
-import me.stolyy.heroes.Party.PartyManager;
+import me.stolyy.heroes.Games.Party.PartyChatCommand;
+import me.stolyy.heroes.Games.Party.PartyCommand;
+import me.stolyy.heroes.Games.Party.PartyManager;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -58,10 +58,7 @@ public final class Heroes extends JavaPlugin implements Listener {
         Bukkit.getPluginManager().registerEvents(new AbilityListener(heroManager, gameManager), this);
         Bukkit.getPluginManager().registerEvents(new GameListener(gameManager), this);
 
-        // Register commands
         registerCommands();
-
-        // Start periodic tasks
         startPeriodicTasks();
 
         getLogger().info("Heroes plugin has been enabled!");
@@ -108,7 +105,7 @@ public final class Heroes extends JavaPlugin implements Listener {
                         for (UUID playerUUID : game.getPlayers().keySet()) {
                             Player player = Bukkit.getPlayer(playerUUID);
                             if (player != null) {
-                                //game.updateScoreboard();;
+                                //game.updateScoreboard();
                                 game.checkPlayerPosition(player);
                             }
                         }

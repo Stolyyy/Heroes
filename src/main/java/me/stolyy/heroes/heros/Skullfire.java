@@ -105,12 +105,12 @@ public class Skullfire extends Hero implements Hitscan, Projectile{
                         ammo = 7;
                         isReloading = false;
                         updateAmmoDisplay();
-                        updateItemDurability(gunItem, (short) 0, 1); // Fully "repaired" state
+                        updateItemDurability(gunItem, (short) 0, 8002);
                         player.sendMessage(ChatColor.GREEN + "Reload complete!");
                         this.cancel();
                     } else {
                         short durability = (short) (25 - (25 * currentTick / reloadTicks));
-                        updateItemDurability(gunItem, durability, 2); // Use a different custom model data for reloading state
+                        updateItemDurability(gunItem, durability, 8002);
                         currentTick++;
                     }
                 }

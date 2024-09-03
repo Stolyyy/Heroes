@@ -11,7 +11,7 @@ public class HeroManager {
     private final Map<Player, Hero> heroes;
 
     public HeroManager() {
-        heroes = new ConcurrentHashMap<>();
+        heroes = new HashMap<>();
     }
 
     public void setHero(Player player, Hero hero) {
@@ -28,17 +28,13 @@ public class HeroManager {
 
     public String heroToString(Player player){
         Hero h = getHero(player);
-        if(h instanceof VoidCrawler){
-            return "Void Crawler";
-        } else if(h instanceof Shoop){
-            return "Shoop";
-        }else if(h instanceof Skullfire){
-            return "Skullfire";
-        } else if(h instanceof Pug){
-            return "Pug";
-        } else {
-            return "Invalid Hero";
-        }
+        return switch (h) {
+            case VoidCrawler voidCrawler -> "Void Crawler";
+            case Shoop shoop -> "Shoop";
+            case Skullfire skullfire -> "Skullfire";
+            case Pug pug -> "Pug";
+            case null, default -> "Invalid Hero";
+        };
     }
 
     public void clear() {

@@ -49,6 +49,7 @@ public class Cooldowns {
         }.runTaskTimer(plugin, 0L, 2L);
     }
 
+    //Visual display for primary's cooldown
     private String createProgressBar(int percentage) {
         int totalBars = 10;
         int filledBars = (int) (percentage / 10.0);
@@ -87,6 +88,7 @@ public class Cooldowns {
         }
     }
 
+    //Visual display for ultimate/secondary cooldown
     private void updateItemDurability(ItemStack item, short durability, int customModelData) {
         ItemMeta meta = item.getItemMeta();
         if (meta != null && meta instanceof Damageable) {

@@ -15,6 +15,7 @@ import org.bukkit.util.Vector;
 import java.util.List;
 
 public interface Hitscan {
+    //Hitscan using particles
     static void hitscan(double range, Location location, Vector direction, Particle particle, Color color, Player player, Hero hero, AbilityType abilityType) {
         Location startLocation = location.clone();
         Location endLocation = startLocation.clone().add(direction.clone().multiply(range));
@@ -47,6 +48,7 @@ public interface Hitscan {
         }
     }
 
+    //Hitscan using custom models
     static void hitscan(double range, Location location, Vector direction, int customModelData, Player player, Hero hero, AbilityType abilityType) {
         Location startLocation = location.clone();
         Location endLocation = startLocation.clone().add(direction.clone().multiply(range));

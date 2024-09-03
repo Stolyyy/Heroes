@@ -20,12 +20,13 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 public class Equipment {
+    //Give player proper equipment (armor, tools) based on hero
     public static void equip(Player p) {
         Hero h = Heroes.getInstance().getHeroManager().getHero(p);
-        ItemStack head = customItem(0, "Dunce Hat");
-        ItemStack chest = customArmor("chest", 255, 255, 255, "Dunce Chest");
-        ItemStack legs = customArmor("legs", 255, 255, 255, "Dunce Legs");;
-        ItemStack boots = customArmor("boots", 255, 255, 255, "Dunce Boots");;
+        ItemStack head = customItem(0, "Hat");
+        ItemStack chest = customArmor("chest", 255, 255, 255, "Chest");
+        ItemStack legs = customArmor("legs", 255, 255, 255, "Legs");;
+        ItemStack boots = customArmor("boots", 255, 255, 255, "Boots");;
         ItemStack fist = customItem(0, "Pick a character");;
         ItemStack secondary = customItem(5, "Secondary");;
         ItemStack ult = customItem(6, "Ultimate!");;
@@ -38,7 +39,7 @@ public class Equipment {
         } else if (h instanceof Pug) {
             head = customItem(11000, "Pug face");
             chest = customArmor("chest", 190, 141, 89, "Pug Chest");
-            legs = customArmor("legs", 190, 141, 89, "Pug Money Makers");
+            legs = customArmor("legs", 190, 141, 89, "Pug Legs");
             boots = customArmor("boots", 190, 141, 89, "Pug Feet");
             fist = customItem(11002, "Pug Hand");
         } else if (h instanceof Shoop) {
@@ -48,10 +49,10 @@ public class Equipment {
             boots = customArmor("boots", 0, 158, 16, "Shoop feet");
             fist = customItem(14002, "Lazor");
         } else if (h instanceof Skullfire) {
-            head = customItem(8000, "AARRGGHHGH");
+            head = customItem(8000, "help i am on fire");
             chest = customArmor("chest", 30, 30, 30, "Skullfire Chest");
             legs = customArmor("legs", 30, 30, 30, "Skullfire Legs");
-            boots = customArmor("boots", 30, 30, 30, "Skullfire Feet");
+            boots = customArmor("boots", 30, 30, 30, "Skullfire Boots");
             fist = customItem(8002, "Gun");
         }
 
@@ -65,6 +66,7 @@ public class Equipment {
         p.getInventory().setItem(2, ult);
     }
 
+    //Create carrot on a stick with custom model data
                 public static ItemStack customItem(int customModelData, String name) {
                     ItemStack item = new ItemStack(Material.CARROT_ON_A_STICK);
                     ItemMeta meta = item.getItemMeta();
@@ -81,26 +83,15 @@ public class Equipment {
                     return item;
                 }
 
+                //Create armor with RGB coloring
                 public static ItemStack customArmor(String type, int r, int g, int b, String name) {
-                    Material material;
-                    EquipmentSlot slot;
-
-                    switch (type.toLowerCase()) {
-                        case "chest":
-                            material = Material.LEATHER_CHESTPLATE;
-                            slot = EquipmentSlot.CHEST;
-                            break;
-                        case "legs":
-                            material = Material.LEATHER_LEGGINGS;
-                            slot = EquipmentSlot.LEGS;
-                            break;
-                        case "boots":
-                            material = Material.LEATHER_BOOTS;
-                            slot = EquipmentSlot.FEET;
-                            break;
-                        default:
-                            throw new IllegalArgumentException("Invalid armor type. Use 'chest', 'legs', or 'boots'.");
-                    }
+                    Material material = switch (type.toLowerCase()) {
+                        case "chest" -> Material.LEATHER_CHESTPLATE;
+                        case "legs" -> Material.LEATHER_LEGGINGS;
+                        case "boots" -> Material.LEATHER_BOOTS;
+                        default ->
+                                throw new IllegalArgumentException("Invalid armor type. Use 'chest', 'legs', or 'boots'.");
+                    };
 
                     ItemStack armor = new ItemStack(material);
                     LeatherArmorMeta meta = (LeatherArmorMeta) armor.getItemMeta();

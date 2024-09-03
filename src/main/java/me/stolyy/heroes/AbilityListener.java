@@ -43,6 +43,7 @@ public class AbilityListener implements Listener {
         this.gameManager = gameManager;
     }
 
+    //Primary
     @EventHandler
     public void onPlayerUsePrimary(PlayerInteractEvent event) {
         Player p = event.getPlayer();
@@ -58,6 +59,7 @@ public class AbilityListener implements Listener {
         }
     }
 
+    //Secondary & Ultimate
     @EventHandler
     public void onPlayerUseAbility(PlayerItemHeldEvent event) {
         Player p = event.getPlayer();
@@ -87,6 +89,7 @@ public class AbilityListener implements Listener {
         }
     }
 
+    //Passive
     @EventHandler
     public void onPlayerUsePassive1(PlayerToggleSneakEvent event){
         Player p = event.getPlayer();
@@ -100,6 +103,7 @@ public class AbilityListener implements Listener {
         }
     }
 
+    //Initiate Jab and Double Jump related variables on join
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
         Player player = e.getPlayer();
@@ -113,6 +117,8 @@ public class AbilityListener implements Listener {
             canDoubleJump.put(player, true);
         }
     }
+
+    //Handle jab cooldowns
     @EventHandler
     public void onPlayerAttack(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player) {
@@ -127,6 +133,7 @@ public class AbilityListener implements Listener {
         }
     }
 
+    //Double Jump
     @EventHandler
     public void onDoubleJump(PlayerToggleFlightEvent e) {
         Player p = e.getPlayer();
@@ -149,6 +156,7 @@ public class AbilityListener implements Listener {
         }
     }
 
+    //Double Jump reset
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
         Player p = event.getPlayer();
@@ -165,6 +173,7 @@ public class AbilityListener implements Listener {
         }
     }
 
+    //code to actually do the double jump
     private void performDoubleJump(Player p) {
         Vector upVector = new Vector(0, 1, 0);
         for (int i = 0; i < 12; i++) {
@@ -177,6 +186,7 @@ public class AbilityListener implements Listener {
         p.playSound(p.getLocation(), Sound.ENTITY_BAT_TAKEOFF, 1.0f, 1.0f);
         p.setVelocity(p.getLocation().getDirection().multiply(0.90).setY(0.85));
     }
+    //circle for a particle ring
     private Vector rotateAroundAxis(Vector vector, Vector axis, double angle) {
         angle = Math.toRadians(angle);
         Vector parallel = axis.multiply(axis.dot(vector));

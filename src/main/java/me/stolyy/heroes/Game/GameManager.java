@@ -56,7 +56,11 @@ public class GameManager {
     public Game getPlayerGame(Player player){
         //iterate through active games, and get playerlist for each one
         //if playerlist has the player's game then add them
-        return null;}
+        for(Game game : activeGames) {
+            if (game.getPlayerList().contains(player)) return game;
+        }
+        return null;
+        }
 
 
     public Set<Game> getActiveGames() {return activeGames;}

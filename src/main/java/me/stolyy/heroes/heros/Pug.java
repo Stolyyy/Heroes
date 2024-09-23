@@ -2,6 +2,8 @@ package me.stolyy.heroes.heros;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.Utility.Interactions;
+import me.stolyy.heroes.heros.Minions.BasherEntity;
+import me.stolyy.heroes.heros.Minions.PrincessEntity;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;

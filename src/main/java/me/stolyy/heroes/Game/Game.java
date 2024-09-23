@@ -20,6 +20,7 @@ import java.util.*;
 public class Game {
     Set<Player> playerList;
     Set<Player> alivePlayerList;
+    Set<Player> restrictedPlayers;
     GameMode gameMode;
     Map<Player, GameTeam> playerTeams;
     GameMap gameMap;
@@ -178,14 +179,19 @@ public class Game {
                 }
             }
             //respawn player at furthest spawn point from enemy location (or player location if no enemy)
-            double nearestSpawn = 0;
+            double furthestDistance = 0;
             Location referencePoint = player.getLocation();
+            Location furthestSpawn = gameMap.getSpawnLocations()[0];
             if (nearestPlayer != null) referencePoint = nearestPlayer.getLocation();
 
             for (Location spawn : gameMap.getSpawnLocations()) {
                 double distance = referencePoint.distance(spawn);
-                if (distance > nearestSpawn) nearestSpawn = distance;
+                if (distance > furthestDistance){
+                    furthestDistance = distance;
+                    furthestSpawn = spawn;
+                }
             }
+            player.setBedSpawnLocation(furthestSpawn,true);
             //respawn player if they still have lives
         if(lives.get(player) > 0) {
             player.setGameMode(org.bukkit.GameMode.SPECTATOR);
@@ -250,15 +256,16 @@ public class Game {
         }
     }
 
+    public void checkPosition(Player player){
+        if (!gameMap.getBoundaries().contains(player.getLocation().toVector())) {
+            onDeath(player);
+        }
+    }
+
     public void updateVisuals(){
         //update HP on tab and below name
         //update scoreboard
     }
-
-    public void restrictPlayer(Player player){
-    }
-
-    public void unRestrictPlayer(Player player){}
 
     public void applyEffects(Player player){
         player.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(100.0);
@@ -314,6 +321,9 @@ public class Game {
         }
     }
 
+    public void restrictPlayer(Player player){restrictedPlayers.add(player);}
+    public void unRestrictPlayer(Player player){restrictedPlayers.remove(player);}
+    public boolean isPlayerRestricted(Player player) {return restrictedPlayers.contains(player); }
     public Set<Player> getPlayerList() {return playerList;}
     public void setPlayerList(Set<Player> playerList) {this.playerList = playerList;}
     public GameMode getGameMode() {return gameMode;}

@@ -1,4 +1,4 @@
-package me.stolyy.heroes.heros;
+package me.stolyy.heroes.heros.Minions;
 
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -7,7 +7,6 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Skeleton;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 

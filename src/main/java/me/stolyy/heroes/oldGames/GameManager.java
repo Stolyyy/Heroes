@@ -1,9 +1,9 @@
-package me.stolyy.heroes.Games;
+package me.stolyy.heroes.oldGames;
 
 import me.stolyy.heroes.Game.GameEnums;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.HeroManager;
-import me.stolyy.heroes.Games.Party.PartyManager;
+import me.stolyy.heroes.oldGames.Party.PartyManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 

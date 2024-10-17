@@ -125,7 +125,7 @@ public class Skullfire extends Hero implements Hitscan, Projectile{
                     updateAmmoDisplay();
                     player.sendMessage(ChatColor.GREEN + "Reload complete!");
                 }
-            }.runTaskLater(Heroes.getInstance(), 30L);
+            }.runTaskLater(Heroes.getInstance(), (long) (20*primaryCD));
         }
     }
 

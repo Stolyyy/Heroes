@@ -1,11 +1,10 @@
 package me.stolyy.heroes.Game;
 
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.util.BoundingBox;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class GameMapManager {
     static Set<GameMap> maps;
@@ -14,15 +13,27 @@ public class GameMapManager {
 
     }
 
-    public static void createWorld(){
+    public static GameMap createWorld(){
 
     }
 
-    public static void deleteWorld(){
+    public static GameMap deleteWorld(){
 
     }
 
-    public static void addMap(String name, Location[] spawnLocations, Location[] crystalLocations, BoundingBox boundaries, Location spectatorLocation){
-        maps.add(new GameMap(name, spawnLocations, crystalLocations, boundaries, spectatorLocation));
+    public static GameMap getRandomMap(){
+        List<GameMap> allMaps = new ArrayList<>(maps);
+        Random random = new Random();
+        int randomIndex = random.nextInt(allMaps.size());
+        return allMaps.get(randomIndex);
+    }
+
+    public static void addMap(String name, Location[] spawnLocations, Location[] crystalLocations, BoundingBox boundaries, Location spectatorLocation, World world){
+        maps.add(new GameMap(name, spawnLocations, crystalLocations, boundaries, spectatorLocation, world));
     }
 }
+
+//static int for each map
+//new folder: royale + int
+//int represents number of instances of that map
+//idk

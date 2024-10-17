@@ -1,7 +1,7 @@
 package me.stolyy.heroes.heros;
 
 import me.stolyy.heroes.AbilityListener;
-import me.stolyy.heroes.Games.GameManager;
+import me.stolyy.heroes.oldGames.GameManager;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.Utility.Interactions;
 import org.bukkit.*;

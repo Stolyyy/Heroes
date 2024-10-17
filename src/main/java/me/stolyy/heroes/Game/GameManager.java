@@ -1,5 +1,6 @@
 package me.stolyy.heroes.Game;
 
+import me.stolyy.heroes.Game.Menus.Party;
 import me.stolyy.heroes.Game.Party.PartyManager;
 import org.bukkit.entity.Player;
 
@@ -11,9 +12,10 @@ public class GameManager {
     Set<Game> waitingGames;
 
 
-    public void createNewGame(){
+    public Game createNewGame(GameEnums.GameMode gameMode){
         //Random map not in use
         //new game
+        return new Game(GameMapManager.getRandomMap(), gameMode);
     }
 
     public void join(Player player, GameEnums.GameMode gameMode){
@@ -21,8 +23,14 @@ public class GameManager {
         //check if player is in a game already
         //if they are, make them leave their game to join this one
         //if in a party, do the same to the members of their party
+
         switch(gameMode){
             case PARTY:
+                Game game1 = createNewGame(gameMode);
+                for(Player p : PartyManager.getPlayersInParty(player)){
+                    game1.addPlayer(p);
+                }
+                Party.openGUI(player);
                 //Create a new game
                 //Add all players in the party
                 //open GUI for leader
@@ -32,6 +40,25 @@ public class GameManager {
                 //Find game
                 //if no game, create game
                 //if game is full, start it
+                if(!PartyManager.isInParty(player)){
+                    boolean foundGame = false;
+                    if(!waitingGames.isEmpty()){
+                        loop: for(Game g : waitingGames){
+                            if(g.getGameMode().equals(gameMode)){
+                                g.addPlayer(player);
+                                foundGame = true;
+                            }
+                            break loop;
+                        }
+                    }
+                    if(!foundGame){
+                        Game game2 = createNewGame(gameMode);
+                        game2.addPlayer(player);
+                        if(game2.getPlayerList().size() == 2) game2.gameStart();
+                    }
+                } else{
+                    player.sendMessage("You cannot enter 1v1 in a party, please join Party for custom games");
+                }
                 break;
             case TWO_V_TWO:
                 //only allow joining in party of 2
@@ -39,6 +66,27 @@ public class GameManager {
                 //if no game, make new game
                 //add both members of party
                 //start game if its full now
+                if(PartyManager.getPartySize(player) == 2){
+                    boolean foundGame = false;
+                    if(!waitingGames.isEmpty()){
+                        loop: for(Game g : waitingGames){
+                            if(g.getGameMode().equals(gameMode)){
+                                g.addPlayer(player);
+                                foundGame = true;
+                            }
+                            break loop;
+                        }
+                    }
+                    if(!foundGame){
+                        Game game2 = createNewGame(gameMode);
+                        game2.addPlayer(player);
+                        for(Player p : PartyManager.getPartyMembers(player)){
+                            if(!p.equals(player)) game2.addPlayer(p);
+                        }
+
+                        if(game2.getPlayerList().size() == 4) game2.gameStart();
+                    }
+                }
                 break;
         }
     }

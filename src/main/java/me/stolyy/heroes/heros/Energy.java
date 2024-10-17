@@ -7,9 +7,10 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.WeakHashMap;
 
 public interface Energy {
-    Map<UUID, EnergyData> energyMap = new HashMap<>();
+    Map<UUID, EnergyData> energyMap = new WeakHashMap<>();
 
     class EnergyData {
         double energy;
@@ -28,6 +29,10 @@ public interface Energy {
     default void initializeEnergy(Player player, double energyRegenRate) {
         energyMap.put(player.getUniqueId(), new EnergyData(energyRegenRate));
         updateEnergy(player);
+    }
+
+    default void removeEnergyData(Player player){
+        energyMap.remove(player.getUniqueId());
     }
 
     default double getEnergy(Player player) {
@@ -94,6 +99,10 @@ public interface Energy {
 
         @Override
         public void run() {
+            if(!energyMap.containsKey(player.getUniqueId())) {
+                this.cancel();
+                return;
+            }
             if (energy.getEnergy(player) < energy.getMaxEnergy(player) && energy.canIncreaseEnergy(player)) {
                 energy.addEnergy(player, energy.getEnergyRegenRate(player));
             }

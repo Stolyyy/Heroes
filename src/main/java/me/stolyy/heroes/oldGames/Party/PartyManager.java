@@ -1,4 +1,4 @@
-package me.stolyy.heroes.Games.Party;
+package me.stolyy.heroes.oldGames.Party;
 import me.stolyy.heroes.Heroes;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;

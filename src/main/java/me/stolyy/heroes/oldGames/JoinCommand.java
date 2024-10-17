@@ -1,4 +1,4 @@
-package me.stolyy.heroes.Games;
+package me.stolyy.heroes.oldGames;
 
 import me.stolyy.heroes.Game.GameEnums.GameMode;
 import org.bukkit.command.Command;

@@ -15,6 +15,10 @@ public class HeroManager {
     }
 
     public void setHero(Player player, Hero hero) {
+        if(heroes.getOrDefault(player, null) instanceof Energy oldHero) {
+            oldHero.setCanIncreaseEnergy(player, false);
+            oldHero.removeEnergyData(player);
+        }
         heroes.put(player, hero);
     }
 

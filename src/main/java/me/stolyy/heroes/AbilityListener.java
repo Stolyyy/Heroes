@@ -1,8 +1,8 @@
 package me.stolyy.heroes;
 
-import me.stolyy.heroes.Games.Game;
+import me.stolyy.heroes.oldGames.Game;
 import me.stolyy.heroes.Game.GameEnums;
-import me.stolyy.heroes.Games.GameManager;
+import me.stolyy.heroes.oldGames.GameManager;
 import me.stolyy.heroes.heros.Hero;
 import me.stolyy.heroes.heros.HeroType;
 import org.bukkit.GameMode;

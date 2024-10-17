@@ -1,4 +1,4 @@
-package me.stolyy.heroes.Games;
+package me.stolyy.heroes.oldGames;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;

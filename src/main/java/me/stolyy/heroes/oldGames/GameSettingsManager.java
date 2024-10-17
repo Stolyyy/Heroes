@@ -1,4 +1,4 @@
-package me.stolyy.heroes.Games;
+package me.stolyy.heroes.oldGames;
 
 public class GameSettingsManager {
     private boolean friendlyFire;

@@ -31,9 +31,7 @@ public class Pug extends Hero implements Dash, Energy {
     double secondaryCD = 5;
     int ultCD = 90;
     double pounceCharge = 0;
-    double energy = 100;
     double changePerTick = 0.35;
-    boolean increaseEnergy = true;
 
     private BasherEntity basher;
     private PrincessEntity princess;

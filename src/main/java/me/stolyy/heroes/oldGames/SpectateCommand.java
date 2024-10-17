@@ -1,8 +1,6 @@
-package me.stolyy.heroes.Games;
+package me.stolyy.heroes.oldGames;
 
 import me.stolyy.heroes.Heroes;
-import me.stolyy.heroes.Games.Game;
-import me.stolyy.heroes.Games.GameManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;

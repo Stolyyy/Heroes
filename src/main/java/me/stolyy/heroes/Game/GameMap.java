@@ -1,6 +1,7 @@
 package me.stolyy.heroes.Game;
 
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.util.BoundingBox;
 
 public class GameMap {
@@ -9,13 +10,15 @@ public class GameMap {
     final Location[] crystalLocations;
     final BoundingBox boundaries;
     final Location spectatorLocation;
+    final World world;
 
-    public GameMap(String name, Location[] spawnLocations, Location[] crystalLocations, BoundingBox boundaries, Location spectatorLocation) {
+    public GameMap(String name, Location[] spawnLocations, Location[] crystalLocations, BoundingBox boundaries, Location spectatorLocation, World world) {
         this.name = name;
         this.spawnLocations = spawnLocations;
         this.crystalLocations = crystalLocations;
         this.boundaries = boundaries;
         this.spectatorLocation = spectatorLocation;
+        this.world = world;
     }
 
     public String getName() {return name;}

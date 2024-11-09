@@ -10,36 +10,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="606daf4b-1469-4eeb-8180-44b5b6838e57" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/AbilityListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/AbilityListener.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/GameManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/GameManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/GameMap.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/GameMap.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/GameMapManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/GameMapManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/Menus/Party.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/Menus/Party.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Games/Game.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/Game.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Games/GameGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/GameGUI.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Games/GameListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/GameListener.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Games/GameManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/GameManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Games/GameSettingsGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/GameSettingsGUI.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Games/GameSettingsManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/GameSettingsManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Games/JoinCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/JoinCommand.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Games/LeaveCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/LeaveCommand.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Games/MapData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/MapData.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Games/MapGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/MapGUI.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Games/MapManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/MapManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Games/Party/Party.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/Party/Party.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Games/Party/PartyChatCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/Party/PartyChatCommand.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Games/Party/PartyCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/Party/PartyCommand.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Games/Party/PartyManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/Party/PartyManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Games/SpectateCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/SpectateCommand.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/HeroManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/HeroManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Heroes.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Heroes.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Utility/Interactions.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Utility/Interactions.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/Energy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/Energy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/Pug.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/Pug.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/Skullfire.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/Skullfire.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/VoidCrawler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/VoidCrawler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/Party/Party.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/Party/Party.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/Party/PartyManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/Party/PartyManager.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

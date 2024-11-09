@@ -8,17 +8,15 @@ import java.util.List;
 import java.util.Set;
 
 public class GameManager {
-    Set<Game> activeGames;
-    Set<Game> waitingGames;
+    static Set<Game> activeGames;
+    static Set<Game> waitingGames;
 
 
-    public Game createNewGame(GameEnums.GameMode gameMode){
-        //Random map not in use
-        //new game
+    public static Game createNewGame(GameEnums.GameMode gameMode){
         return new Game(GameMapManager.getRandomMap(), gameMode);
     }
 
-    public void join(Player player, GameEnums.GameMode gameMode){
+    public static void join(Player player, GameEnums.GameMode gameMode){
 
         //check if player is in a game already
         //if they are, make them leave their game to join this one
@@ -80,7 +78,7 @@ public class GameManager {
                     if(!foundGame){
                         Game game2 = createNewGame(gameMode);
                         game2.addPlayer(player);
-                        for(Player p : PartyManager.getPartyMembers(player)){
+                        for(Player p : PartyManager.getPlayersInParty(player)){
                             if(!p.equals(player)) game2.addPlayer(p);
                         }
 
@@ -91,17 +89,17 @@ public class GameManager {
         }
     }
 
-    public void leaveGame(Player player){
+    public static void leaveGame(Player player){
         //maybe unnecessary, just call removePlayer in the game itself
     }
 
-    public void cleanUpGames(){
+    public static void cleanUpGames(){
         //update activeGames list to only include games that are in progress
         //update waitingGames to only have games that are waiting for players
         //Clean up any games that have ended (idk)
     }
 
-    public Game getPlayerGame(Player player){
+    public static Game getPlayerGame(Player player){
         //iterate through active games, and get playerlist for each one
         //if playerlist has the player's game then add them
         for(Game game : activeGames) {
@@ -111,6 +109,6 @@ public class GameManager {
         }
 
 
-    public Set<Game> getActiveGames() {return activeGames;}
-    public void setActiveGames(Set<Game> activeGames) {this.activeGames = activeGames;}
+    public static Set<Game> getActiveGames() {return activeGames;}
+    public static void setActiveGames(Set<Game> active) {activeGames = active;}
 }

@@ -13,6 +13,14 @@ public class Party {
     Player leader;
     Set<Player> members;
 
+    public void invite(Player inviter, Player invited){
+        if(!inviter.equals(leader)){
+            inviter.sendMessage("You must be the party leader in order to invite people!");
+            return;
+        }
+
+    }
+
     public Player getLeader() {
         return leader;
     }

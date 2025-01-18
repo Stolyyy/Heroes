@@ -9,12 +9,23 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="606daf4b-1469-4eeb-8180-44b5b6838e57" name="Changes" comment="">
+    <list default="true" id="606daf4b-1469-4eeb-8180-44b5b6838e57" name="Changes" comment="jhkgfkjyhg">
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/Commands/PartyC.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/Punishgers.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/Spooderman.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/Commands/Party.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/Commands/PartyChat.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/Commands/PartyChat.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/GameManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/GameManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/GameMapManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/GameMapManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/Menus/PartyMap.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/Menus/PartyMap.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/Party/Party.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/Party/Party.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/Party/PartyManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Game/Party/PartyManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/VoidCrawler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/VoidCrawler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/GameGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/GameGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/GameListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/GameListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/GameManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/GameManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/Party/PartyCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/Party/PartyCommand.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/Party/PartyManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/oldGames/Party/PartyManager.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -25,8 +36,8 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Interface" />
-        <option value="Class" />
         <option value="Enum" />
+        <option value="Class" />
       </list>
     </option>
   </component>
@@ -121,6 +132,15 @@
       <option name="presentableId" value="Default" />
       <updated>1720809846535</updated>
     </task>
+    <task id="LOCAL-00001" summary="jhkgfkjyhg">
+      <option name="closed" value="true" />
+      <created>1731181246931</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1731181246931</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -138,5 +158,7 @@
     <ignored-roots>
       <path value="$PROJECT_DIR$" />
     </ignored-roots>
+    <MESSAGE value="jhkgfkjyhg" />
+    <option name="LAST_COMMIT_MESSAGE" value="jhkgfkjyhg" />
   </component>
 </project>

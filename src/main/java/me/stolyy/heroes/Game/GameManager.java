@@ -55,7 +55,7 @@ public class GameManager {
                         if(game2.getPlayerList().size() == 2) game2.gameStart();
                     }
                 } else{
-                    player.sendMessage("You cannot enter 1v1 in a party, please join Party for custom games");
+                    player.sendMessage("You cannot enter 1v1 in a party, please join PartyC for custom games");
                 }
                 break;
             case TWO_V_TWO:

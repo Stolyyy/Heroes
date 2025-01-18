@@ -1,24 +1,19 @@
 package me.stolyy.heroes.Game.Party;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 
 import java.util.Set;
 
 public class Party {
-    public Party(Set<Player> members, Player leader) {
-        this.members = members;
-        this.leader = leader;
-    }
-
     Player leader;
     Set<Player> members;
 
-    public void invite(Player inviter, Player invited){
-        if(!inviter.equals(leader)){
-            inviter.sendMessage("You must be the party leader in order to invite people!");
-            return;
-        }
-
+    public Party(Set<Player> members, Player leader) {
+        this.members = members;
+        this.leader = leader;
     }
 
     public Player getLeader() {
@@ -38,12 +33,30 @@ public class Party {
     }
 
     public void addPlayer(Player player) {
+        player.sendMessage(Component.text("You joined " + getLeader().getName() + "'s party").color(NamedTextColor.YELLOW));
+        for(Player member : members) member.sendMessage(Component.text(player.getName() + " has joined the party!").color(NamedTextColor.YELLOW));
         members.add(player);
     }
 
     public void removePlayer(Player player) {
+        if(!members.contains(player)){
+            player.sendMessage(Component.text("You are not in the party!").color(NamedTextColor.RED));
+            return;
+        }
         members.remove(player);
-        if(player.equals(leader)) leader = members.iterator().next();
+        for(Player member : members) {
+            member.sendMessage(Component.text(player.getName() + " has left the party!").color(NamedTextColor.YELLOW));
+        }
+        if(player.equals(leader)) {
+            if(!members.isEmpty()){
+                leader = members.iterator().next();
+                for(Player member : members) {
+                    member.sendMessage(Component.text(leader.getName() + " is the new Party Leader!").color(NamedTextColor.YELLOW));
+                }
+            } else {
+                leader = null;
+            }
+        }
     }
 
     public int getSize() {

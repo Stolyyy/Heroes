@@ -141,7 +141,7 @@ public class GameManager {
             case TWO_V_TWO:
                 return playerCount >= 4;
             case PARTY:
-                return false; // Party games start manually
+                return false; // PartyC games start manually
             default:
                 return false;
         }

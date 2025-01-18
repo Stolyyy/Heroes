@@ -60,7 +60,7 @@ public class GameListener implements Listener {
 
         event.setCancelled(true); // Cancel all clicks by default
 
-        if (inventoryTitle.equals("Party Game Setup")) {
+        if (inventoryTitle.equals("PartyC Game Setup")) {
             game.getGameGUI().handleClick(player, slot);
         } else if (inventoryTitle.equals("Game Settings")) {
             new GameSettingsGUI(game).handleClick(player, slot);
@@ -76,7 +76,7 @@ public class GameListener implements Listener {
         Game game = gameManager.getPlayerGame(player);
         if (game == null) return;
 
-        if (event.getView().getTitle().equals("Party Game Setup") && game.getGameState() == GameEnums.GameState.WAITING) {
+        if (event.getView().getTitle().equals("PartyC Game Setup") && game.getGameState() == GameEnums.GameState.WAITING) {
             // Only reopen for the party leader
             if (player.getUniqueId().equals(Heroes.getInstance().getPartyManager().getPartyByPlayer(player.getUniqueId()).getLeader())) {
                 Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {

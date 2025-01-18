@@ -26,7 +26,7 @@ public class GameGUI {
 
     public GameGUI(Game game) {
         this.game = game;
-        this.inventory = Bukkit.createInventory(null, 54, "Party Game Setup");
+        this.inventory = Bukkit.createInventory(null, 54, "PartyC Game Setup");
         initializeInventory();
     }
 

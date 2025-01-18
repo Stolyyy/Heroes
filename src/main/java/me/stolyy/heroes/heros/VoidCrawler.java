@@ -105,7 +105,7 @@ public class VoidCrawler extends Hero implements Dash, Listener, Energy {
             cooldowns.useUltimateAbility();
             List<Player> Targets = (List<Player>) player.getLocation().getNearbyPlayers(75);
             for (Player target : Targets) {
-                if (target.getGameMode() == GameMode.SURVIVAL && target != player && gameManager.getPlayerGame(player).arePlayersOnSameTeam(player,target)) {
+                if (target.getGameMode() == GameMode.ADVENTURE && target != player && gameManager.getPlayerGame(player).arePlayersOnSameTeam(player,target)) {
                     PotionEffect darknessEffect = new PotionEffect(PotionEffectType.DARKNESS, 20 * ultTime, 0);
                     target.addPotionEffect(darknessEffect);
                 }

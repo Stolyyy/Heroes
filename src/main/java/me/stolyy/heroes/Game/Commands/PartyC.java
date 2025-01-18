@@ -1,20 +1,18 @@
-package me.stolyy.heroes.oldGames.Party;
+package me.stolyy.heroes.Game.Commands;
 
+import me.stolyy.heroes.Game.Party.PartyManager;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 
 import java.util.*;
 
-public class PartyCommand extends Command {
-    private final PartyManager partyManager;
-
-    public PartyCommand(PartyManager partyManager) {
+public class PartyC extends Command {
+    public PartyC() {
         super("party");
-        this.partyManager = partyManager;
         this.setDescription("Manage parties");
         this.setUsage("/party <invite|accept|list|leave|disband|transfer> [player]");
         this.setAliases(Arrays.asList("p"));
@@ -30,37 +28,37 @@ public class PartyCommand extends Command {
         Player player = (Player) sender;
 
         if (args.length == 0) {
-            sendUsage(player);
+            usage(player);
             return true;
         }
 
         switch (args[0].toLowerCase()) {
             case "invite":
-                handleInvite(player, args);
+                invite(player, args);
                 break;
             case "accept":
-                partyManager.acceptInvite(player);
+                PartyManager.acceptInvite(args[1], player);
                 break;
             case "list":
-                handleList(player);
+                list(player);
                 break;
             case "leave":
-                partyManager.leaveParty(player);
+                PartyManager.leaveParty(player);
                 break;
             case "disband":
-                partyManager.disbandParty(player);
+                PartyManager.disbandParty(player);
                 break;
             case "transfer":
-                handleTransfer(player, args);
+                transfer(player, args);
                 break;
             default:
-                sendUsage(player);
+                usage(player);
         }
 
         return true;
     }
 
-    private void handleInvite(Player inviter, String[] args) {
+    private void invite(Player inviter, String[] args) {
         if (args.length < 2) {
             inviter.sendMessage(Component.text("Usage: /party invite <player>").color(NamedTextColor.RED));
             return;
@@ -72,29 +70,27 @@ public class PartyCommand extends Command {
             return;
         }
 
-        partyManager.invitePlayer(inviter, invited);
+        PartyManager.invitePlayer(inviter, invited);
     }
 
-    private void handleList(Player player) {
-        Set<UUID> members = partyManager.getPartyMembers(player.getUniqueId());
+    private void list(Player player) {
+        Set<Player> members = PartyManager.getPlayersInParty(player);
         if (members == null || members.isEmpty()) {
             player.sendMessage(Component.text("You are not in a party.").color(NamedTextColor.RED));
             return;
         }
-
         int memberCount = members.size();
         Component message = Component.text("PartyC members (" + memberCount + "):").color(NamedTextColor.YELLOW);
-        for (UUID memberUUID : members) {
-            Player member = Bukkit.getPlayer(memberUUID);
-            if (member != null) {
+        for (Player p : members) {
+            if (p != null) {
                 message = message.append(Component.newline())
-                        .append(Component.text("- " + member.getName()).color(NamedTextColor.WHITE));
+                        .append(Component.text("- " + p.getName()).color(NamedTextColor.WHITE));
             }
         }
         player.sendMessage(message);
     }
 
-    private void handleTransfer(Player currentLeader, String[] args) {
+    private void transfer(Player currentLeader, String[] args) {
         if (args.length < 2) {
             currentLeader.sendMessage(Component.text("Usage: /party transfer <player>").color(NamedTextColor.RED));
             return;
@@ -106,10 +102,10 @@ public class PartyCommand extends Command {
             return;
         }
 
-        partyManager.transferLeadership(currentLeader, newLeader);
+        PartyManager.transferLeader(currentLeader, newLeader);
     }
 
-    private void sendUsage(Player player) {
+    private void usage(Player player) {
         player.sendMessage(Component.text("Usage: /party <invite|accept|list|leave|disband|transfer> [player]").color(NamedTextColor.RED));
     }
 

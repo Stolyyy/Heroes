@@ -75,7 +75,7 @@ public class PartyManager {
             return;
         }
 
-        Component partyMessage = Component.text("[Party] " + sender.getName() + ": ").color(NamedTextColor.AQUA)
+        Component partyMessage = Component.text("[PartyC] " + sender.getName() + ": ").color(NamedTextColor.AQUA)
                 .append(Component.text(message).color(NamedTextColor.WHITE));
         broadcastToParty(party, partyMessage);
     }

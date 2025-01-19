@@ -76,7 +76,7 @@ public class GameListener implements Listener {
         Game game = gameManager.getPlayerGame(player);
         if (game == null) return;
 
-        if (event.getView().getTitle().equals("PartyC Game Setup") && game.getGameState() == GameEnums.GameState.WAITING) {
+        if (event.getView().getTitle().equals("Party Game Setup") && game.getGameState() == GameEnums.GameState.WAITING) {
             // Only reopen for the party leader
             if (player.getUniqueId().equals(Heroes.getInstance().getPartyManager().getPartyByPlayer(player.getUniqueId()).getLeader())) {
                 Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {

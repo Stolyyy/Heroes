@@ -1,10 +1,9 @@
 package me.stolyy.heroes.Game;
 
-import me.stolyy.heroes.Game.Menus.Party;
+import me.stolyy.heroes.Game.Menus.PartyGUI;
 import me.stolyy.heroes.Game.Party.PartyManager;
 import org.bukkit.entity.Player;
 
-import java.util.List;
 import java.util.Set;
 
 public class GameManager {
@@ -28,7 +27,8 @@ public class GameManager {
                 for(Player p : PartyManager.getPlayersInParty(player)){
                     game1.addPlayer(p);
                 }
-                Party.openGUI(player);
+                PartyGUI partyGUI = new PartyGUI(game1, player);
+                partyGUI.openGUI();
                 //Create a new game
                 //Add all players in the party
                 //open GUI for leader
@@ -55,7 +55,7 @@ public class GameManager {
                         if(game2.getPlayerList().size() == 2) game2.gameStart();
                     }
                 } else{
-                    player.sendMessage("You cannot enter 1v1 in a party, please join PartyC for custom games");
+                    player.sendMessage("You cannot enter 1v1 in a party, please join the Party gamemode for custom games");
                 }
                 break;
             case TWO_V_TWO:

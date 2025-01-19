@@ -321,6 +321,17 @@ public class Game {
         }
     }
 
+    public boolean canCountdown(){
+        Map<GameTeam, Integer> teamCounts = getTeamPlayerCount();
+        int teamsWithPlayers = 0;
+        for (int count : teamCounts.values()) {
+            if (count > 0) {
+                teamsWithPlayers++;
+            }
+        }
+        return teamsWithPlayers >= 2;
+    }
+
     public void restrictPlayer(Player player){restrictedPlayers.add(player);}
     public void unRestrictPlayer(Player player){restrictedPlayers.remove(player);}
     public boolean isPlayerRestricted(Player player) {return restrictedPlayers.contains(player); }

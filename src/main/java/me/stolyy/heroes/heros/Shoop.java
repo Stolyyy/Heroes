@@ -34,8 +34,8 @@ public class Shoop extends Hero implements Projectile, Hitscan, Listener, Energy
     double secondaryKB = 1;
     double secondaryCD = 0;
     Color secondaryColor = Color.YELLOW;
-    double ultimateKB = 3.5;
-    double ultimateDMG = 8;
+    double ultimateKB = 2.5;
+    double ultimateDMG = 5;
     double passiveKB = 1.1;
     double passiveDMG = 5;
     boolean isOnProjectile = false;
@@ -175,7 +175,7 @@ public class Shoop extends Hero implements Projectile, Hitscan, Listener, Energy
                     }
                     Hitscan.hitscan(50, player.getEyeLocation(), player.getLocation().getDirection(), 14004, player, h, AbilityType.ULTIMATE);
                 }
-            }.runTaskTimer(Heroes.getInstance(), 20L, 5L);
+            }.runTaskTimer(Heroes.getInstance(), 20L, 3L);
         } else {
             player.sendMessage(ChatColor.RED + "Ultimate ability is on cooldown! " + cooldowns.getUltimateCooldown() + " seconds remaining.");
         }

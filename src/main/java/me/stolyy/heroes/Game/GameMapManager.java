@@ -16,7 +16,7 @@ import java.util.*;
 
 public class GameMapManager {
     static Set<GameMap> maps = new HashSet<>();
-    static Set<GameMap> templateMaps = new HashSet<>();
+    public static Set<GameMap> templateMaps = new HashSet<>();
     private static final File serverWorldFolder = new File(Bukkit.getWorldContainer().getAbsolutePath());
     private static final File mapsFolder = new File(serverWorldFolder, "maps");
     private static final Random random = new Random();
@@ -54,8 +54,7 @@ public class GameMapManager {
         World world = creator.createWorld();
 
         GameMap gameMap = new GameMap(map.name, map.spawnLocations, map.crystalLocations,
-                map.boundaries, map.spectatorLocation, world
-        );
+                map.boundaries, map.spectatorLocation, world);
 
         maps.add(gameMap);
         return gameMap;

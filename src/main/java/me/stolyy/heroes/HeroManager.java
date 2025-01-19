@@ -23,7 +23,7 @@ public class HeroManager {
     }
 
     public Hero getHero(Player player) {
-        return heroes.get(player);
+        return heroes.getOrDefault(player, new Shoop(player));
     }
 
     public void removePlayer(Player player) {

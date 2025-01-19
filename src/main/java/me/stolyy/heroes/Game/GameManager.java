@@ -1,5 +1,6 @@
 package me.stolyy.heroes.Game;
 
+import me.stolyy.heroes.Game.Menus.GUIListener;
 import me.stolyy.heroes.Game.Menus.PartyGUI;
 import me.stolyy.heroes.Game.Party.PartyManager;
 import org.bukkit.entity.Player;
@@ -27,8 +28,7 @@ public class GameManager {
                 for(Player p : PartyManager.getPlayersInParty(player)){
                     game1.addPlayer(p);
                 }
-                PartyGUI partyGUI = new PartyGUI(game1, player);
-                partyGUI.openGUI();
+                new PartyGUI(game1, player);
                 //Create a new game
                 //Add all players in the party
                 //open GUI for leader

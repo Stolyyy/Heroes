@@ -1,10 +1,18 @@
 package me.stolyy.heroes;
 
-import me.stolyy.heroes.Game.GameEnums;
-import me.stolyy.heroes.oldGames.*;
-import me.stolyy.heroes.oldGames.Party.PartyChatCommand;
-import me.stolyy.heroes.oldGames.Party.PartyCommand;
-import me.stolyy.heroes.oldGames.Party.PartyManager;
+import me.stolyy.heroes.game.maps.GameMapManager;
+import me.stolyy.heroes.game.menus.GUIListener;
+import me.stolyy.heroes.game.minigame.*;
+import me.stolyy.heroes.heros.AbilityListener;
+import me.stolyy.heroes.heros.HeroManager;
+import me.stolyy.heroes.heros.SetHeroCommand;
+import me.stolyy.heroes.party.PartyChatCommand;
+import me.stolyy.heroes.party.PartyCommand;
+import me.stolyy.heroes.party.PartyManager;
+import me.stolyy.heroes.heros.characters.VoidCrawler;
+import me.stolyy.heroes.utility.LobbyCommand;
+import me.stolyy.heroes.utility.SpectateCommand;
+import me.stolyy.heroes.utility.StuckCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -21,15 +29,11 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandMap;
 
 import java.lang.reflect.Field;
-import java.util.UUID;
 import java.util.logging.Level;
 
 public final class Heroes extends JavaPlugin implements Listener {
 
     private static Heroes instance;
-    private HeroManager heroManager;
-    private PartyManager partyManager;
-    private GameManager gameManager;
     private Location lobbyLocation;
 
     public static Heroes getInstance() {
@@ -40,12 +44,6 @@ public final class Heroes extends JavaPlugin implements Listener {
     public void onEnable() {
         instance = this;
 
-        // Initialize managers
-        heroManager = new HeroManager();
-        partyManager = new PartyManager();
-        gameManager = new GameManager(heroManager, partyManager);
-
-        // Set lobby location
         World world = Bukkit.getWorld("world");
         if (world != null) {
             this.lobbyLocation = new Location(world, 0.5, 0, 500.5);
@@ -54,9 +52,11 @@ public final class Heroes extends JavaPlugin implements Listener {
         }
 
         // Register event listeners
+        GameMapManager.initializeMaps();
         Bukkit.getPluginManager().registerEvents(this, this);
-        Bukkit.getPluginManager().registerEvents(new AbilityListener(heroManager, gameManager), this);
-        Bukkit.getPluginManager().registerEvents(new GameListener(gameManager), this);
+        Bukkit.getPluginManager().registerEvents(new AbilityListener(), this);
+        Bukkit.getPluginManager().registerEvents(new GUIListener(), this);
+        Bukkit.getPluginManager().registerEvents(new GameListener(), this);
 
         registerCommands();
         startPeriodicTasks();
@@ -65,15 +65,22 @@ public final class Heroes extends JavaPlugin implements Listener {
     }
 
     private void registerCommands() {
-        registerCommand("setcharacter", new SetCharacterCommand(heroManager));
-        registerCommand("hero", new SetCharacterCommand(heroManager));
-        registerCommand("party", new PartyCommand(partyManager));
-        registerCommand("p", new PartyCommand(partyManager));
-        registerCommand("partychat", new PartyChatCommand(partyManager));
-        registerCommand("pc", new PartyChatCommand(partyManager));
-        registerCommand("join", new JoinCommand(gameManager));
-        registerCommand("spectate", new SpectateCommand(this, gameManager));
-        registerCommand("leave", new LeaveCommand(this, gameManager));
+        registerCommand("setcharacter", new SetHeroCommand());
+        registerCommand("hero", new SetHeroCommand());
+        registerCommand("sethero", new SetHeroCommand());
+        registerCommand("party", new PartyCommand());
+        registerCommand("p", new PartyCommand());
+        registerCommand("partychat", new PartyChatCommand());
+        registerCommand("pc", new PartyChatCommand());
+        registerCommand("join", new Join());
+        registerCommand("spectate", new SpectateCommand());
+        registerCommand("leave", new LobbyCommand());
+        registerCommand("lobby", new LobbyCommand());
+        registerCommand("hub", new LobbyCommand());
+        registerCommand("l", new LobbyCommand());
+        registerCommand("gg", new LobbyCommand());
+        registerCommand("stuck", new StuckCommand());
+        registerCommand("s", new StuckCommand());
     }
 
     private void registerCommand(String name, Command command) {
@@ -92,7 +99,7 @@ public final class Heroes extends JavaPlugin implements Listener {
         new BukkitRunnable() {
             @Override
             public void run() {
-                gameManager.cleanupGames();
+                GameManager.cleanUpGames();
             }
         }.runTaskTimer(this, 20 * 60 * 5, 20 * 60 * 5); // Run every 5 minutes
 
@@ -100,13 +107,14 @@ public final class Heroes extends JavaPlugin implements Listener {
         new BukkitRunnable() {
             @Override
             public void run() {
-                for (Game game : gameManager.getActiveGames().values()) {
-                    if (game.getGameState() == GameEnums.GameState.IN_PROGRESS) {
-                        for (UUID playerUUID : game.getPlayers().keySet()) {
-                            Player player = Bukkit.getPlayer(playerUUID);
-                            if (player != null) {
-                                //game.updateScoreboard();
-                                game.checkPlayerPosition(player);
+                if(!GameManager.getActiveGames().isEmpty()){
+                    for (Game game : GameManager.getActiveGames()) {
+                        if (game.getGameState() == GameEnums.GameState.IN_PROGRESS) {
+                            for (Player player : game.getPlayerList()) {
+                                if (player != null) {
+                                    game.updateVisuals();
+                                    game.checkPosition(player);
+                                }
                             }
                         }
                     }
@@ -124,15 +132,14 @@ public final class Heroes extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        partyManager.leaveParty(player);
-        gameManager.leaveGame(player);
-        heroManager.removePlayer(player);
+        PartyManager.leaveParty(player);
+        GameManager.leaveGame(player);
+        HeroManager.removePlayer(player);
     }
 
     public void teleportToLobby(Player player) {
         if (lobbyLocation != null) {
             player.teleport(lobbyLocation);
-            player.setGameMode(GameMode.ADVENTURE);
             player.getInventory().clear();
             player.setHealth(player.getMaxHealth());
             player.setFoodLevel(20);
@@ -143,23 +150,11 @@ public final class Heroes extends JavaPlugin implements Listener {
             for (PotionEffect effect : player.getActivePotionEffects()) {
                 player.removePotionEffect(effect.getType());
             }
-
+            Bukkit.getScheduler().runTaskLater(this, () -> player.setGameMode(GameMode.ADVENTURE), 1L);
             player.sendMessage("You have been teleported to the lobby.");
         } else {
             getLogger().warning("Attempted to teleport player to lobby, but lobby location is not set.");
         }
-    }
-
-    public HeroManager getHeroManager() {
-        return heroManager;
-    }
-
-    public PartyManager getPartyManager() {
-        return partyManager;
-    }
-
-    public GameManager getGameManager() {
-        return gameManager;
     }
 
     @Override
@@ -168,14 +163,14 @@ public final class Heroes extends JavaPlugin implements Listener {
         Bukkit.getScheduler().cancelTasks(this);
 
         // End all active games
-        for (Game game : gameManager.getActiveGames().values()) {
-            game.endGame(null);
+        for (Game game : GameManager.getActiveGames()) {
+            game.gameEnd();
         }
 
         // Clear data structures
-        heroManager.clear();
-        partyManager.clear();
-        gameManager.clearGames();
+        HeroManager.clear();
+        //GameManager.clear();
+        //PartyManager.clear();
 
         getLogger().info("Heroes plugin has been disabled!");
     }

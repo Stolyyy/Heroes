@@ -224,11 +224,11 @@ public class AbilityListener implements Listener {
     public double getJabDamage(Player player) {
         if(HeroManager.getHero(player) == null) {
             return jabDamage.getOrDefault(player, 1.0);
-        } else if(HeroManager.getHero(player).getHeroType() == HeroType.MELEE) {
+        } else if(HeroManager.getHero(player).heroType == HeroType.MELEE) {
             return jabDamage.getOrDefault(player, 5.0);
-        } else if(HeroManager.getHero(player).getHeroType() == HeroType.HYBRID) {
+        } else if(HeroManager.getHero(player).heroType == HeroType.HYBRID) {
             return jabDamage.getOrDefault(player, 4.0);
-        } else if(HeroManager.getHero(player).getHeroType() == HeroType.RANGED) {
+        } else if(HeroManager.getHero(player).heroType == HeroType.RANGED) {
             return jabDamage.getOrDefault(player, 2.0);
         } else {
             return jabDamage.getOrDefault(player, 1.0);

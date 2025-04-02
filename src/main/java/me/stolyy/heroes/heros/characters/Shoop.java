@@ -9,8 +9,8 @@ import me.stolyy.heroes.heros.HeroType;
 import me.stolyy.heroes.utility.Interactions;
 import me.stolyy.heroes.utility.UltTimer;
 import me.stolyy.heroes.utility.WallDetection;
-import me.stolyy.heroes.heros.commonabilities.Hitscan;
-import me.stolyy.heroes.heros.commonabilities.Projectile;
+import me.stolyy.heroes.heros.abilityinterfaces.Hitscan;
+import me.stolyy.heroes.heros.abilityinterfaces.Projectile;
 import org.bukkit.*;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
@@ -26,14 +26,6 @@ public class Shoop extends HeroEnergy implements Projectile, Hitscan, Listener {
 
     Player player;
     final double weight = 3;
-    Cooldowns cooldowns;
-    @Override
-    public double getWeight() {
-        return weight;
-    }
-    public HeroType getHeroType() {
-        return HeroType.RANGED;
-    }
     double primaryDMG = 1.5;
     double primaryKB = 1;
     double primaryCD = 0.3;

@@ -93,7 +93,7 @@ public class Interactions {
         }
         hitLocation.setPitch(pitch);
         Vector direction = hitLocation.getDirection();
-        double weight = targetHero.getWeight() / 3;
+        double weight = targetHero.weight / 3;
         direction.setY(direction.getY() * (double)(1.0f - Math.abs(pitch) / 90.0f));
         Vector kb = target.getVelocity().multiply(0.8).add(direction.multiply(weight + finalKnockback * (1.0 - mitigation.getOrDefault(target,0))));
         kb.setY(kb.getY() - weight - finalVerticalKnockback * Math.sin(Math.toRadians(pitch)) * (1.0 - mitigation.getOrDefault(target,0)));

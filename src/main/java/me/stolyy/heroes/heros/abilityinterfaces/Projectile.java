@@ -1,4 +1,4 @@
-package me.stolyy.heroes.heros.commonabilities;
+package me.stolyy.heroes.heros.abilityinterfaces;
 
 import io.papermc.paper.entity.TeleportFlag;
 import me.stolyy.heroes.Heroes;

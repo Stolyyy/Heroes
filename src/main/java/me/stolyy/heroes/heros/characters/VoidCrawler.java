@@ -5,11 +5,9 @@ import me.stolyy.heroes.game.minigame.GameManager;
 import me.stolyy.heroes.heros.*;
 import me.stolyy.heroes.utility.Interactions;
 import me.stolyy.heroes.utility.UltTimer;
-import me.stolyy.heroes.heros.commonabilities.Dash;
+import me.stolyy.heroes.heros.abilityinterfaces.Dash;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,7 +17,6 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import java.util.Arrays;
 import java.util.List;
 
 

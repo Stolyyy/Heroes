@@ -1,8 +1,8 @@
 package me.stolyy.heroes.heros.characters;
 
 import me.stolyy.heroes.heros.*;
-import me.stolyy.heroes.heros.commonabilities.Dash;
-import me.stolyy.heroes.heros.commonabilities.Projectile;
+import me.stolyy.heroes.heros.abilityinterfaces.Dash;
+import me.stolyy.heroes.heros.abilityinterfaces.Projectile;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 

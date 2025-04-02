@@ -1,4 +1,4 @@
-package me.stolyy.heroes.heros.commonabilities;
+package me.stolyy.heroes.heros.abilityinterfaces;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.heros.AbilityType;

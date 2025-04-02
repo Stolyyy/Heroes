@@ -5,6 +5,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public abstract class HeroEnergy extends Hero {
+    public HeroEnergy(Player player){
+        super(player);
+    }
+
     protected double energy;
     protected double maxEnergy;
     protected double energyRegenRate;

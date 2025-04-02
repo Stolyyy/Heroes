@@ -4,11 +4,10 @@ import me.stolyy.heroes.Cooldowns;
 import me.stolyy.heroes.heros.HeroEnergy;
 import me.stolyy.heroes.utility.Interactions;
 import me.stolyy.heroes.heros.AbilityType;
-import me.stolyy.heroes.heros.Hero;
 import me.stolyy.heroes.heros.HeroType;
-import me.stolyy.heroes.heros.commonabilities.Dash;
-import me.stolyy.heroes.heros.commonabilities.Hitscan;
-import me.stolyy.heroes.heros.commonabilities.Projectile;
+import me.stolyy.heroes.heros.abilityinterfaces.Dash;
+import me.stolyy.heroes.heros.abilityinterfaces.Hitscan;
+import me.stolyy.heroes.heros.abilityinterfaces.Projectile;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 

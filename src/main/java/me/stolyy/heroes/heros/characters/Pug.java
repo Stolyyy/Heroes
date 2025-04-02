@@ -6,11 +6,10 @@ import me.stolyy.heroes.heros.HeroEnergy;
 import me.stolyy.heroes.utility.Interactions;
 import me.stolyy.heroes.utility.UltTimer;
 import me.stolyy.heroes.heros.AbilityType;
-import me.stolyy.heroes.heros.Hero;
 import me.stolyy.heroes.heros.HeroType;
 import me.stolyy.heroes.heros.minions.BasherEntity;
 import me.stolyy.heroes.heros.minions.PrincessEntity;
-import me.stolyy.heroes.heros.commonabilities.Dash;
+import me.stolyy.heroes.heros.abilityinterfaces.Dash;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -19,37 +18,28 @@ import org.bukkit.util.Vector;
 import java.util.*;
 
 public class Pug extends HeroEnergy implements Dash {
-    Player player;
-    final double weight = 2.5;
+    private final double weight = 2.5;
     private Cooldowns cooldowns;
-    @Override
-    public double getWeight() {
-        return weight;
-    }
-    public HeroType getHeroType() {
-        return HeroType.MELEE;
-    }
-    double primaryDMG = 6;
-    double primaryRange = 9;
-    double primaryKB = 1;
-    double primaryCD = 2;
-    double secondaryDMG = 10;
-    double secondaryKB = 3.5;
-    double secondaryCD = 5;
-    int ultCD = 90;
-    double pounceCharge = 0;
-    double changePerTick = 0.35;
+    private double primaryDMG = 6;
+    private double primaryRange = 9;
+    private double primaryKB = 1;
+    private double primaryCD = 2;
+    private double secondaryDMG = 10;
+    private double secondaryKB = 3.5;
+    private double secondaryCD = 5;
+    private int ultCD = 90;
+    private double pounceCharge = 0;
+    private double changePerTick = 0.35;
 
     private BasherEntity basher;
     private PrincessEntity princess;
 
 
     public Pug(Player player) {
-        this.player = player;
+        super(player);
         this.cooldowns = new Cooldowns(player, HeroType.MELEE, ultCD);
         initializeEnergy(changePerTick);
     }
-
 
     @Override
     public void usePrimaryAbility() {
@@ -73,6 +63,7 @@ public class Pug extends HeroEnergy implements Dash {
             Vector direction = player.getEyeLocation().getDirection();
             Set<Player> hitPlayers = new HashSet<>();
             player.playSound(player.getLocation(), Sound.ENTITY_WOLF_AMBIENT, 3.0f, 1.0f);
+
             new BukkitRunnable() {
                 int tick = 0;
                 final int totalTicks = 20;
@@ -82,6 +73,7 @@ public class Pug extends HeroEnergy implements Dash {
                         this.cancel();
                         return;
                     }
+                    // 6 rings
                     for (int ring = 0; ring < 6; ring++) {
                         double radius = 0.3 + (ring * 0.24); // radius 0.3 to 1.5
                         double distance = ring * 1.2; // Spacing of the rings
@@ -89,8 +81,9 @@ public class Pug extends HeroEnergy implements Dash {
                     }
                     tick++;
                 }
+
                 private void createRing(Location center, Vector direction, double radius, double distance, int ringIndex) {
-                    int particles = 12; // Reduced number of particles per ring
+                    int particles = 12; // 12 particles per ring
                     Vector up = new Vector(0, 1, 0);
                     Vector right = direction.getCrossProduct(up).normalize();
                     Vector planeNormal = direction.clone();
@@ -101,7 +94,7 @@ public class Pug extends HeroEnergy implements Dash {
                         Location particleLocation = center.clone().add(direction.clone().multiply(distance)).add(offset);
                         center.getWorld().spawnParticle(Particle.NOTE, particleLocation, 1, 0, 0, 0, 0);
 
-                        // Check for players hit by particles
+                        // only hit players once
                         List<Player> nearbyPlayers = (List<Player>) player.getWorld().getNearbyPlayers(particleLocation, 1);
                         for (Player nearbyPlayer : nearbyPlayers) {
                             if (nearbyPlayer != player && !hitPlayers.contains(nearbyPlayer)) {
@@ -115,9 +108,9 @@ public class Pug extends HeroEnergy implements Dash {
 
                 private void hitPlayer(Player target, Player source, int ringIndex) {
                     // Calculate knockback based on ring index (0 is closest, 5 is farthest)
-                    double knockbackStrength = secondaryKB - (ringIndex * 0.5); // 3.5 to 1
+                    double knockbackStrength = abilityKB.get(AbilityType.SECONDARY) - (ringIndex * 0.5); // 3.5 to 1
                     Vector knockbackDirection = source.getEyeLocation().getDirection();
-                    Interactions.handleInteractions(knockbackDirection, knockbackStrength, secondaryDMG, source, target
+                    Interactions.handleInteractions(knockbackDirection, knockbackStrength, abilityDMG.get(AbilityType.SECONDARY), source, target
                     );
                     player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
                 }
@@ -192,5 +185,11 @@ public class Pug extends HeroEnergy implements Dash {
         Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
             primaryDMG = 6;
         }, 20L);
+    }
+
+
+    @Override
+    protected void stats() {
+
     }
 }

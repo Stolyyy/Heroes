@@ -187,7 +187,12 @@ public class Game {
             if (p.getScoreboard() == scoreboard) p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard()); // ✅ Clears scoreboard
         }
         gameState = GameState.ENDED;
-        GameMapManager.deleteWorld(gameMap);
+        GameManager.cleanUpGames();
+        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
+            //HAVEN'T TESTED YET
+            //clear();
+            GameMapManager.deleteWorld(gameMap);
+        }, 100L);
     }
 
     public void onDeath(Player player){
@@ -421,6 +426,14 @@ public class Game {
             default:
                 return ChatColor.WHITE;
         }
+    }
+
+    private void clear(){
+        playerList.clear();
+        alivePlayerList.clear();
+        restrictedPlayers.clear();
+        playerTeams.clear();
+        lives.clear();
     }
 
     public void restrictPlayer(Player player){restrictedPlayers.add(player);}

@@ -5,9 +5,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-public class Join extends Command {
+public class JoinCommand extends Command {
     //make sure party sizes are good before joining
-    public Join() {
+    public JoinCommand() {
         super("join");
         this.setDescription("Join a game");
         this.setUsage("/join <1v1|2v2|party>");

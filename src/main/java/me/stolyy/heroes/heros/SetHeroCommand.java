@@ -42,15 +42,14 @@ public class SetHeroCommand extends Command {
                     Bukkit.getPluginManager().registerEvents((Listener) hero, Heroes.getInstance());
                 } else if (characterName.equalsIgnoreCase("Bulk")) {
                     //hero = new Bulk(player);
-
                 } else if (characterName.equalsIgnoreCase("Bug")) {
-                    //hero = new Bulk(player);
+                    //hero = new Bug(player);
                 } else if (characterName.equalsIgnoreCase("Spooderman")) {
-                    //hero = new Bulk(player);
+                    //hero = new Spooderman(player);
                 } else if (characterName.equalsIgnoreCase("Punishgers")) {
-                    //hero = new Bulk(player);
+                    //hero = new Punishgers(player);
                 } else if (characterName.equalsIgnoreCase("Blud")) {
-                    //hero = new Bulk(player);
+                    //hero = new Blud(player);
                 } else if (characterName.equalsIgnoreCase("Shoop")) {
                     hero = new Shoop(player);
                     player.playSound(player.getLocation(), "shoopdawhoop.select", SoundCategory.MASTER, 2.0f, 1.0f);

@@ -9,7 +9,6 @@ import me.stolyy.heroes.heros.SetHeroCommand;
 import me.stolyy.heroes.party.PartyChatCommand;
 import me.stolyy.heroes.party.PartyCommand;
 import me.stolyy.heroes.party.PartyManager;
-import me.stolyy.heroes.heros.characters.VoidCrawler;
 import me.stolyy.heroes.utility.LobbyCommand;
 import me.stolyy.heroes.utility.SpectateCommand;
 import me.stolyy.heroes.utility.StuckCommand;
@@ -72,7 +71,7 @@ public final class Heroes extends JavaPlugin implements Listener {
         registerCommand("p", new PartyCommand());
         registerCommand("partychat", new PartyChatCommand());
         registerCommand("pc", new PartyChatCommand());
-        registerCommand("join", new Join());
+        registerCommand("join", new JoinCommand());
         registerCommand("spectate", new SpectateCommand());
         registerCommand("leave", new LobbyCommand());
         registerCommand("lobby", new LobbyCommand());

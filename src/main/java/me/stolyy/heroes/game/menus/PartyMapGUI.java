@@ -1,5 +1,6 @@
 package me.stolyy.heroes.game.menus;
 
+import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.minigame.Game;
 import me.stolyy.heroes.game.minigame.GameEnums;
 import me.stolyy.heroes.game.maps.GameMap;
@@ -13,7 +14,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
 
-public class PartyMap extends GUI {
+public class PartyMapGUI extends GUI {
     //GUI for changing the map options in Party Mode
     //Changing map will create a new game and reopen gui
     //will also make the old game's gamestate 'ended'
@@ -22,7 +23,7 @@ public class PartyMap extends GUI {
     private Game game;
     private PartyGUI partyGUI;
 
-    public PartyMap(Game game, Player player, PartyGUI partyGUI){
+    public PartyMapGUI(Game game, Player player, PartyGUI partyGUI){
         this.game = game;
         this.player = player;
         this.partyGUI = partyGUI;
@@ -42,6 +43,8 @@ public class PartyMap extends GUI {
         GUIListener.playerGUIMap.put(player, this);
         GUIListener.isReopening.put(player, true);
         player.openInventory(inventory);
+        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () ->
+                GUIListener.isReopening.put(player, false), 1L);
     }
 
     public void handleClick(int slot){
@@ -55,6 +58,7 @@ public class PartyMap extends GUI {
             for(Player p : PartyManager.getPlayersInParty(player)){
                 newGame.addPlayer(p);
                 newGame.setPlayerTeam(p, teams.getOrDefault(p, GameEnums.GameTeam.SPECTATOR));
+                if(game.getAlivePlayerList().contains(p)) newGame.getAlivePlayerList().add(p);
             }
             partyGUI.setGame(newGame);
             partyGUI.openGUI();

@@ -16,9 +16,8 @@ public class HeroManager {
     private static final Map<Player, Hero> heroes = new HashMap<>();
 
     public static void setHero(Player player, Hero hero) {
-        if(heroes.getOrDefault(player, null) instanceof HeroEnergy oldHero) {
+        if(heroes.getOrDefault(player, null) instanceof HeroEnergy oldHero)
             oldHero.setCanIncreaseEnergy(false);
-        }
         heroes.put(player, hero);
     }
 

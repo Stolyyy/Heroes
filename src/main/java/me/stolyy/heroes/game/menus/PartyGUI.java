@@ -68,6 +68,8 @@ public class PartyGUI extends GUI{
         GUIListener.playerGUIMap.put(player, this);
         GUIListener.isReopening.put(player, true);
         player.openInventory(inventory);
+        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () ->
+            GUIListener.isReopening.put(player, false), 1L);
     }
 
     public void handleClick(int slot){
@@ -75,7 +77,7 @@ public class PartyGUI extends GUI{
             case 22 -> {
                 //map
                 GUIListener.playerGUIMap.put(player, null);
-                PartyMap mapGUI = new PartyMap(game, player, this);
+                PartyMapGUI mapGUI = new PartyMapGUI(game, player, this);
             } case 31 -> {
                 //settings
                 //GUIListener.playerGUIMap.put(player, this);

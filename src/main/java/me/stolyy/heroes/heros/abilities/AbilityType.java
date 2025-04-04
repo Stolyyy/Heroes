@@ -1,4 +1,4 @@
-package me.stolyy.heroes.heros;
+package me.stolyy.heroes.heros.abilities;
 
 public enum AbilityType {
     PRIMARY,

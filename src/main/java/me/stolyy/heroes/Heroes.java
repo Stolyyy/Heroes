@@ -3,7 +3,7 @@ package me.stolyy.heroes;
 import me.stolyy.heroes.game.maps.GameMapManager;
 import me.stolyy.heroes.game.menus.GUIListener;
 import me.stolyy.heroes.game.minigame.*;
-import me.stolyy.heroes.heros.AbilityListener;
+import me.stolyy.heroes.heros.abilities.AbilityListener;
 import me.stolyy.heroes.heros.HeroManager;
 import me.stolyy.heroes.heros.SetHeroCommand;
 import me.stolyy.heroes.party.PartyChatCommand;

@@ -1,6 +1,7 @@
 package me.stolyy.heroes.heros;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.heros.abilities.AbilityType;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;

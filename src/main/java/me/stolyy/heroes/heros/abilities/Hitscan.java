@@ -1,8 +1,7 @@
-package me.stolyy.heroes.heros.abilityinterfaces;
+package me.stolyy.heroes.heros.abilities;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.utility.WallDetection;
-import me.stolyy.heroes.heros.AbilityType;
 import me.stolyy.heroes.heros.Hero;
 import org.bukkit.*;
 import org.bukkit.entity.ArmorStand;

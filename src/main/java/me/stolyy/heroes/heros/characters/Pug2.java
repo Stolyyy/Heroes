@@ -1,14 +1,13 @@
 package me.stolyy.heroes.heros.characters;
 
 import me.stolyy.heroes.Heroes;
-import me.stolyy.heroes.heros.AbilityType;
+import me.stolyy.heroes.heros.abilities.AbilityType;
 import me.stolyy.heroes.heros.HeroEnergy;
 import me.stolyy.heroes.heros.HeroType;
-import me.stolyy.heroes.heros.abilityinterfaces.Dash;
+import me.stolyy.heroes.heros.abilities.Dash;
 import me.stolyy.heroes.heros.minions.BasherEntity;
 import me.stolyy.heroes.heros.minions.PrincessEntity;
 import me.stolyy.heroes.utility.Interactions;
-import me.stolyy.heroes.utility.UltTimer;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;

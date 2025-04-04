@@ -200,6 +200,7 @@ public class PartyManager {
 
     public static Set<Player> getPlayersInParty(Player player){
         Party party = getPlayerParty(player);
+
         return party != null ? party.getMembers() : null;
     }
 

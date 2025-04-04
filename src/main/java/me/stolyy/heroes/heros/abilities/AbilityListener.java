@@ -1,9 +1,12 @@
-package me.stolyy.heroes.heros;
+package me.stolyy.heroes.heros.abilities;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.minigame.Game;
 import me.stolyy.heroes.game.minigame.GameManager;
 import me.stolyy.heroes.game.minigame.GameEnums;
+import me.stolyy.heroes.heros.Hero;
+import me.stolyy.heroes.heros.HeroManager;
+import me.stolyy.heroes.heros.HeroType;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;

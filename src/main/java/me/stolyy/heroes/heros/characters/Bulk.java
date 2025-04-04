@@ -3,10 +3,10 @@ package me.stolyy.heroes.heros.characters;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.utility.Interactions;
 import me.stolyy.heroes.utility.WallDetection;
-import me.stolyy.heroes.heros.AbilityType;
+import me.stolyy.heroes.heros.abilities.AbilityType;
 import me.stolyy.heroes.heros.Hero;
 import me.stolyy.heroes.heros.HeroType;
-import me.stolyy.heroes.heros.abilityinterfaces.Projectile;
+import me.stolyy.heroes.heros.abilities.Projectile;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.*;
@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class Bulk extends Hero implements Listener, me.stolyy.heroes.heros.abilityinterfaces.Projectile {
+public class Bulk extends Hero implements Listener, me.stolyy.heroes.heros.abilities.Projectile {
     public Player player;
     final double weight = 5;
     @Override

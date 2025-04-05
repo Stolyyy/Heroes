@@ -9,27 +9,29 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="606daf4b-1469-4eeb-8180-44b5b6838e57" name="Changes" comment="Drafted GUI">
+    <list default="true" id="606daf4b-1469-4eeb-8180-44b5b6838e57" name="Changes" comment="Refractored GUI classes&#10;Hopefully fixed errors that happen when swapping maps">
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/HeroCooldown.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Ability.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/BugCharmsGUI.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Reload.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Heroes.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Heroes.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/AbilityListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/AbilityListener.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/AbilityType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/AbilityType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/Charms.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Charms.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/Hero.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/Hero.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilityinterfaces/Dash.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Dash.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilityinterfaces/Hitscan.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Hitscan.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilityinterfaces/Projectile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Projectile.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilityinterfaces/Shockwave.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Shockwave.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/HeroEnergy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/HeroEnergy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Charms.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Charms.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Dash.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Dash.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Hitscan.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Hitscan.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Projectile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Projectile.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Blud.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Blud.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Bug.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Bug.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Bulk.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Bulk.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Pug.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Pug.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Pug2.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Pug2.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Shoop.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Shoop.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Skullfire.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Skullfire.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/VoidCrawler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/VoidCrawler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/party/PartyManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/party/PartyManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/minions/BasherEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/minions/BasherEntity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/minions/PrincessEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/minions/PrincessEntity.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/Interactions.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/Interactions.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/UltTimer.java" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,8 +41,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Interface" />
         <option value="Enum" />
+        <option value="Interface" />
         <option value="Class" />
       </list>
     </option>
@@ -54,12 +56,12 @@
     &quot;assignee&quot;: &quot;Stolyyy&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/Stolyyy/Heroes",
-    "accountId": "55685a82-252d-4dc9-b980-4f09fa55b7a9"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Stolyyy/Heroes.git&quot;,
+    &quot;accountId&quot;: &quot;f67b61af-f943-4544-9a81-af342252d364&quot;
   }
-}]]></component>
+}</component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
   </component>
@@ -81,10 +83,10 @@
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;C:/Users/willi/IdeaProjects&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Artifacts&quot;,
     &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
     &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settings.project.maven.testRunning&quot;
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
   }
 }</component>
   <component name="RecentsManager">
@@ -160,7 +162,31 @@
       <option name="project" value="LOCAL" />
       <updated>1737257190556</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="PartyGUI, PartyMap, and GUIListener">
+      <option name="closed" value="true" />
+      <created>1737315880711</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1737315880711</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Organized stuff">
+      <option name="closed" value="true" />
+      <created>1743256159992</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1743256159992</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Worked on Hero class, created &quot;Pug2&quot; to test how changes look, moved cooldowns + ulttimer to Hero class">
+      <option name="closed" value="true" />
+      <created>1743637060973</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1743637060973</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -181,6 +207,10 @@
     <MESSAGE value="jhkgfkjyhg" />
     <MESSAGE value="Finished New Party System (Party, PartyManager, PartyC, PartyChat)" />
     <MESSAGE value="Drafted GUI" />
-    <option name="LAST_COMMIT_MESSAGE" value="Drafted GUI" />
+    <MESSAGE value="PartyGUI, PartyMap, and GUIListener" />
+    <MESSAGE value="Organized stuff" />
+    <MESSAGE value="Worked on Hero class, created &quot;Pug2&quot; to test how changes look, moved cooldowns + ulttimer to Hero class" />
+    <MESSAGE value="Refractored GUI classes&#10;Hopefully fixed errors that happen when swapping maps" />
+    <option name="LAST_COMMIT_MESSAGE" value="Refractored GUI classes&#10;Hopefully fixed errors that happen when swapping maps" />
   </component>
 </project>

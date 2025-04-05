@@ -7,7 +7,6 @@ import me.stolyy.heroes.heros.abilities.AbilityType;
 import me.stolyy.heroes.heros.Hero;
 import me.stolyy.heroes.heros.HeroType;
 import me.stolyy.heroes.utility.Interactions;
-import me.stolyy.heroes.utility.UltTimer;
 import me.stolyy.heroes.heros.abilities.Hitscan;
 import me.stolyy.heroes.heros.abilities.Projectile;
 import org.bukkit.*;

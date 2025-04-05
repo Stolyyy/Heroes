@@ -1,5 +1,6 @@
 package me.stolyy.heroes.heros.minions;
 
+import me.stolyy.heroes.utility.Equipment;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -31,7 +32,9 @@ public class PrincessEntity {
             skeleton.setTarget(null);
             skeleton.setCanPickupItems(false);
             skeleton.setAggressive(false);
-            skeleton.getEquipment().setItemInMainHand(null);  // Remove bow
+            skeleton.getEquipment().setItemInMainHand(null);
+            skeleton.setInvisible(true);
+            skeleton.getEquipment().setHelmet(Equipment.customItem(11004, "Princess"));
         });
 
         startAI();

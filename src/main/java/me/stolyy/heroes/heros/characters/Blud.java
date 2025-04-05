@@ -1,76 +1,58 @@
 package me.stolyy.heroes.heros.characters;
 
-import me.stolyy.heroes.Cooldowns;
 import me.stolyy.heroes.heros.HeroEnergy;
-import me.stolyy.heroes.utility.Interactions;
-import me.stolyy.heroes.heros.abilities.AbilityType;
+import me.stolyy.heroes.heros.abilities.*;
 import me.stolyy.heroes.heros.HeroType;
-import me.stolyy.heroes.heros.abilities.Dash;
-import me.stolyy.heroes.heros.abilities.Hitscan;
-import me.stolyy.heroes.heros.abilities.Projectile;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 
+import javax.swing.*;
+
 public class Blud extends HeroEnergy implements Hitscan, Dash, Projectile {
-
-
-    final double weight = 3;
-    @Override
-    public double getWeight() {return weight;}
-    @Override
-    public HeroType getHeroType() {return HeroType.HYBRID;}
     private PrimaryType primaryType;
-    Cooldowns cooldowns;
+    private Ability dash;
+    private double dashLength;
+    private Ability bullet;
+    private double bulletRadius;
+    private double bulletSpeed;
+    private Ability pierce;
 
-    public Blud(Player player) {
-        this.player = player;
-        this.cooldowns = new Cooldowns(player, HeroType.HYBRID, 90);
-        initializeEnergy(1);
+
+    public Blud(Player player){
+        super(player);
     }
 
-    enum PrimaryType{
-        DASH,
-        PIERCE,
-        BULLET
-    }
-
+    //swaps between primaries, uses energy for cooldowns
     @Override
     public void usePrimaryAbility() {
-        switch(primaryType) {
-            case DASH:
-                if(cooldowns.isPrimaryReady()) {
-                    Dash.onDash(player, this, AbilityType.PRIMARY, 7);
-                    cooldowns.usePrimaryAbility(1.75);
-                    removeEnergy(60);
-                }
-                break;
-            case PIERCE:
-                if(cooldowns.isPrimaryReady()) {
-                    Hitscan.hitscan(100, player.getEyeLocation(), player.getEyeLocation().getDirection(), Particle.DUST, Color.RED, player, this, AbilityType.PRIMARY);
-                    cooldowns.usePrimaryAbility(0.1);
-                    removeEnergy(3);
-                }
-                break;
-            case BULLET:
-                if(cooldowns.isPrimaryReady()) {
-                    Projectile.projectile(player, 1.8, false, 17001, 1.5, this, AbilityType.PRIMARY);
-                    cooldowns.usePrimaryAbility(0.5);
-                    removeEnergy(30);
-                }
-                break;
+        switch (primaryType){
+            case DASH -> {
+                if(!dash.ready || energy < 60) return;
+                Dash.dash(player, this, AbilityType.PRIMARY, dashLength);
+                cooldown(dash);
+                energy -= 60;
+            } case BULLET -> {
+                if(!bullet.ready || energy < 30) return;
+                Projectile.projectile(player, AbilityType.PRIMARY, bulletSpeed, bulletRadius, false, 17001);
+                cooldown(bullet);
+                energy -= 30;
+            } case PIERCE -> {
+                if(!pierce.ready || energy < 2) return;
+                Hitscan.hitscan(player, AbilityType.PRIMARY, 0.5, 100, Particle.DUST, Color.RED);
+                cooldown(pierce);
+                energy -= 2;
+            }
         }
     }
 
     @Override
     public void onDashHit(Player target, Location location, AbilityType abilityType) {
-        Interactions.handleInteractions(player.getEyeLocation().getDirection(), 1, 6, player, target);
-        player.playSound(player.getLocation(), "melee.sword.meleehit", SoundCategory.MASTER, 1.0f, 1.0f);
+
     }
 
     @Override
     public void onHitscanHit(Player target, Location location, AbilityType abilityType) {
-        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
-        Interactions.handleInteractions(player.getLocation().getDirection(), 0.3, 0.5, player, target);
+
     }
 
     @Override
@@ -80,8 +62,7 @@ public class Blud extends HeroEnergy implements Hitscan, Dash, Projectile {
 
     @Override
     public void onProjectileHit(Player target, Location location, AbilityType abilityType) {
-        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
-        Interactions.handleInteractions(player.getLocation().getDirection(), 3.5, 5, player, target);
+
     }
 
     @Override
@@ -129,5 +110,30 @@ public class Blud extends HeroEnergy implements Hitscan, Dash, Projectile {
     @Override
     public void passiveAbility2() {
 
+    }
+
+    @Override
+    protected void stats() {
+        heroType = HeroType.HYBRID;
+        weight = 3.5;
+        dash = new Ability(AbilityType.PRIMARY, true, 6, 2,1.5);
+        dashLength = 7;
+        bullet = new Ability(AbilityType.PRIMARY, true, 7, 2, 0.6);
+        bulletRadius = 1.5;
+        bulletSpeed = 2;
+        pierce = new Ability(AbilityType.PRIMARY, true, 1, 0.5, 0.1);
+        primaryType = PrimaryType.DASH;
+        ultimate = new Ability(AbilityType.ULTIMATE, false, 0,0,90);
+        ultDuration = 0;
+        energy = 100;
+        maxEnergy = 100;
+        energyPerTick = 1.5;
+        initializeEnergyUpdates();
+    }
+
+    enum PrimaryType{
+        DASH,
+        BULLET,
+        PIERCE
     }
 }

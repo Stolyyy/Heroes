@@ -2,6 +2,7 @@ package me.stolyy.heroes.heros.abilities;
 
 import io.papermc.paper.entity.TeleportFlag;
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.heros.HeroManager;
 import me.stolyy.heroes.utility.WallDetection;
 import me.stolyy.heroes.heros.Hero;
 import org.bukkit.Location;
@@ -18,7 +19,7 @@ import org.bukkit.util.Vector;
 import java.util.List;
 
 public interface Projectile {
-    static ArmorStand projectile(Player player, double speed, boolean hasGravity, int customModelData, double radius, Hero hero, AbilityType abilityType) {
+    static ArmorStand projectile(Player player, AbilityType abilityType, double speed, double radius, boolean hasGravity, int customModelData) {
         Location location = player.getLocation();
         Location eyeLocation = player.getEyeLocation();
         Vector direction = eyeLocation.getDirection();
@@ -61,7 +62,7 @@ public interface Projectile {
 
                 Location checkLocation = newLocation.clone().add(0, 2, 0);
                 if (WallDetection.detectWall(lastLocation.clone().add(0, 2, 0), checkLocation, 0.5) || distanceTraveled >= 100) {
-                    ((Projectile) hero).onProjectileHitWall(armorStand.getLocation(), abilityType);
+                    ((Projectile) HeroManager.getHero(player)).onProjectileHitWall(armorStand.getLocation(), abilityType);
                     armorStand.remove();
                     this.cancel();
                     return;
@@ -70,7 +71,7 @@ public interface Projectile {
                 List<Player> nearbyPlayers = (List<Player>) newLocation.getWorld().getNearbyPlayers(newLocation, radius);
                 for (Player target : nearbyPlayers) {
                     if (target != player) {
-                        ((Projectile) hero).onProjectileHit(target, armorStand.getLocation(), abilityType);
+                        ((Projectile) HeroManager.getHero(player)).onProjectileHit(target, armorStand.getLocation(), abilityType);
                         armorStand.remove();
                         this.cancel();
                         return;

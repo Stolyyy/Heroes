@@ -1,6 +1,7 @@
 package me.stolyy.heroes.heros.abilities;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.heros.HeroManager;
 import me.stolyy.heroes.utility.WallDetection;
 import me.stolyy.heroes.heros.Hero;
 import org.bukkit.*;
@@ -17,11 +18,10 @@ import java.util.List;
 
 public interface Hitscan {
     //Hitscan using particles
-    static void hitscan(double range, Location location, Vector direction, Particle particle, Color color, Player player, Hero hero, AbilityType abilityType) {
-        Location startLocation = location.clone();
+    static void hitscan(Player player, AbilityType abilityType, double radius, double range, Particle particle, Color color) {
+        Location startLocation = player.getEyeLocation().clone();
+        Vector direction = startLocation.getDirection().clone();
         Location endLocation = startLocation.clone().add(direction.clone().multiply(range));
-
-
 
         double distance = startLocation.distance(endLocation);
         Vector normalizedDirection = direction.clone().normalize();
@@ -35,23 +35,24 @@ public interface Hitscan {
                 player.getWorld().spawnParticle(particle, particleLocation, 1, 0, 0, 0, 0);
             }
 
-            List<Player> nearbyPlayers = (List<Player>) player.getWorld().getNearbyPlayers(particleLocation, 0.5);
+            List<Player> nearbyPlayers = (List<Player>) player.getWorld().getNearbyPlayers(particleLocation, radius);
             for (Player nearbyPlayer : nearbyPlayers) {
                 if (nearbyPlayer != player) {
-                    ((Hitscan) hero).onHitscanHit(nearbyPlayer, particleLocation, abilityType);
+                    ((Hitscan) HeroManager.getHero(player)).onHitscanHit(nearbyPlayer, particleLocation, abilityType);
                     return;
                 }
             }
         }
 
         if (WallDetection.detectWall(startLocation, endLocation, 0.1)) {
-            ((Hitscan) hero).onHitscanHitWall(endLocation, abilityType);
+            ((Hitscan) HeroManager.getHero(player)).onHitscanHitWall(endLocation, abilityType);
         }
     }
 
     //Hitscan using custom models
-    static void hitscan(double range, Location location, Vector direction, int customModelData, Player player, Hero hero, AbilityType abilityType) {
-        Location startLocation = location.clone();
+    static void hitscan(Player player, AbilityType abilityType, double radius, double range, int customModelData) {
+        Location startLocation = player.getEyeLocation().clone();
+        Vector direction = startLocation.getDirection().clone();
         Location endLocation = startLocation.clone().add(direction.clone().multiply(range));
 
         if (WallDetection.detectWall(startLocation, endLocation, 0.1)) {
@@ -86,17 +87,17 @@ public interface Hitscan {
                 }
             }.runTaskLater(Heroes.getInstance(), 5L);
 
-            List<Player> nearbyPlayers = (List<Player>) world.getNearbyPlayers(spawnLocation.clone().add(0, 2, 0), 0.5);
+            List<Player> nearbyPlayers = (List<Player>) world.getNearbyPlayers(spawnLocation.clone().add(0, 2, 0), radius);
             for (Player nearbyPlayer : nearbyPlayers) {
                 if (nearbyPlayer != player) {
-                    ((Hitscan) hero).onHitscanHit(nearbyPlayer, spawnLocation.clone().add(0, 2, 0), abilityType);
+                    ((Hitscan) HeroManager.getHero(player)).onHitscanHit(nearbyPlayer, spawnLocation.clone().add(0, 2, 0), abilityType);
                     return;
                 }
             }
         }
 
         if (WallDetection.detectWall(startLocation, endLocation, 0.1)) {
-            ((Hitscan) hero).onHitscanHitWall(endLocation, abilityType);
+            ((Hitscan) HeroManager.getHero(player)).onHitscanHitWall(endLocation, abilityType);
         }
     }
 

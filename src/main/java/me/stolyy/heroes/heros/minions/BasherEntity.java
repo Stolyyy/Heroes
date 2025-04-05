@@ -1,5 +1,7 @@
 package me.stolyy.heroes.heros.minions;
 
+import me.stolyy.heroes.utility.Equipment;
+import me.stolyy.heroes.utility.Interactions;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
@@ -29,6 +31,8 @@ public class BasherEntity {
             zombie.setTarget(null);
             zombie.setAggressive(false);
             zombie.setCanPickupItems(false);
+            zombie.setInvisible(true);
+            zombie.getEquipment().setHelmet(Equipment.customItem(11004, "Basher"));
         });
 
         startAI();
@@ -73,9 +77,7 @@ public class BasherEntity {
     }
 
     private void dashAttack(Player target) {
-        Vector knockback = target.getLocation().toVector().subtract(entity.getLocation().toVector()).normalize().multiply(1.5);
-        target.setVelocity(knockback);
-        target.damage(5, entity);
+        Interactions.handleInteraction(entity.getLocation(),5,3,owner,target);
         attackCooldown = 60; // 3 seconds cooldown
     }
 

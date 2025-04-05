@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public interface Dash {
-    static void onDash(Player player, Hero hero, AbilityType abilityType, double length) {
+    static void dash(Player player, Hero hero, AbilityType abilityType, double length) {
         Location startLocation = player.getLocation();
         Vector direction = player.getEyeLocation().getDirection();
         double dashSpeed = 3.5; // Speed of the dash movement

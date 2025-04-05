@@ -6,7 +6,6 @@ import me.stolyy.heroes.heros.*;
 import me.stolyy.heroes.heros.abilities.AbilityListener;
 import me.stolyy.heroes.heros.abilities.AbilityType;
 import me.stolyy.heroes.utility.Interactions;
-import me.stolyy.heroes.utility.UltTimer;
 import me.stolyy.heroes.heros.abilities.Dash;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;

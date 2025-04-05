@@ -4,7 +4,6 @@ import me.stolyy.heroes.Cooldowns;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.heros.HeroEnergy;
 import me.stolyy.heroes.utility.Interactions;
-import me.stolyy.heroes.utility.UltTimer;
 import me.stolyy.heroes.heros.abilities.AbilityType;
 import me.stolyy.heroes.heros.HeroType;
 import me.stolyy.heroes.heros.minions.BasherEntity;

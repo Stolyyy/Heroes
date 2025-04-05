@@ -1,6 +1,5 @@
 package me.stolyy.heroes.heros.characters;
 
-import me.stolyy.heroes.Cooldowns;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.heros.abilities.AbilityType;
 import me.stolyy.heroes.heros.Hero;

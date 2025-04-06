@@ -25,7 +25,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile {
 
     @Override
     public void usePrimaryAbility() {
-
+        //dash
     }
 
     @Override
@@ -35,7 +35,9 @@ public class Bug extends HeroEnergy implements Dash, Projectile {
 
     @Override
     public void useSecondaryAbility() {
-
+        //up: shriek
+        //neutral: spirit
+        //down: dive
     }
 
     @Override
@@ -65,7 +67,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile {
 
     @Override
     protected void stats() {
-        primary = new Ability(AbilityType.PRIMARY, true, 5, 1.5, 2);
+        primary = new Ability(AbilityType.PRIMARY, 5, 1.5, 2);
 
         registerCharms();
     }
@@ -87,7 +89,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile {
         if(charms.contains(Charms.SHARP_SHADOW)) primary.dmg += 2;
         if(charms.contains(Charms.SOUL_EATER)) soulPerHit *= 1.5;
         if(charms.contains(Charms.SOUL_TWISTER)) soulsPerCast *= 0.75;
-        if(charms.contains(Charms.SPRINTMASTER)) player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.115);
+        if(charms.contains(Charms.SPRINTMASTER)) player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(1.6);
         if(charms.contains(Charms.STEADY_BODY)) weight += 2;
         if(charms.contains(Charms.STRENGTH)) ;
         if(charms.contains(Charms.WEAVERSONG)) ;

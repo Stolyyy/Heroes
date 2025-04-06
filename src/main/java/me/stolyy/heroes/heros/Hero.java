@@ -23,8 +23,6 @@ public abstract class Hero {
     protected Ability primary;
     protected Ability secondary;
     protected Ability ultimate;
-    protected boolean inUltimate = false;
-    protected double ultDuration;
 
     public Hero(Player player){
         this.player = player;

@@ -1,10 +1,7 @@
 package me.stolyy.heroes.heros;
 
 import me.stolyy.heroes.Heroes;
-import me.stolyy.heroes.heros.characters.Pug;
-import me.stolyy.heroes.heros.characters.Shoop;
-import me.stolyy.heroes.heros.characters.Skullfire;
-import me.stolyy.heroes.heros.characters.VoidCrawler;
+import me.stolyy.heroes.heros.characters.*;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -16,8 +13,8 @@ public class HeroManager {
     private static final Map<Player, Hero> heroes = new HashMap<>();
 
     public static void setHero(Player player, Hero hero) {
-        if(heroes.getOrDefault(player, null) instanceof HeroEnergy oldHero)
-            oldHero.setCanIncreaseEnergy(false);
+        if(heroes.get(player) instanceof HeroEnergy oldHero)
+            oldHero.canIncreaseEnergy = false;
         heroes.put(player, hero);
     }
 
@@ -40,6 +37,11 @@ public class HeroManager {
             case Shoop shoop -> "Shoop";
             case Skullfire skullfire -> "Skullfire";
             case Pug pug -> "Pug";
+            case Blud blud -> "blud";
+            case Bug bug -> "Bug";
+            case Bulk bulk -> "Bulk";
+            case Punishgers gers -> "Herlgers";
+            case Spooderman spooderman -> "Spooderman";
             case null, default -> "Invalid Hero";
         };
     }

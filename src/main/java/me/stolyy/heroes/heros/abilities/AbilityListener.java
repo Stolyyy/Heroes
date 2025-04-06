@@ -5,8 +5,11 @@ import me.stolyy.heroes.game.minigame.Game;
 import me.stolyy.heroes.game.minigame.GameManager;
 import me.stolyy.heroes.game.minigame.GameEnums;
 import me.stolyy.heroes.heros.Hero;
+import me.stolyy.heroes.heros.HeroEnergy;
 import me.stolyy.heroes.heros.HeroManager;
 import me.stolyy.heroes.heros.HeroType;
+import me.stolyy.heroes.heros.characters.Skullfire;
+import me.stolyy.heroes.utility.Interactions;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
@@ -26,11 +29,11 @@ import java.util.Map;
 public class AbilityListener implements Listener {
 
     private static final HashMap<Player, Long> jabCooldowns = new HashMap<>();
-    public static final HashMap<Player, Integer> jabCooldown = new HashMap<>();
-    public static final HashMap<Player, Double> jabReach = new HashMap<>();
-    public static final HashMap<Player, Double> jabDamage = new HashMap<>();
+    private static final HashMap<Player, Integer> jabCooldown = new HashMap<>();
+    private static final HashMap<Player, Double> jabReach = new HashMap<>();
+    private static final HashMap<Player, Double> jabDamage = new HashMap<>();
 
-    public static final Map<Player, Integer> maxDoubleJumps = new HashMap<>();
+    private static final Map<Player, Integer> maxDoubleJumps = new HashMap<>();
     private static final Map<Player, Integer> doubleJumpCount = new HashMap<>();
     private static final Map<Player, Boolean> canDoubleJump = new HashMap<>();
 
@@ -112,14 +115,14 @@ public class AbilityListener implements Listener {
     //Handle jab cooldowns
     @EventHandler
     public void onPlayerAttack(EntityDamageByEntityEvent event) {
-        if (event.getDamager() instanceof Player) {
-            Player p = (Player) event.getDamager();
+        if (event.getDamager() instanceof Player p && event.getEntity() instanceof Player t) {
+            event.setCancelled(true);
             long currentTime = System.currentTimeMillis();
             long lastAttackTime = jabCooldowns.getOrDefault(p, 0L);
             if ((currentTime - lastAttackTime) < getJabCooldown(p)) {
-                event.setCancelled(true);
                 return;
             }
+            Interactions.handleStaticInteraction(getJabDamage(p), 1, p, t);
             jabCooldowns.put(p, currentTime);
         }
     }
@@ -153,6 +156,7 @@ public class AbilityListener implements Listener {
         Player p = event.getPlayer();
         if (p.getGameMode() == GameMode.SURVIVAL || p.getGameMode() == GameMode.ADVENTURE) {
             if (p.isOnGround()) {
+                Hero hero = HeroManager.getHero(p);
                 maxDoubleJumps.put(p, 2);
                 doubleJumpCount.put(p, 0);
                 canDoubleJump.put(p, true);
@@ -165,7 +169,7 @@ public class AbilityListener implements Listener {
     }
 
     //code to actually do the double jump
-    private void performDoubleJump(Player p) {
+    private static void performDoubleJump(Player p) {
         Vector upVector = new Vector(0, 1, 0);
         for (int i = 0; i < 12; i++) {
             double angle = 2 * Math.PI * i / 12;
@@ -178,7 +182,7 @@ public class AbilityListener implements Listener {
         p.setVelocity(p.getLocation().getDirection().multiply(0.90).setY(0.85));
     }
     //circle for a particle ring
-    private Vector rotateAroundAxis(Vector vector, Vector axis, double angle) {
+    private static Vector rotateAroundAxis(Vector vector, Vector axis, double angle) {
         angle = Math.toRadians(angle);
         Vector parallel = axis.multiply(axis.dot(vector));
         Vector perpendicular = vector.subtract(parallel);
@@ -186,11 +190,11 @@ public class AbilityListener implements Listener {
         return parallel.add(perpendicular.multiply(Math.cos(angle))).add(crossProduct.multiply(Math.sin(angle)));
     }
 
-    public int getMaxDoubleJumps(Player player) {
+    public static int getMaxDoubleJumps(Player player) {
         return maxDoubleJumps.getOrDefault(player, 2);
     }
 
-    public void setMaxDoubleJumps(Player player, int max) {
+    public static void setMaxDoubleJumps(Player player, int max) {
         maxDoubleJumps.put(player, max);
     }
 
@@ -201,30 +205,30 @@ public class AbilityListener implements Listener {
         }
     }
 
-    public void setJabCooldown(Player player, int cooldown) {
+    public static void setJabCooldown(Player player, int cooldown) {
         jabCooldown.put(player, cooldown);
     }
 
-    public int getJabCooldown(Player player) {
+    public static int getJabCooldown(Player player) {
         return jabCooldown.getOrDefault(player, 500);
     }
 
-    public void setJabReach(Player player, double reach) {
+    public static void setJabReach(Player player, double reach) {
         jabReach.put(player, reach);
         player.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE).setBaseValue(getJabReach(player));
     }
 
 
-    public double getJabReach(Player player) {
+    public static double getJabReach(Player player) {
         return jabReach.getOrDefault(player, 5.5);
     }
 
-    public void setJabDamage(Player player, double damage) {
+    public static void setJabDamage(Player player, double damage) {
         jabDamage.put(player, damage);
         player.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(getJabDamage(player));
     }
 
-    public double getJabDamage(Player player) {
+    public static double getJabDamage(Player player) {
         if(HeroManager.getHero(player) == null) {
             return jabDamage.getOrDefault(player, 1.0);
         } else if(HeroManager.getHero(player).heroType == HeroType.MELEE) {
@@ -238,7 +242,7 @@ public class AbilityListener implements Listener {
         }
     }
 
-    private boolean isPlayerEligible(Player player) {
+    private static boolean isPlayerEligible(Player player) {
         Game game = GameManager.getPlayerGame(player);
         if (game == null) {
             //player.sendMessage(ChatColor.RED + "DEBUG: You are not in a game!");

@@ -5,14 +5,8 @@ import me.stolyy.heroes.heros.HeroType;
 import org.bukkit.entity.Player;
 
 public class Punishgers extends Hero {
-    @Override
-    public double getWeight() {
-        return 0;
-    }
-
-    @Override
-    public HeroType getHeroType() {
-        return null;
+    public Punishgers(Player player) {
+        super(player);
     }
 
     @Override
@@ -27,7 +21,7 @@ public class Punishgers extends Hero {
 
     @Override
     public void useUltimateAbility() {
-        //steroid fire (but slight slowness)
+        //idk
     }
 
     @Override
@@ -37,6 +31,11 @@ public class Punishgers extends Hero {
 
     @Override
     public void passiveAbility2() {
+
+    }
+
+    @Override
+    protected void stats() {
 
     }
 }

@@ -1,6 +1,7 @@
 package me.stolyy.heroes.heros.minions;
 
 import me.stolyy.heroes.utility.Equipment;
+import me.stolyy.heroes.utility.Interactions;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -10,6 +11,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class PrincessEntity {
     //Princess entity is part of Pug's ultimate
@@ -81,17 +85,18 @@ public class PrincessEntity {
     private void sonicBoomAttack(Player target) {
         targetLocation = target.getLocation().clone();
         entity.lookAt(target);
-
+        Vector direction = targetLocation.toVector().subtract(entity.getLocation().toVector()).normalize();
+        Set<Player> hitPlayers = new HashSet<>();
         new BukkitRunnable() {
             @Override
             public void run() {
-                Vector direction = targetLocation.toVector().subtract(entity.getLocation().toVector()).normalize();
                 for (int i = 1; i <= 15; i++) {
                     Location particleLocation = entity.getLocation().add(direction.clone().multiply(i));
                     entity.getWorld().spawnParticle(Particle.SONIC_BOOM, particleLocation, 1, 0, 0, 0, 0);
                 }
-                if (target.getLocation().distanceSquared(targetLocation) < 2 * 2) {
-                    target.damage(5, entity);
+                if (target.getLocation().distanceSquared(targetLocation) < 1 && !hitPlayers.contains(target)) {
+                    hitPlayers.add(target);
+                    Interactions.handleInteraction(direction, 6, 2, owner, target);
                 }
                 attackCooldown = 60; // 3 seconds cooldown
             }

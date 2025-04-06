@@ -21,6 +21,10 @@ import java.util.List;
 import java.util.Random;
 
 public class Bulk extends Hero implements Listener, Projectile, Dash, Shockwave {
+    private double secondaryLength;
+    private double slamEnergy;
+    private int ultSlams;
+
 
     public Bulk(Player player) {
         super(player);
@@ -38,6 +42,10 @@ public class Bulk extends Hero implements Listener, Projectile, Dash, Shockwave 
 
     @Override
     public void onProjectileHitWall(Location location, AbilityType abilityType) {
+
+    }
+
+    private void carExplode(Location location){
 
     }
 

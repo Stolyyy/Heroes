@@ -2,6 +2,7 @@ package me.stolyy.heroes.heros.abilities;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.heros.Hero;
+import me.stolyy.heroes.heros.HeroManager;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -11,7 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public interface Dash {
-    static void dash(Player player, Hero hero, AbilityType abilityType, double length) {
+    static void dash(Player player, AbilityType abilityType, double length) {
         Location startLocation = player.getLocation();
         Vector direction = player.getEyeLocation().getDirection();
         double dashSpeed = 3.5; // Speed of the dash movement
@@ -46,7 +47,7 @@ public interface Dash {
                 List<Player> nearbyPlayers = (List<Player>) player.getWorld().getNearbyPlayers(currentLocation, 2);
                 for (Player nearbyPlayer : nearbyPlayers) {
                     if (nearbyPlayer != player && !hitPlayer.getOrDefault(nearbyPlayer, false)) {
-                        ((Dash) hero).onDashHit(nearbyPlayer, currentLocation, abilityType);
+                        ((Dash) HeroManager.getHero(player)).onDashHit(nearbyPlayer, currentLocation, abilityType);
                         hitPlayer.put(nearbyPlayer, true);
                     }
                 }

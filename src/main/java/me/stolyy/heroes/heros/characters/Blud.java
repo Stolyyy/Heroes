@@ -28,7 +28,7 @@ public class Blud extends HeroEnergy implements Hitscan, Dash, Projectile {
         switch (primaryType){
             case DASH -> {
                 if(!dash.ready || energy < 60) return;
-                Dash.dash(player, this, AbilityType.PRIMARY, dashLength);
+                Dash.dash(player, AbilityType.PRIMARY, dashLength);
                 cooldown(dash);
                 energy -= 60;
             } case BULLET -> {
@@ -116,15 +116,14 @@ public class Blud extends HeroEnergy implements Hitscan, Dash, Projectile {
     protected void stats() {
         heroType = HeroType.HYBRID;
         weight = 3.5;
-        dash = new Ability(AbilityType.PRIMARY, true, 6, 2,1.5);
+        dash = new Ability(AbilityType.PRIMARY, 6, 2,1.5);
         dashLength = 7;
-        bullet = new Ability(AbilityType.PRIMARY, true, 7, 2, 0.6);
+        bullet = new Ability(AbilityType.PRIMARY, 7, 2, 0.6);
         bulletRadius = 1.5;
         bulletSpeed = 2;
-        pierce = new Ability(AbilityType.PRIMARY, true, 1, 0.5, 0.1);
+        pierce = new Ability(AbilityType.PRIMARY, 1, 0.5, 0.1);
         primaryType = PrimaryType.DASH;
-        ultimate = new Ability(AbilityType.ULTIMATE, false, 0,0,90);
-        ultDuration = 0;
+        ultimate = new Ability(AbilityType.ULTIMATE, 0,0,90, 10);
         energy = 100;
         maxEnergy = 100;
         energyPerTick = 1.5;

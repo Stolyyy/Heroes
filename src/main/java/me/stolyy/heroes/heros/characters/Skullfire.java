@@ -1,13 +1,11 @@
 package me.stolyy.heroes.heros.characters;
 
 import me.stolyy.heroes.Heroes;
-import me.stolyy.heroes.heros.abilities.AbilityListener;
-import me.stolyy.heroes.heros.abilities.AbilityType;
+import me.stolyy.heroes.heros.HeroEnergy;
+import me.stolyy.heroes.heros.abilities.*;
 import me.stolyy.heroes.heros.Hero;
 import me.stolyy.heroes.heros.HeroType;
 import me.stolyy.heroes.utility.Interactions;
-import me.stolyy.heroes.heros.abilities.Hitscan;
-import me.stolyy.heroes.heros.abilities.Projectile;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -22,74 +20,49 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Skullfire extends Hero implements Hitscan, Projectile {
-    Player player;
-    final double weight = 2;
-    Cooldowns cooldowns;
-    @Override
-    public double getWeight() {
-        return weight;
-    }
-    public HeroType getHeroType() {
-        return HeroType.RANGED;
-    }
-    AbilityListener jumpCap;
-    boolean inPrimary = false;
-    boolean isReloading = false;
-    int consecutiveHits = 0;
-    double primaryDMG = 3;
-    double primaryKB = 0.9;
-    double primaryCD = 1.5;
-    double secondaryDMG = 7;
-    double secondaryKB = 3;
-    double secondaryCD = 8;
-    int ammo = 7;
-    int ultTime = 10;
-    boolean inUltimate = false;
-    Map<Player, Integer> chainCount = new HashMap<>();
+public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload {
+    private boolean isReloading;
+    private int consecutiveHits;
+    private int ammo;
+    private int maxDoubleJumps;
+    private Map<Player, Integer> chainCount;
 
     public Skullfire(Player player) {
-        this.player=player;
-        //this.jumpCap = new AbilityListener(Heroes.getInstance().getHeroManager());
-        this.cooldowns = new Cooldowns(player, HeroType.RANGED, 100);
+        super(player);
     }
 
     @Override
     public void usePrimaryAbility() {
-        if (inPrimary || isReloading) {
+        if(primary.inUse || isReloading || ammo <= 0){
             return;
         }
 
-        if (ammo > 0) {
-            inPrimary = true;
-            Hero h = this;
-            int shotsPerClick = player.isSneaking() ? 3 : 1;
-            new BukkitRunnable() {
-                private int count = 0;
-                @Override
-                public void run() {
-                    if (count >= shotsPerClick || ammo == 0) {
-                        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> inPrimary = false, 8L);
-                        this.cancel();
-                        return;
-                    }
-                    player.playSound(player.getLocation(), "skullfire.magnumshot", SoundCategory.MASTER, 1.0f, 1.0f);
-                    if (inUltimate) {
-                        Hitscan.hitscan(100, player.getEyeLocation(), player.getEyeLocation().getDirection(), Particle.SOUL_FIRE_FLAME, Color.WHITE, player, h, AbilityType.ULTIMATE);
-                    } else {
-                        Hitscan.hitscan(100, player.getEyeLocation(), player.getEyeLocation().getDirection(), Particle.ASH, Color.WHITE, player, h, AbilityType.PRIMARY);
-                    }
-                    ammo--;
-                    count++;
-                    updateAmmoDisplay();
-                    if (ammo == 0) {
-                        reload();
-                    }
+        primary.inUse = true;
+        int shotsPerClick = player.isSneaking() ? 3 : 1;
+
+        new BukkitRunnable(){
+            private int shots = 0;
+
+            @Override
+            public void run(){
+                if(shots >= shotsPerClick || ammo == 0){
+                    Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> primary.inUse = false, 8L);
+                    this.cancel();
+                    return;
                 }
-            }.runTaskTimer(Heroes.getInstance(), 0L, 3L);
+                player.playSound(player.getLocation(), "skullfire.magnumshot", SoundCategory.MASTER, 1.0f, 1.0f);
 
+                if(ultimate.inUse)
+                    Hitscan.hitscan(player, AbilityType.ULTIMATE, 100, 1, Particle.SOUL_FIRE_FLAME, Color.WHITE);
+                else Hitscan.hitscan(player, AbilityType.PRIMARY, 100, 1, Particle.ASH, Color.WHITE);
 
-        }
+                ammo--;
+                shots++;
+                updateAmmoDisplay();
+
+                if(ammo == 0) reload();
+            }
+        }.runTaskTimer(Heroes.getInstance(), 0, 3L);
     }
 
     private void reload() {
@@ -97,11 +70,12 @@ public class Skullfire extends Hero implements Hitscan, Projectile {
         isReloading = true;
         player.playSound(player.getLocation(), "melee.reload", SoundCategory.MASTER, 1.0f, 1.0f);
         player.sendMessage(ChatColor.RED + "Reloading...");
-
         ItemStack gunItem = player.getInventory().getItem(0);
+        cooldown(primary);
+
         if (gunItem != null && gunItem.getType() == Material.CARROT_ON_A_STICK) {
             new BukkitRunnable() {
-                int reloadTicks = 30; // 1.5 seconds * 20 ticks
+                int reloadTicks = (int) primary.cd * 20;
                 int currentTick = 0;
 
                 @Override
@@ -110,12 +84,12 @@ public class Skullfire extends Hero implements Hitscan, Projectile {
                         ammo = 7;
                         isReloading = false;
                         updateAmmoDisplay();
-                        updateItemDurability(gunItem, (short) 0, 8002);
+                        updateItemDurability(gunItem, (short) 0);
                         player.sendMessage(ChatColor.GREEN + "Reload complete!");
                         this.cancel();
                     } else {
                         short durability = (short) (25 - (25 * currentTick / reloadTicks));
-                        updateItemDurability(gunItem, durability, 8002);
+                        updateItemDurability(gunItem, durability);
                         currentTick++;
                     }
                 }
@@ -130,59 +104,64 @@ public class Skullfire extends Hero implements Hitscan, Projectile {
                     updateAmmoDisplay();
                     player.sendMessage(ChatColor.GREEN + "Reload complete!");
                 }
-            }.runTaskLater(Heroes.getInstance(), (long) (20*primaryCD));
+            }.runTaskLater(Heroes.getInstance(), (long) (20*primary.cd));
         }
     }
 
-    private void updateItemDurability(ItemStack item, short durability, int customModelData) {
+    private void updateItemDurability(ItemStack item, short durability) {
         ItemMeta meta = item.getItemMeta();
-        if (meta != null && meta instanceof Damageable) {
-            meta.setCustomModelData(customModelData);
+        if (meta instanceof Damageable) {
+            meta.setCustomModelData(8002);
             ((Damageable) meta).setDamage(25 - durability);  // Invert the durability
             item.setItemMeta(meta);
         }
     }
 
-        private void updateAmmoDisplay() {
-            ItemStack primaryItem = player.getInventory().getItem(0);
-            if (primaryItem != null) {
-                ItemMeta meta = primaryItem.getItemMeta();
-                if (meta != null) {
-                    meta.setDisplayName(ChatColor.GOLD + "Skullfire Gun (" + ammo + "/7)");
-                    primaryItem.setItemMeta(meta);
-                }
-                primaryItem.setAmount(Math.max(1, ammo)); // Ensure at least 1 is displayed
+    private void updateAmmoDisplay() {
+        ItemStack primaryItem = player.getInventory().getItem(0);
+        if (primaryItem != null) {
+            ItemMeta meta = primaryItem.getItemMeta();
+            if (meta != null) {
+                meta.setDisplayName(ChatColor.GOLD + "Skullfire Gun (" + ammo + "/7)");
+                primaryItem.setItemMeta(meta);
             }
+            primaryItem.setAmount(Math.max(1, ammo)); // Ensure at least 1 is displayed
         }
+    }
 
     @Override
     public void onHitscanHit(Player target, Location location, AbilityType abilityType) {
         if (!player.isOnGround()) {
             increaseMaxDoubleJumps();
         }
+
         consecutiveHits++;
         if (consecutiveHits >= 3) {
-            cooldowns.useSecondaryAbility(0); // Reset grenade cooldown
+            secondary.timeUntilUse = 0; // Reset grenade cooldown
             consecutiveHits = 0;
         }
-        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
+
         switch (abilityType) {
             case PRIMARY:
-                Interactions.handleInteractions(player.getEyeLocation().getDirection(), primaryKB, primaryDMG, player, target);
+                player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
+                Interactions.handleInteraction(player.getEyeLocation().getDirection(), primary.dmg, primary.kb, player, target);
                 break;
             case ULTIMATE:
-                Interactions.handleInteractions(player.getEyeLocation().getDirection(), primaryKB*1.2, primaryDMG+1, player, target);
-                chainCount.put(target, chainCount.getOrDefault(target, 0)+1);
+                Interactions.handleInteraction(player.getEyeLocation().getDirection(), primary.dmg + ultimate.dmg, primary.kb + ultimate.kb, player, target);
+                player.playSound(player.getLocation(), Sound.BLOCK_CHAIN_HIT, 1.0f, 1.0f);
+                chainCount.put(target, chainCount.getOrDefault(target, 0) + 1);
                 chainUpdate(target);
                 break;
         }
     }
+
     private void increaseMaxDoubleJumps() {
-        int currentMax = jumpCap.getMaxDoubleJumps(player);
-        if (currentMax < 7) {
-            jumpCap.setMaxDoubleJumps(player, currentMax + 1);
-            player.sendMessage(ChatColor.YELLOW + "Max double jumps increased to " + (currentMax + 1) + "!");
+        int currentMax = AbilityListener.getMaxDoubleJumps(player);
+        if (currentMax < maxDoubleJumps) {
+            AbilityListener.setMaxDoubleJumps(player,
+                    AbilityListener.getMaxDoubleJumps(player) + 1);
         }
+        energy = Math.min(currentMax + 1, maxDoubleJumps);
     }
 
     @Override
@@ -190,14 +169,15 @@ public class Skullfire extends Hero implements Hitscan, Projectile {
         consecutiveHits = 0;
     }
 
+
+
     @Override
     public void useSecondaryAbility() {
-        if(cooldowns.isSecondaryReady()) {
-            player.playSound(player.getLocation(), "skullfire.grenadethrow", SoundCategory.MASTER, 2.0f, 1.0f);
-            Projectile.projectile(player,2,true, 8003, 0.5, this, AbilityType.SECONDARY);
-            cooldowns.useSecondaryAbility(secondaryCD);
-        }
+        if(!secondary.ready) return;
 
+        player.playSound(player.getLocation(), "skullfire.grenadethrow", SoundCategory.MASTER, 2.0f, 1.0f);
+        Projectile.projectile(player, AbilityType.SECONDARY, 2, 0.5, true, 8003);
+        cooldown(secondary);
     }
 
     @Override
@@ -217,41 +197,56 @@ public class Skullfire extends Hero implements Hitscan, Projectile {
         for (Player nearbyPlayer : nearbyPlayers) {
             if (nearbyPlayer != player) {
                 player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
-                Interactions.handleInteractions(player.getLocation(), secondaryKB, secondaryDMG, player, nearbyPlayer);
-                return;
+                Interactions.handleInteraction(secondary.dmg, secondary.kb, player, nearbyPlayer);
             }
         }
     }
 
+
+
     @Override
     public void useUltimateAbility() {
-        if (cooldowns.getUltimateCooldown() == 0) {
-            inUltimate = true;
-            cooldowns.useUltimateAbility();
-            player.playSound(player.getLocation(), "skullfire.crystal", SoundCategory.MASTER, 5.0f, 1.0f);
-            new UltTimer(player, ultTime).runTaskTimer(Heroes.getInstance(), 0L, 20L);
-            Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> inUltimate = false, (ultTime * 20L));
-        } else {
-            player.sendMessage(ChatColor.RED + "Ultimate ability is on cooldown! " + cooldowns.getUltimateCooldown() + " seconds remaining.");
+        if(!ultimate.ready || ultimate.inUse) {
+            player.sendMessage(ChatColor.RED + "Ultimate ability is on cooldown! " + ultimate.timeUntilUse + " seconds remaining.");
+            return;
         }
+
+        ultimate.inUse = true;
+        ultTimer();
+        ammo = 9;
+        updateAmmoDisplay();
+        player.playSound(player.getLocation(), "skullfire.crystal", SoundCategory.MASTER, 5.0f, 1.0f);
+
+        new BukkitRunnable(){
+            int timer = 0;
+            @Override
+            public void run() {
+                if(ammo <= 0 || timer >= ultimate.duration * 20L){
+                    cooldown(ultimate);
+                }
+                timer++;
+            }
+        }.runTaskTimer(Heroes.getInstance(), 0L, 1L);
     }
 
     public void chainUpdate(Player target) {
-        double currentHealth = target.getHealth();
         if(chainCount.getOrDefault(target, 0) == 1) {
             target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20 * 2, 1));
             createParticleRing(target,1, 40);
         } else if(chainCount.getOrDefault(target, 0) == 2) {
             target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 20 * 2, 2));
+            createParticleRing(target,1, 40);
             createParticleRing(target,0.6, 40);
         }
         if(chainCount.getOrDefault(target, 0) == 3) {
             target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 10, 3));
+
+            //stun for .25s
             new BukkitRunnable(){
                 int ticksRun = 0;
                 @Override
                 public void run(){
-                    if (ticksRun >= 5) {
+                    if (ticksRun >= 8) {
                         this.cancel();
                         return;
                     }
@@ -259,19 +254,17 @@ public class Skullfire extends Hero implements Hitscan, Projectile {
                     ticksRun++;
                 }
             }.runTaskTimer(Heroes.getInstance(), 0L, 1L);
+
+            createParticleRing(target,1, 40);
+            createParticleRing(target,0.6, 40);
             createParticleRing(target,1.5, 20);
-            if (currentHealth > 1.0) {
-                target.setHealth(Math.max(1.0, currentHealth - 5));
-            } else if (currentHealth <= 1.0) {
-                target.damage(target.getHealth(), player);
-            }
             chainCount.put(target,0);
         }
     }
 
     public void createParticleRing(Player player, double heightOffset, double duration) {
         final double radius = 1.0; // Radius of the ring
-        final int particlesPerRing = 20; // Number of particles in each ring
+        final int particlesPerRing = 16; // Number of particles in each ring
 
         new BukkitRunnable() {
             int ticksRun = 0;
@@ -317,7 +310,22 @@ public class Skullfire extends Hero implements Hitscan, Projectile {
 
     }
 
+    @Override
+    protected void stats(){
+        weight = 2;
+        heroType = HeroType.RANGED;
 
+        primary = new Ability(AbilityType.PRIMARY, 3, 0.9,1.5);
+        consecutiveHits = 0;
+        ammo = 7;
+        isReloading = false;
+        secondary = new Ability(AbilityType.SECONDARY, 7, 3, 8);
+        //dmg/kb is added on top of primary stats
+        ultimate = new Ability(AbilityType.ULTIMATE, 1, .5, 100, 10);
+        chainCount = new HashMap<>();
+        maxDoubleJumps = 5;
 
-
+        setEnergyStats(2,5,0,false);
+        initializeEnergyUpdates();
+    }
 }

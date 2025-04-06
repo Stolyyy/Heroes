@@ -14,6 +14,13 @@ public abstract class HeroEnergy extends HeroCooldown {
         super(player);
     }
 
+    protected void setEnergyStats(double Energy, double maxEnergy, double energyPerTick, boolean canIncreaseEnergy){
+        this.energy = energy;
+        this.maxEnergy = maxEnergy;
+        this.energyPerTick = energyPerTick;
+        this.canIncreaseEnergy = canIncreaseEnergy;
+    }
+
     protected void initializeEnergyUpdates() {
         HeroEnergy heroEnergy = this;
         new BukkitRunnable(){

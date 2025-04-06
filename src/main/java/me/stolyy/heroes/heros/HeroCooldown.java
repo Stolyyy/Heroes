@@ -57,6 +57,7 @@ public abstract class HeroCooldown extends Hero {
                     runCooldown(ability,cooldownItem);
                 }
             } case ULTIMATE -> {
+                ability.inUse = false;
                 ItemStack ultimateItem = player.getInventory().getItem(2);
                 if (ultimateItem != null && ultimateItem.getType() == Material.CARROT_ON_A_STICK) {
                     runCooldown(ability,ultimateItem);
@@ -71,17 +72,17 @@ public abstract class HeroCooldown extends Hero {
             @Override
             public void run() {
                 String title;
-                if (elapsedTime < 0.4 * ultDuration) {
+                if (elapsedTime < 0.4 * ultimate.duration) {
                     title = "" + ChatColor.DARK_GREEN;
-                } else if (elapsedTime < 0.7 * ultDuration) {
+                } else if (elapsedTime < 0.7 * ultimate.duration) {
                     title = "" + ChatColor.YELLOW;
                 } else {
                     title = "" + ChatColor.RED;
                 }
-                player.sendTitle(title  + (ultDuration - elapsedTime), "", 5, 25, 10);
+                player.sendTitle(title  + (ultimate.duration - elapsedTime), "", 5, 25, 10);
                 elapsedTime++;
 
-                if (elapsedTime == ultDuration) {
+                if (elapsedTime == ultimate.duration) {
                     this.cancel();
                 }
             }

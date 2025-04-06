@@ -1,8 +1,8 @@
 package me.stolyy.heroes.heros.characters;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.heros.abilities.Ability;
 import me.stolyy.heroes.heros.abilities.AbilityType;
-import me.stolyy.heroes.heros.Hero;
 import me.stolyy.heroes.heros.HeroEnergy;
 import me.stolyy.heroes.heros.HeroType;
 import me.stolyy.heroes.utility.Interactions;
@@ -18,92 +18,82 @@ import org.bukkit.event.entity.EntityDismountEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class Shoop extends HeroEnergy implements Projectile, Hitscan, Listener {
-
-    Player player;
-    final double weight = 3;
-    double primaryDMG = 1.5;
-    double primaryKB = 1;
-    double primaryCD = 0.3;
-    double secondaryDMG = 7;
-    double secondaryRange = 75;
-    double secondaryKB = 1;
-    double secondaryCD = 0;
-    Color secondaryColor = Color.YELLOW;
-    double ultimateKB = 2.5;
-    double ultimateDMG = 5;
-    double passiveKB = 1.1;
-    double passiveDMG = 5;
-    boolean isOnProjectile = false;
-    int ultTime = 4;
+    private double primarySpeed;
+    private Color secondaryColor;
+    private double secondaryRange;
+    private Set<Player> ultimateHits;
+    private Ability passive;
+    private double passiveSpeed;
 
     public Shoop(Player player) {
-        this.player = player;
-        this.cooldowns = new Cooldowns(player, HeroType.RANGED, 100);
-        initializeEnergy( 0.25);
+        super(player);
     }
+
+
 
     @Override
     public void usePrimaryAbility() {
-        if(cooldowns.isPrimaryReady()) {
-            Projectile.projectile(player, 2.6, false, 14003, 1, this, AbilityType.PRIMARY);
-            cooldowns.usePrimaryAbility(primaryCD);
-            player.playSound(player.getLocation(), "shoopdawhoop.active", SoundCategory.MASTER, 1.0f, 1.0f);
-        }
+        if(!primary.ready) return;
+        Projectile.projectile(player, AbilityType.PRIMARY, primarySpeed,1, false, 14003);
+        cooldown(primary);
+        player.playSound(player.getLocation(), "shoopdawhoop.active", SoundCategory.MASTER, 1.0f, 1.0f);
     }
 
     @Override
     public void onProjectileHit(Player target, Location location, AbilityType abilityType) {
-        if (secondaryCD < 5) {
-            secondaryCD++;
+        if (secondary.cd < 5) {
+            secondary.cd++;
         }
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
-        player.sendMessage("Secondary Charge: " + secondaryCD);
+        player.sendMessage("Secondary Charge: " + secondary.cd);
         switch (abilityType) {
             case PRIMARY:
-                Interactions.handleInteractions(player.getLocation(), primaryKB, primaryDMG, player, target);
-                cooldowns.reduceUltimateCooldown(1);
+                Interactions.handleInteraction(primary.dmg, primary.kb, player, target);
                 break;
             case PASSIVE:
-                Interactions.handleInteractions(player.getLocation(), passiveKB, passiveDMG, player, target);
+                Interactions.handleInteraction(passive.dmg, passive.kb, player, target);
                 break;
         }
+        onRangedHit();
     }
 
     @Override
     public void onProjectileHitWall(Location location, AbilityType abilityType) {
     }
 
+
+
     @Override
     public void useSecondaryAbility() {
-        Location eyeLocation = player.getEyeLocation();
-        Vector direction = eyeLocation.getDirection();
-        Location targetLocation = eyeLocation.clone();
-        Bukkit.getLogger().info("Secondary CD: " + secondaryCD);
-        if (secondaryCD == 0) {
-            return;
-        } else if (secondaryCD == 1) {
-            secondaryDMG = 2;
-            secondaryKB = 1;
+        Location targetLocation = player.getEyeLocation().clone();
+        Vector direction = targetLocation.getDirection();
+        if (secondary.cd == 0) return;
+        else if (secondary.cd == 1) {
+            secondary.dmg = 2;
+            secondary.kb = 1;
             secondaryColor = Color.YELLOW;
-        } else if (secondaryCD == 2) {
-            secondaryDMG = 4;
-            secondaryKB = 2;
+        } else if (secondary.cd == 2) {
+            secondary.dmg = 4;
+            secondary.kb = 2;
             secondaryColor = Color.LIME;
-        } else if (secondaryCD == 3) {
-            secondaryDMG = 7;
-            secondaryKB = 3;
+        } else if (secondary.cd == 3) {
+            secondary.dmg = 7;
+            secondary.kb = 3;
             secondaryColor = Color.BLUE;
-        } else if (secondaryCD == 4) {
-            secondaryDMG = 10;
-            secondaryKB = 4;
+        } else if (secondary.cd == 4) {
+            secondary.dmg = 10;
+            secondary.kb = 4;
             secondaryColor = Color.PURPLE;
-        } else if (secondaryCD == 5) {
-            secondaryCD = 0;
-            secondaryDMG = 15;
-            secondaryKB = 5;
+        } else if (secondary.cd == 5) {
+            secondary.cd = 0;
+            secondary.dmg = 15;
+            secondary.kb = 5;
+            //maybe use hitscan call and then use particles around it, if statement after default calls
             for (double i = 0; i < secondaryRange; i += 0.1) {
                 Location nextLocation = targetLocation.clone().add(direction.clone().multiply(0.1));
                 if (WallDetection.detectWall(targetLocation, nextLocation, 0.5)) {
@@ -123,28 +113,33 @@ public class Shoop extends HeroEnergy implements Projectile, Hitscan, Listener {
                 List<Player> nearbyPlayers = (List<Player>) player.getWorld().getNearbyPlayers(targetLocation, 0.5);
                 for (Player nearbyPlayer : nearbyPlayers) {
                     if (nearbyPlayer != player) {
-                        Interactions.handleInteractions(player.getEyeLocation().getDirection(), secondaryKB, secondaryDMG, player, nearbyPlayer);
+                        Interactions.handleInteraction(player.getEyeLocation().getDirection(), secondary.dmg, secondary.kb, player, nearbyPlayer);
                         return;
                     }
                 }
             }
             return;
         }
-        secondaryCD = 0;
-        Hitscan.hitscan(100, eyeLocation, direction, Particle.DUST, secondaryColor, player, this, AbilityType.SECONDARY);
+        secondary.cd = 0;
+        Hitscan.hitscan(player,AbilityType.SECONDARY,1,secondaryRange,Particle.DUST, secondaryColor);
         player.playSound(player.getLocation(), "shoopdawhoop.chargedbeam.small", SoundCategory.MASTER, 2.0f, 1.0f);
     }
+
 
     @Override
     public void onHitscanHit(Player target, Location location, AbilityType abilityType) {
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
         switch (abilityType) {
-            case SECONDARY:
-                Interactions.handleInteractions(player.getLocation().getDirection(), secondaryKB, secondaryDMG, player, target);
-                break;
-            case ULTIMATE:
-                Interactions.handleInteractions(player.getLocation().getDirection(), ultimateKB, ultimateDMG, player, target);
-                break;
+            case SECONDARY -> {
+                Interactions.handleInteraction(player.getLocation().getDirection(), secondary.dmg, secondary.kb, player, target);
+                onRangedHit();
+            }
+            case ULTIMATE -> {
+                if(ultimateHits.contains(target)) return;
+                ultimateHits.add(target);
+                Interactions.handleInteraction(player.getLocation().getDirection(), ultimate.dmg, ultimate.kb, player, target);
+                Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> ultimateHits.remove(target), 4L);
+            }
         }
     }
 
@@ -153,85 +148,74 @@ public class Shoop extends HeroEnergy implements Projectile, Hitscan, Listener {
     }
 
 
+
     @Override
     public void useUltimateAbility() {
-        if (cooldowns.getUltimateCooldown() == 0) {
-            cooldowns.useUltimateAbility();
-            Hero h = this;
-            player.playSound(player.getLocation(), "shoopdawhoop.crystal", SoundCategory.MASTER, 5.0f, 1.0f);
-            Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> player.playSound(player.getLocation(), Sound.ENTITY_WITHER_DEATH, 1.0f, 0.0f), (20L));
-
-            new UltTimer(player, ultTime).runTaskTimer(Heroes.getInstance(), 0L, 20L);
-            new BukkitRunnable() {
-                private int count = 0;
-                @Override
-                public void run() {
-                    count++;
-                    if (count >= 20) {
-                        this.cancel();
-                        return;
-                    }
-                    Hitscan.hitscan(50, player.getEyeLocation(), player.getLocation().getDirection(), 14004, player, h, AbilityType.ULTIMATE);
-                }
-            }.runTaskTimer(Heroes.getInstance(), 20L, 3L);
-        } else {
-            player.sendMessage(ChatColor.RED + "Ultimate ability is on cooldown! " + cooldowns.getUltimateCooldown() + " seconds remaining.");
+        if(!ultimate.ready || ultimate.inUse) {
+            player.sendMessage(ChatColor.RED + "Ultimate ability is on cooldown! " + (int) ultimate.timeUntilUse + " seconds remaining.");
         }
+        ultTimer();
+        ultimate.inUse = true;
+        player.playSound(player.getLocation(), "shoopdawhoop.crystal", SoundCategory.MASTER, 5.0f, 1.0f);
+        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> player.playSound(player.getLocation(), Sound.ENTITY_WITHER_DEATH, 1.0f, 0.0f), (20L));
+        new BukkitRunnable(){
+            private int timer = 0;
 
+            @Override
+            public void run(){
+                timer++;
+                if(timer >= ultimate.duration * 20){
+                    this.cancel();
+                    return;
+                }
+                Hitscan.hitscan(player,AbilityType.ULTIMATE,1,secondaryRange,14004);
+            }
+        }.runTaskTimer(Heroes.getInstance(), 20L, 1L);
+        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> cooldown(ultimate), 4L);
     }
+
 
 
     @Override
     public void passiveAbility1() {
-        if (getEnergy() > 55) {
-            removeEnergy(55);
-            setCanIncreaseEnergy(false);
-            ArmorStand armorStand = Projectile.projectile(player, 1.9, false, 14003, 2, this, AbilityType.PASSIVE);
-            armorStand.addPassenger(player);
-            player.playSound(player.getLocation(), "shoopdawhoop.active", SoundCategory.MASTER, 3.0f, 1.0f);
-            isOnProjectile = true;
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    isOnProjectile = false;
-                }
-            }.runTaskLater(Heroes.getInstance(), 10L);
-            new BukkitRunnable() {
-                Location lastLocation = armorStand.getLocation();
+        //can't use twice because u can't have >55 energy if ur on it already
+        if(energy < 55 || passive.inUse) return;
+        energy -= 55;
+        canIncreaseEnergy = false;
 
-                @Override
-                public void run() {
-                    if (armorStand.isDead() || !armorStand.isValid() || getEnergy() <= 0) {
-                        player.leaveVehicle();
-                        setCanIncreaseEnergy(true);
-                        this.cancel();
-                        return;
-                    }
-                    if (player.isInsideVehicle()) {
-                        Location currentLocation = armorStand.getLocation();
-                        double distance = lastLocation.distance(currentLocation);
-                        removeEnergy(distance);
-                        updateXpBar();
-                        if (getEnergy() <= 0) {
-                            player.leaveVehicle();
-                            setCanIncreaseEnergy(true);
-                            this.cancel();
-                            return;
-                        }
-                        lastLocation = currentLocation;
-                    } else {
-                        setCanIncreaseEnergy(true);
-                        this.cancel();
-                    }
+        ArmorStand armorStand = Projectile.projectile(player,AbilityType.PASSIVE, passiveSpeed, 1, false, 14003);
+        armorStand.addPassenger(player);
+
+        player.playSound(player.getLocation(), "shoopdawhoop.active", SoundCategory.MASTER, 3.0f, 1.0f);
+        passive.inUse = true;
+
+        //prevent player from immediately getting off
+        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> passive.inUse = false, 10L);
+
+        new BukkitRunnable(){
+            Location lastLocation = armorStand.getLocation();
+
+            @Override
+            public void run() {
+                if(armorStand.isDead() || !armorStand.isValid() || energy <= 0 || !player.isInsideVehicle()) {
+                    player.leaveVehicle();
+                    canIncreaseEnergy = true;
+                    this.cancel();
+                    return;
                 }
-            }.runTaskTimer(Heroes.getInstance(), 0L, 1L);
-        }
+                Location currentLocation = armorStand.getLocation();
+                double distance = lastLocation.distance(currentLocation);
+                energy = Math.max(energy - distance,0);
+                lastLocation = currentLocation;
+            }
+        }.runTaskTimer(Heroes.getInstance(), 0L, 2L);
     }
 
     @EventHandler
     public void onEntityDismount(EntityDismountEvent event) {
         if (event.getEntity() == player) {
-            if (isOnProjectile && getEnergy() > 10) {
+            //prevent player from accidentally dismounting when activating
+            if (passive.inUse && energy > 10) {
                 event.setCancelled(true);
             }
             Location newLocation = player.getLocation().add(0, 0.75, 0);
@@ -241,5 +225,26 @@ public class Shoop extends HeroEnergy implements Projectile, Hitscan, Listener {
 
     @Override
     public void passiveAbility2(){
+    }
+
+
+
+    @Override
+    protected void stats() {
+        heroType = HeroType.RANGED;
+        weight = 3;
+
+        primary = new Ability(AbilityType.PRIMARY, 1.5, 1, 0.3);
+        primarySpeed = 2.6;
+        secondary = new Ability(AbilityType.SECONDARY, 7, 1, 0);
+        secondaryColor = Color.YELLOW;
+        secondaryRange = 75;
+        ultimate = new Ability(AbilityType.ULTIMATE, 6, 3,100, 4);
+        ultimateHits = new HashSet<>();
+        passive = new Ability(AbilityType.PASSIVE, 5, 4, 0);
+        passiveSpeed = 1.8;
+
+        setEnergyStats(100,100,1,true);
+        initializeEnergyUpdates();
     }
 }

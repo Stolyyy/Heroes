@@ -5,14 +5,8 @@ import me.stolyy.heroes.heros.HeroType;
 import org.bukkit.entity.Player;
 
 public class Spooderman extends Hero {
-    @Override
-    public double getWeight() {
-        return 0;
-    }
-
-    @Override
-    public HeroType getHeroType() {
-        return null;
+    public Spooderman(Player player){
+        super(player);
     }
 
     @Override
@@ -37,6 +31,11 @@ public class Spooderman extends Hero {
 
     @Override
     public void passiveAbility2() {
+
+    }
+
+    @Override
+    protected void stats(){
 
     }
 }

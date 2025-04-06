@@ -2,6 +2,8 @@ package me.stolyy.heroes.game.minigame;
 
 import me.stolyy.heroes.game.maps.GameMap;
 import me.stolyy.heroes.game.maps.GameMapManager;
+import me.stolyy.heroes.heros.HeroCooldown;
+import me.stolyy.heroes.heros.HeroManager;
 import me.stolyy.heroes.utility.Equipment;
 import me.stolyy.heroes.game.minigame.GameEnums.GameMode;
 import me.stolyy.heroes.game.minigame.GameEnums.GameTeam;
@@ -170,6 +172,8 @@ public class Game {
             applyEffects(p);
             unRestrictPlayer(p);
             updateVisuals();
+            if(HeroManager.getHero(p) instanceof HeroCooldown h)
+                h.resetUltTimer();
         }
         gameState = GameState.IN_PROGRESS;
         //unrestrict players

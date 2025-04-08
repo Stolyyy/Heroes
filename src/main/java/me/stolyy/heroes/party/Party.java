@@ -63,6 +63,7 @@ public class Party {
     }
 
     public boolean isMember(Player player){
+        if(members == null) return false;
         return members.contains(player);
     }
 }

@@ -110,7 +110,7 @@ public class Shoop extends HeroEnergy implements Projectile, Hitscan, Listener {
                     Particle.DustOptions dustOptions = new Particle.DustOptions(j % 2 == 0 ? Color.RED : Color.WHITE, 1);
                     player.getWorld().spawnParticle(Particle.DUST, particleLocation, 1, dustOptions);
                 }
-                List<Player> nearbyPlayers = (List<Player>) player.getWorld().getNearbyPlayers(targetLocation, 0.5);
+                List<Player> nearbyPlayers = (List<Player>) player.getWorld().getNearbyPlayers(targetLocation, 1);
                 for (Player nearbyPlayer : nearbyPlayers) {
                     if (nearbyPlayer != player) {
                         Interactions.handleInteraction(player.getEyeLocation().getDirection(), secondary.dmg, secondary.kb, player, nearbyPlayer);
@@ -138,7 +138,7 @@ public class Shoop extends HeroEnergy implements Projectile, Hitscan, Listener {
                 if(ultimateHits.contains(target)) return;
                 ultimateHits.add(target);
                 Interactions.handleInteraction(player.getLocation().getDirection(), ultimate.dmg, ultimate.kb, player, target);
-                Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> ultimateHits.remove(target), 4L);
+                Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> ultimateHits.remove(target), 10L);
             }
         }
     }
@@ -164,13 +164,13 @@ public class Shoop extends HeroEnergy implements Projectile, Hitscan, Listener {
             @Override
             public void run(){
                 timer++;
-                if(timer >= ultimate.duration * 20){
+                if(timer >= ultimate.duration * 20 / 3){
                     this.cancel();
                     return;
                 }
                 Hitscan.hitscan(player,AbilityType.ULTIMATE,1,secondaryRange,14004);
             }
-        }.runTaskTimer(Heroes.getInstance(), 20L, 1L);
+        }.runTaskTimer(Heroes.getInstance(), 20L, 3L);
         Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> cooldown(ultimate), 4L);
     }
 
@@ -235,7 +235,7 @@ public class Shoop extends HeroEnergy implements Projectile, Hitscan, Listener {
         weight = 3;
 
         primary = new Ability(AbilityType.PRIMARY, 1.5, 1, 0.3);
-        primarySpeed = 2.6;
+        primarySpeed = 3;
         secondary = new Ability(AbilityType.SECONDARY, 7, 1, 0);
         secondaryColor = Color.YELLOW;
         secondaryRange = 75;
@@ -244,7 +244,7 @@ public class Shoop extends HeroEnergy implements Projectile, Hitscan, Listener {
         passive = new Ability(AbilityType.PASSIVE, 5, 4, 0);
         passiveSpeed = 1.8;
 
-        setEnergyStats(100,100,1,true);
+        setEnergyStats(100,100,0.3,true);
         initializeEnergyUpdates();
     }
 }

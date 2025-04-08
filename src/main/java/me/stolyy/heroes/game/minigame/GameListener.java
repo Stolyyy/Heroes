@@ -2,6 +2,7 @@ package me.stolyy.heroes.game.minigame;
 
 import me.stolyy.heroes.Heroes;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -10,6 +11,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,6 +44,16 @@ public class GameListener implements Listener {
             e.getDrops().clear();
             e.setDroppedExp(0);
             game.onDeath(p);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerRespawn(PlayerRespawnEvent event) {
+        Player player = event.getPlayer();
+        Game game = GameManager.getPlayerGame(player);
+        if (game != null && game.getGameState() == GameEnums.GameState.IN_PROGRESS) {
+            Location respawnLocation = game.getFurthestSpawn(player);
+            event.setRespawnLocation(respawnLocation);
         }
     }
 

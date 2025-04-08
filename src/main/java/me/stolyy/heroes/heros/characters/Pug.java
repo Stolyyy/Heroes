@@ -103,7 +103,9 @@ public class Pug extends HeroEnergy implements Dash {
 
     @Override
     public void useUltimateAbility() {
-        if(ultimate.inUse || !ultimate.ready) return;
+        if(ultimate.inUse || !ultimate.ready) {
+            return;
+        }
         ultimate.inUse = true;
 
         player.playSound(player.getLocation(), "pug.intruders.activation", SoundCategory.MASTER, 5f, 1.0f);
@@ -175,7 +177,7 @@ public class Pug extends HeroEnergy implements Dash {
         primaryRange = 9;
         pounceCharge = 0;
 
-        setEnergyStats(100,100,1,true);
+        setEnergyStats(100,100,0.75,true);
         initializeEnergyUpdates();
     }
 }

@@ -90,6 +90,7 @@ public class GameMapManager {
         world.setGameRule(GameRule.KEEP_INVENTORY, true);
         world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
         world.setGameRule(GameRule.NATURAL_REGENERATION, false);
+        world.setGameRule(GameRule.DISABLE_ELYTRA_MOVEMENT_CHECK, true);
         world.setFullTime(10000L);
 
         Location[] updatedSpawnLocations = Arrays.stream(map.spawnLocations)

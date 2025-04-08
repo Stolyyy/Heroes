@@ -31,7 +31,7 @@ public abstract class HeroEnergy extends HeroCooldown {
                     return;
                 }
                 if(energy < maxEnergy && canIncreaseEnergy){
-                    energy = Math.min(maxEnergy, energy + energyPerTick);
+                    energy = Math.min(maxEnergy, Math.max(energy + energyPerTick, 0));
                 }
                 updateXpBar();
             }
@@ -39,8 +39,8 @@ public abstract class HeroEnergy extends HeroCooldown {
     }
 
     protected void updateXpBar() {
-        int xpLevels = (int) energy;
-        float xpProgress = (float) (energy / maxEnergy);
+        int xpLevels = Math.max( (int) energy, 0);
+        float xpProgress = (float) (Math.max(energy, 0) / maxEnergy);
         xpProgress = Math.max(0.0f, Math.min(1.0f, xpProgress));
         player.setLevel(xpLevels);
         player.setExp(xpProgress);

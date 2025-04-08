@@ -53,8 +53,8 @@ public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload
                 player.playSound(player.getLocation(), "skullfire.magnumshot", SoundCategory.MASTER, 1.0f, 1.0f);
 
                 if(ultimate.inUse)
-                    Hitscan.hitscan(player, AbilityType.ULTIMATE, 100, 1, Particle.SOUL_FIRE_FLAME, Color.WHITE);
-                else Hitscan.hitscan(player, AbilityType.PRIMARY, 100, 1, Particle.ASH, Color.WHITE);
+                    Hitscan.hitscan(player, AbilityType.ULTIMATE, 1, 100, Particle.SOUL_FIRE_FLAME, Color.WHITE);
+                else Hitscan.hitscan(player, AbilityType.PRIMARY, 1, 100, Particle.ASH, Color.WHITE);
 
                 ammo--;
                 shots++;
@@ -222,6 +222,7 @@ public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload
             @Override
             public void run() {
                 if(ammo <= 0 || timer >= ultimate.duration * 20L){
+                    chainCount.clear();
                     cooldown(ultimate);
                 }
                 timer++;

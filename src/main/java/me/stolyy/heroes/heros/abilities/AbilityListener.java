@@ -4,10 +4,7 @@ import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.minigame.Game;
 import me.stolyy.heroes.game.minigame.GameManager;
 import me.stolyy.heroes.game.minigame.GameEnums;
-import me.stolyy.heroes.heros.Hero;
-import me.stolyy.heroes.heros.HeroEnergy;
-import me.stolyy.heroes.heros.HeroManager;
-import me.stolyy.heroes.heros.HeroType;
+import me.stolyy.heroes.heros.*;
 import me.stolyy.heroes.heros.characters.Skullfire;
 import me.stolyy.heroes.utility.Interactions;
 import org.bukkit.*;
@@ -122,7 +119,9 @@ public class AbilityListener implements Listener {
             if ((currentTime - lastAttackTime) < getJabCooldown(p)) {
                 return;
             }
-            Interactions.handleStaticInteraction(getJabDamage(p), 1, p, t);
+            if(HeroManager.getHero(p) instanceof HeroCooldown hc)
+                hc.onPunch();
+            Interactions.handleStaticInteraction(getJabDamage(p), 5, p, t);
             jabCooldowns.put(p, currentTime);
         }
     }

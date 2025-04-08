@@ -1,5 +1,6 @@
 package me.stolyy.heroes.game.minigame;
 
+import me.stolyy.heroes.game.maps.GameMap;
 import me.stolyy.heroes.game.maps.GameMapManager;
 import me.stolyy.heroes.game.menus.PartyGUI;
 import me.stolyy.heroes.party.PartyManager;
@@ -15,6 +16,10 @@ public class GameManager {
 
     public static Game createNewGame(GameEnums.GameMode gameMode){
         return new Game(GameMapManager.getRandomMap(), gameMode);
+    }
+
+    public static Game createNewGame(GameEnums.GameMode gameMode, GameMap map){
+        return new Game(map, gameMode);
     }
 
     public static void join(Player player, GameEnums.GameMode gameMode){

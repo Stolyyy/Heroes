@@ -39,7 +39,7 @@ public class SetHeroCommand extends Command {
                     hero = new VoidCrawler(player);
                     player.playSound(player.getLocation(), "duskcrawler.select", SoundCategory.MASTER, 2.0f, 1.0f);
                     ((VoidCrawler) hero).updateAttackDamage();
-                    Bukkit.getPluginManager().registerEvents((Listener) hero, Heroes.getInstance());
+                    //Bukkit.getPluginManager().registerEvents((Listener) hero, Heroes.getInstance());
                 } else if (characterName.equalsIgnoreCase("Bulk")) {
                     //hero = new Bulk(player);
                 } else if (characterName.equalsIgnoreCase("Bug")) {

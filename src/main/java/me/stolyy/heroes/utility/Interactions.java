@@ -19,7 +19,7 @@ public class Interactions {
     //Normal knockback
     //Calculates direction based on attacker + victim locations
     public static void handleInteraction(double damage, double knockback, Player attacker, Player victim){
-        Vector direction = attacker.getLocation().toVector().subtract(victim.getLocation().toVector());
+        Vector direction = victim.getLocation().toVector().subtract(attacker.getLocation().toVector());
         handleKnockback(direction,knockback,0,false,victim);
         blood(victim);
         handleDamage(damage, attacker, victim);
@@ -32,7 +32,7 @@ public class Interactions {
     }
     //Calculates direction based on hit + victim locations
     public static void handleInteraction(Location hitLocation, double damage, double knockback, Player attacker, Player victim){
-        Vector direction = hitLocation.toVector().subtract(victim.getLocation().toVector());
+        Vector direction = victim.getLocation().toVector().subtract(hitLocation.toVector());
         handleKnockback(direction,knockback,0,false,victim);
         blood(victim);
         handleDamage(damage, attacker, victim);
@@ -42,7 +42,7 @@ public class Interactions {
 
     //Vertical = distinct y-kb
     public static void handleVerticalInteraction(double damage, double knockback, double yKnockback, Player attacker, Player victim){
-        Vector direction = attacker.getLocation().toVector().subtract(victim.getLocation().toVector());
+        Vector direction = victim.getLocation().toVector().subtract(attacker.getLocation().toVector());
         handleKnockback(direction,knockback,yKnockback,false,victim);
         blood(victim);
         handleDamage(damage, attacker, victim);
@@ -53,7 +53,7 @@ public class Interactions {
         handleDamage(damage, attacker, victim);
     }
     public static void handleVerticalInteraction(Location hitLocation, double damage, double knockback, double yKnockback, Player attacker, Player victim){
-        Vector direction = hitLocation.toVector().subtract(victim.getLocation().toVector());
+        Vector direction = victim.getLocation().toVector().subtract(hitLocation.toVector());
         handleKnockback(direction,knockback,yKnockback,false,victim);
         blood(victim);
         handleDamage(damage, attacker, victim);
@@ -63,7 +63,7 @@ public class Interactions {
 
     //Static = KB independent of health
     public static void handleStaticInteraction(double damage, double knockback, Player attacker, Player victim){
-        Vector direction = attacker.getLocation().toVector().subtract(victim.getLocation().toVector());
+        Vector direction = victim.getLocation().toVector().subtract(attacker.getLocation().toVector());
         handleKnockback(direction,knockback,0,true,victim);
         blood(victim);
         handleDamage(damage, attacker, victim);
@@ -74,7 +74,7 @@ public class Interactions {
         handleDamage(damage, attacker, victim);
     }
     public static void handleStaticInteraction(Location hitLocation, double damage, double knockback, Player attacker, Player victim){
-        Vector direction = hitLocation.toVector().subtract(victim.getLocation().toVector());
+        Vector direction = victim.getLocation().toVector().subtract(hitLocation.toVector());
         handleKnockback(direction,knockback,0,true,victim);
         blood(victim);
         handleDamage(damage, attacker, victim);
@@ -112,11 +112,19 @@ public class Interactions {
         }
 
         //ensure upwards kb if player is on ground
+        /*
         double pitch = -Math.toDegrees(Math.asin(direction.getY()));
         if(victim.isOnGround()){
             pitch = Math.min(pitch, -10.0);
         }
         direction.setY(direction.getY() * (1 - Math.abs(pitch) / 90));
+         */
+
+        //check for nonfinite vectors
+        if (!Double.isFinite(direction.getX()) || !Double.isFinite(direction.getY()) ||
+                !Double.isFinite(direction.getZ()) || direction.lengthSquared() < 0.0001)
+            direction = new Vector(0, 1, 0);
+
 
         double weightMultiplier = 1 + (3 - HeroManager.getHero(victim).weight) / 5;
         double mitigationMultiplier = kbMitigation.getOrDefault(victim,1);
@@ -125,7 +133,6 @@ public class Interactions {
         Vector kb = direction.normalize();
         kb.multiply(knockback*weightMultiplier*mitigationMultiplier);
         kb.setY(kb.getY() + yKnockback*weightMultiplier*mitigationMultiplier);
-
         victim.setVelocity(kb);
     }
 

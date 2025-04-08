@@ -185,8 +185,11 @@ public class Game {
         //delete game (if possible)
         //send everyone to lobby
         //remove effects
+
+        //null iteration around here somewhere
         for (Player p : playerList) {
-            Heroes.getInstance().teleportToLobby(p);
+            if(GameManager.getPlayerGame(p) == this)
+                Heroes.getInstance().teleportToLobby(p);
             removePlayer(p);
             if (p.getScoreboard() == scoreboard) p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard()); // ✅ Clears scoreboard
         }
@@ -203,31 +206,8 @@ public class Game {
         //handle respawn logic (timer, respawn point, restricting movement)
         lives.put(player, lives.get(player) - 1);
         //detect nearest enemy to dead player
-            Player nearestPlayer = null;
-            double nearestDistance = Double.MAX_VALUE;
-            for (Player enemy : alivePlayerList) {
-                if (playerTeams.get(enemy) != playerTeams.get(player) && enemy.getWorld() == player.getWorld()) {
-                    double distance = enemy.getLocation().distance(player.getLocation());
-                    if (distance < nearestDistance) {
-                        nearestDistance = distance;
-                        nearestPlayer = player;
-                    }
-                }
-            }
-            //respawn player at furthest spawn point from enemy location (or player location if no enemy)
-            double furthestDistance = 0;
-            Location referencePoint = player.getLocation();
-            Location furthestSpawn = gameMap.getSpawnLocations()[0];
-            if (nearestPlayer != null) referencePoint = nearestPlayer.getLocation();
-
-            for (Location spawn : gameMap.getSpawnLocations()) {
-                double distance = referencePoint.distance(spawn);
-                if (distance > furthestDistance){
-                    furthestDistance = distance;
-                    furthestSpawn = spawn;
-                }
-            }
-            player.setRespawnLocation(furthestSpawn, true);
+        Location furthestSpawn = getFurthestSpawn(player);
+        player.setRespawnLocation(furthestSpawn, true);
             //respawn player if they still have lives
         checkGameEnd();
         updateVisuals();
@@ -252,6 +232,34 @@ public class Game {
         } else if(lives.get(player) < 1) {
             addSpectator(player);
         }
+    }
+
+    public Location getFurthestSpawn(Player player){
+        Player nearestPlayer = null;
+        double nearestDistance = Double.MAX_VALUE;
+        for (Player enemy : alivePlayerList) {
+            if (playerTeams.get(enemy) != playerTeams.get(player) && enemy.getWorld() == player.getWorld()) {
+                double distance = enemy.getLocation().distance(player.getLocation());
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestPlayer = enemy;
+                }
+            }
+        }
+        //respawn player at furthest spawn point from enemy location (or player location if no enemy)
+        double furthestDistance = 0;
+        Location referencePoint = player.getLocation();
+        Location furthestSpawn = gameMap.getSpawnLocations()[0];
+        if (nearestPlayer != null) referencePoint = nearestPlayer.getLocation();
+
+        for (Location spawn : gameMap.getSpawnLocations()) {
+            double distance = referencePoint.distance(spawn);
+            if (distance > furthestDistance){
+                furthestDistance = distance;
+                furthestSpawn = spawn;
+            }
+        }
+        return furthestSpawn;
     }
 
     public void checkGameEnd(){

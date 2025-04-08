@@ -39,13 +39,12 @@ public abstract class HeroCooldown extends Hero {
     }
 
     public void resetUltTimer(){
-        ultimate.ready = false;
-        ultimate.timeUntilUse = ultimate.cd;
+        cooldown(ultimate);
     }
 
     protected void cooldown(Ability ability){
         AbilityType abilityType = ability.abilityType;
-        ability.ready = true;
+        ability.ready = false;
         ability.timeUntilUse = ability.cd;
         switch (abilityType){
             case PRIMARY -> {

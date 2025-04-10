@@ -1,10 +1,12 @@
 package me.stolyy.heroes.game.menus;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.game.minigame.GameManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 
@@ -41,6 +43,16 @@ public class GUIListener implements Listener {
         GUI gui = playerGUIMap.get(player);
         if(gui != null){
             gui.handleClick(event.getSlot());
+            event.setCancelled(true);
+        } else if(GameManager.isPlayerInGame(player)){
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onItemDrop(PlayerDropItemEvent event){
+        Player player = event.getPlayer();
+        if(GameManager.isPlayerInGame(player)){
             event.setCancelled(true);
         }
     }

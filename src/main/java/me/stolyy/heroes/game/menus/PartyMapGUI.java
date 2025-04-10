@@ -19,9 +19,8 @@ public class PartyMapGUI extends GUI {
     //Changing map will create a new game and reopen gui
     //will also make the old game's gamestate 'ended'
     private final List<GameMap> maps;
-    //Slot, Item
     private Game game;
-    private PartyGUI partyGUI;
+    private final PartyGUI partyGUI;
 
     public PartyMapGUI(Game game, Player player, PartyGUI partyGUI){
         this.game = game;
@@ -50,17 +49,21 @@ public class PartyMapGUI extends GUI {
     public void handleClick(int slot){
         if(slot < Math.min(maps.size(),27)) {
             GUIListener.playerGUIMap.put(player, null);
-            Map<Player, GameEnums.GameTeam> teams = game.getPlayerTeams();
             GameMap map = maps.get(slot);
             Game newGame = new Game(map, GameEnums.GameMode.PARTY);
+
+            Map<Player, GameEnums.GameTeam> teams = new HashMap<>(game.getPlayerTeams());
+            newGame.setAlivePlayerList(new HashSet<>(game.getAlivePlayerList()));
             game.gameEnd();
-            //will create problems if party becomes null inside GUI
+
             for(Player p : PartyManager.getPlayersInParty(player)){
+                game.removePlayer(p);
                 newGame.addPlayer(p);
                 newGame.setPlayerTeam(p, teams.getOrDefault(p, GameEnums.GameTeam.SPECTATOR));
-                if(game.getAlivePlayerList().contains(p)) newGame.getAlivePlayerList().add(p);
             }
+
             partyGUI.setGame(newGame);
+            this.game = newGame;
             partyGUI.openGUI();
         }
     }

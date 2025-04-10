@@ -20,11 +20,12 @@ import java.util.List;
 
 public interface Projectile {
     static ArmorStand projectile(Player player, AbilityType abilityType, double speed, double radius, boolean hasGravity, int customModelData) {
-        Location location = player.getLocation();
-        Location eyeLocation = player.getEyeLocation();
-        Vector direction = eyeLocation.getDirection();
+        Location location = player.getLocation().clone();
+        Location eyeLocation = player.getEyeLocation().clone();
+        Vector direction = eyeLocation.getDirection().clone();
 
         ArmorStand armorStand = (ArmorStand) eyeLocation.getWorld().spawnEntity(location, EntityType.ARMOR_STAND);
+        armorStand.teleport(armorStand.getLocation().setDirection(direction));
         ItemStack item = new ItemStack(Material.CARROT_ON_A_STICK);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {

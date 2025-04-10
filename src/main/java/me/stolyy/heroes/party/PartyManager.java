@@ -11,10 +11,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.*;
 
 public class PartyManager {
-    static Set<Party> parties = new HashSet<>();
-    //Invited, Inviters
-    //clean up later by using concurrent map
-    static Map<Player, Set<Player>> invitesPerPlayer = new HashMap<>();
+    private static Set<Party> parties = new HashSet<>();
+    private static Map<Player, Set<Player>> invitesPerPlayer = new HashMap<>();
+    private static Map<Player, Party> playerPartyMap = new HashMap<>();
     private final static long EXPIRATION_TIME = 1200;
 
     public static void invitePlayer(Player inviter, Player invited){
@@ -71,6 +70,12 @@ public class PartyManager {
                     return;
                 }
 
+                if(getPlayersInParty(inviter).contains(invited)){
+                    removeInvite(invited, inviter, RemoveReason.ACCEPTED);
+                    this.cancel();
+                    return;
+                }
+
                 Set<Player> inviterSet = invitesPerPlayer.get(invited);
                 if(inviterSet == null || !inviterSet.contains(inviter)) {
                     removeInvite(invited, inviter, RemoveReason.NO_LONGER_EXISTS);
@@ -82,7 +87,7 @@ public class PartyManager {
     }
 
     private enum RemoveReason{
-        EXPIRED, NOT_LEADER, INVITER_DISCONNECT, INVITED_DISCONNECT, NO_LONGER_EXISTS
+        EXPIRED, NOT_LEADER, INVITER_DISCONNECT, INVITED_DISCONNECT, NO_LONGER_EXISTS, ACCEPTED
     }
 
     private static void removeInvite(Player invited, Player inviter, RemoveReason reason){
@@ -160,7 +165,6 @@ public class PartyManager {
         for(Player member : playerParty.getMembers()) member.sendMessage(Component.text("PartyGUI has been disbanded!").color(NamedTextColor.RED));
         playerParty.setMembers(null);
         playerParty.setLeader(null);
-        playerParty = null;
     }
 
     public static void transferLeader(Player leader, Player newLeader){
@@ -201,7 +205,7 @@ public class PartyManager {
     public static Set<Player> getPlayersInParty(Player player){
         Party party = getPlayerParty(player);
 
-        return party != null ? party.getMembers() : null;
+        return party != null ? party.getMembers() : new HashSet<>();
     }
 
     public static boolean isInParty(Player player){
@@ -212,7 +216,7 @@ public class PartyManager {
         return getPlayerParty(player).getSize();
     }
 
-    public static  boolean isPartyLeader(Player player){
+    public static boolean isPartyLeader(Player player){
         Party party = getPlayerParty(player);
         if(party == null || party.getLeader() == null){
             return false;
@@ -222,9 +226,10 @@ public class PartyManager {
 
     //find a way to use a map later
     public static Party getPlayerParty(Player player){
-        for(Party p : parties){
-            if(p.isMember(player)) return p;
-        }
-        return null;
+        return playerPartyMap.get(player);
+    }
+
+    public static void setPlayerParty(Player player, Party party){
+        playerPartyMap.put(player, party);
     }
 }

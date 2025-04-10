@@ -94,26 +94,15 @@ public final class Heroes extends JavaPlugin implements Listener {
     }
 
     private void startPeriodicTasks() {
-        // Task to clean up inactive games
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                GameManager.cleanUpGames();
-            }
-        }.runTaskTimer(this, 20 * 60 * 5, 20 * 60 * 5); // Run every 5 minutes
-
         // Task to update player health and check positions
         new BukkitRunnable() {
             @Override
             public void run() {
-                if(!GameManager.getActiveGames().isEmpty()){
-                    for (Game game : GameManager.getActiveGames()) {
-                        if (game.getGameState() == GameEnums.GameState.IN_PROGRESS) {
-                            for (Player player : game.getPlayerList()) {
-                                if (player != null) {
-                                    game.updateVisuals();
-                                    game.checkPosition(player);
-                                }
+                for (Game game : GameManager.getActiveGames()) {
+                    if (game.getGameState() == GameEnums.GameState.IN_PROGRESS) {
+                        for (Player player : game.getPlayerList()) {
+                            if (player != null) {
+                                game.updateVisuals();
                             }
                         }
                     }

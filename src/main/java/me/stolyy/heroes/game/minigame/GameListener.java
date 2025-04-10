@@ -17,7 +17,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GameListener implements Listener {
-    private static Map<Player, Integer> suffocationTicks = new HashMap<>();
+    private static final Map<Player, Integer> suffocationTicks = new HashMap<>();
+    private static final Map<Player, Boolean> isPlayerRespawningMap = new HashMap<>();
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent e){
@@ -26,8 +27,9 @@ public class GameListener implements Listener {
         if(game != null && game.isPlayerRestricted(p)) {
             e.setCancelled(true);
         }
-        if (game != null && game.getGameState() == GameEnums.GameState.IN_PROGRESS) {
-            if (!game.getMap().getBoundaries().contains(e.getTo().toVector())) {
+        if (isValidGame(game)) {
+            if (!game.getMap().getBoundaries().contains(e.getTo().toVector())
+            && !isRespawning(p)) {
                 p.setHealth(0); //kill player
                 p.sendMessage("You went out of bounds!");
             }
@@ -38,7 +40,7 @@ public class GameListener implements Listener {
     public void onPlayerDeath(PlayerDeathEvent e) {
         Player p = e.getPlayer();
         Game game = GameManager.getPlayerGame(p);
-        if (game != null && game.getGameState() == GameEnums.GameState.IN_PROGRESS) {
+        if (isValidGame(game)) {
             e.setKeepInventory(true);
             e.setKeepLevel(true);
             e.getDrops().clear();
@@ -51,7 +53,7 @@ public class GameListener implements Listener {
     public void onPlayerRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
         Game game = GameManager.getPlayerGame(player);
-        if (game != null && game.getGameState() == GameEnums.GameState.IN_PROGRESS) {
+        if (isValidGame(game)) {
             Location respawnLocation = game.getFurthestSpawn(player);
             event.setRespawnLocation(respawnLocation);
         }
@@ -73,7 +75,6 @@ public class GameListener implements Listener {
         if (event.getDamager() instanceof Player damager && event.getEntity() instanceof Player victim) {
             Game game = GameManager.getPlayerGame(damager);
             if (game != null && game == GameManager.getPlayerGame(victim)) {
-                //!game.getSettings().isFriendlyFire() &&
                 if (game.getPlayerTeams().get(damager) == game.getPlayerTeams().get(victim)) {
                     event.setCancelled(true);
                 }
@@ -94,5 +95,17 @@ public class GameListener implements Listener {
                 suffocationTicks.put(player, Math.max(suffocationTicks.getOrDefault(player, 0) - 1, 0));
             }, 20L);
         }
+    }
+
+    private static boolean isValidGame(Game game){
+        return game != null && game.getGameState() == GameEnums.GameState.IN_PROGRESS;
+    }
+
+    public static boolean isRespawning(Player player){
+        return isPlayerRespawningMap.getOrDefault(player, false);
+    }
+
+    public static void setPlayerRespawning(Player player, boolean bool){
+        isPlayerRespawningMap.put(player, bool);
     }
 }

@@ -14,7 +14,7 @@ public abstract class HeroEnergy extends HeroCooldown {
         super(player);
     }
 
-    protected void setEnergyStats(double Energy, double maxEnergy, double energyPerTick, boolean canIncreaseEnergy){
+    protected void setEnergyStats(double energy, double maxEnergy, double energyPerTick, boolean canIncreaseEnergy){
         this.energy = energy;
         this.maxEnergy = maxEnergy;
         this.energyPerTick = energyPerTick;

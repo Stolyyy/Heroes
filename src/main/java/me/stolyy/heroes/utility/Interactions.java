@@ -1,5 +1,8 @@
 package me.stolyy.heroes.utility;
 
+import me.stolyy.heroes.game.minigame.Game;
+import me.stolyy.heroes.game.minigame.GameEnums;
+import me.stolyy.heroes.game.minigame.GameListener;
 import me.stolyy.heroes.game.minigame.GameManager;
 import me.stolyy.heroes.heros.HeroManager;
 import me.stolyy.heroes.Heroes;
@@ -19,6 +22,7 @@ public class Interactions {
     //Normal knockback
     //Calculates direction based on attacker + victim locations
     public static void handleInteraction(double damage, double knockback, Player attacker, Player victim){
+        if(!canInteract(attacker, victim)) return;
         Vector direction = victim.getLocation().toVector().subtract(attacker.getLocation().toVector());
         handleKnockback(direction,knockback,0,false,victim);
         blood(victim);
@@ -26,12 +30,14 @@ public class Interactions {
     }
     //Calculates direction based on direction vector
     public static void handleInteraction(Vector direction, double damage, double knockback, Player attacker, Player victim){
+        if(!canInteract(attacker, victim)) return;
         handleKnockback(direction,knockback,0,false,victim);
         blood(victim);
         handleDamage(damage, attacker, victim);
     }
     //Calculates direction based on hit + victim locations
     public static void handleInteraction(Location hitLocation, double damage, double knockback, Player attacker, Player victim){
+        if(!canInteract(attacker, victim)) return;
         Vector direction = victim.getLocation().toVector().subtract(hitLocation.toVector());
         handleKnockback(direction,knockback,0,false,victim);
         blood(victim);
@@ -42,17 +48,20 @@ public class Interactions {
 
     //Vertical = distinct y-kb
     public static void handleVerticalInteraction(double damage, double knockback, double yKnockback, Player attacker, Player victim){
+        if(!canInteract(attacker, victim)) return;
         Vector direction = victim.getLocation().toVector().subtract(attacker.getLocation().toVector());
         handleKnockback(direction,knockback,yKnockback,false,victim);
         blood(victim);
         handleDamage(damage, attacker, victim);
     }
     public static void handleVerticalInteraction(Vector direction, double damage, double knockback, double yKnockback, Player attacker, Player victim){
+        if(!canInteract(attacker, victim)) return;
         handleKnockback(direction,knockback,yKnockback,false,victim);
         blood(victim);
         handleDamage(damage, attacker, victim);
     }
     public static void handleVerticalInteraction(Location hitLocation, double damage, double knockback, double yKnockback, Player attacker, Player victim){
+        if(!canInteract(attacker, victim)) return;
         Vector direction = victim.getLocation().toVector().subtract(hitLocation.toVector());
         handleKnockback(direction,knockback,yKnockback,false,victim);
         blood(victim);
@@ -63,17 +72,20 @@ public class Interactions {
 
     //Static = KB independent of health
     public static void handleStaticInteraction(double damage, double knockback, Player attacker, Player victim){
+        if(!canInteract(attacker, victim)) return;
         Vector direction = victim.getLocation().toVector().subtract(attacker.getLocation().toVector());
         handleKnockback(direction,knockback,0,true,victim);
         blood(victim);
         handleDamage(damage, attacker, victim);
     }
     public static void handleStaticInteraction(Vector direction, double damage, double knockback, Player attacker, Player victim){
+        if(!canInteract(attacker, victim)) return;
         handleKnockback(direction,knockback,0,true,victim);
         blood(victim);
         handleDamage(damage, attacker, victim);
     }
     public static void handleStaticInteraction(Location hitLocation, double damage, double knockback, Player attacker, Player victim){
+        if(!canInteract(attacker, victim)) return;
         Vector direction = victim.getLocation().toVector().subtract(hitLocation.toVector());
         handleKnockback(direction,knockback,0,true,victim);
         blood(victim);
@@ -93,11 +105,10 @@ public class Interactions {
     }
 
     private static void handleKnockback(Vector direction, double knockback, double yKnockback, boolean staticKB, Player victim){
-        double[] xyzReduction = new double[]{0,0,0};
         knockback *= 0.16;
         yKnockback *= 0.16;
         if(!staticKB) {
-            xyzReduction = reduceVelocity(victim);
+            double[] xyzReduction = reduceVelocity(victim);
             //Don't apply backwards kb
             for (double reduce : xyzReduction) if (reduce >= knockback) return;
 
@@ -132,7 +143,7 @@ public class Interactions {
         victim.setVelocity(new Vector(0,0,0));
         Vector kb = direction.normalize();
         kb.multiply(knockback*weightMultiplier*mitigationMultiplier);
-        kb.setY(kb.getY() + yKnockback*weightMultiplier*mitigationMultiplier);
+        //kb.setY(kb.getY() + yKnockback*weightMultiplier*mitigationMultiplier);
         victim.setVelocity(kb);
     }
 
@@ -180,5 +191,24 @@ public class Interactions {
         for (double i = -0.1; i > z; i -= 0.2) xyzReduction[2] += 0.05;
 
         return xyzReduction;
+    }
+
+    //check for gamemode adventure, same game, different teams, and if alive
+    public static boolean canInteract(Player attacker, Player victim){
+        if(!victim.getGameMode().equals(GameMode.ADVENTURE)) return false;
+
+        Game attackerGame = GameManager.getPlayerGame(attacker);
+        Game victimGame = GameManager.getPlayerGame(victim);
+        if(attackerGame == null || victimGame == null) return false;
+        if(!attackerGame.equals(victimGame)) return false;
+
+        Map<Player, GameEnums.GameTeam> teams = attackerGame.getPlayerTeams();
+        if(teams.get(attacker) == teams.get(victim)) return false;
+
+        if(GameListener.isRespawning(victim)) return false;
+
+        if(!victimGame.getAlivePlayerList().contains(victim)) return false;
+
+        return true;
     }
 }

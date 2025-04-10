@@ -44,6 +44,7 @@ public class Equipment {
             fist = customItem(11002, "Pug Hand");
         } else if (h instanceof Shoop) {
             head = customItem(14000, "Im firing");
+            secondary = customItem(4, "Secondary");
             chest = customArmor("chest", 0, 158, 16, "Shoop heart");
             legs = customArmor("legs", 32, 28, 29, "Shoop Leg");
             boots = customArmor("boots", 0, 158, 16, "Shoop feet");

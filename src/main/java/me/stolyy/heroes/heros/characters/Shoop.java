@@ -5,6 +5,7 @@ import me.stolyy.heroes.heros.abilities.Ability;
 import me.stolyy.heroes.heros.abilities.AbilityType;
 import me.stolyy.heroes.heros.HeroEnergy;
 import me.stolyy.heroes.heros.HeroType;
+import me.stolyy.heroes.utility.Equipment;
 import me.stolyy.heroes.utility.Interactions;
 import me.stolyy.heroes.utility.WallDetection;
 import me.stolyy.heroes.heros.abilities.Hitscan;
@@ -15,6 +16,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDismountEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -66,7 +68,17 @@ public class Shoop extends HeroEnergy implements Projectile, Hitscan, Listener {
     public void onProjectileHitWall(Location location, AbilityType abilityType) {
     }
 
+    private void updateSecondaryDisplay(){
+        ItemStack secondaryItem;
 
+        if(secondary.cd > 0){
+            secondaryItem = Equipment.customItem(5, secondary.cd + " Charge");
+            secondaryItem.setAmount((int) secondary.cd);
+        } else
+            secondaryItem = Equipment.customItem(4, "Go hit someone with a lazor");
+
+        player.getInventory().setItem(2, secondaryItem);
+    }
 
     @Override
     public void useSecondaryAbility() {

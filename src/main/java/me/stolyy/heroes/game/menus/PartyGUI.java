@@ -68,8 +68,7 @@ public class PartyGUI extends GUI{
         GUIListener.playerGUIMap.put(player, this);
         GUIListener.isReopening.put(player, true);
         player.openInventory(inventory);
-        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () ->
-            GUIListener.isReopening.put(player, false), 1L);
+        GUIListener.isReopening.put(player, false);
     }
 
     public void handleClick(int slot){

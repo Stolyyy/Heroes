@@ -56,6 +56,7 @@ public class Game {
     }
 
     public void addPlayer(Player player){
+        GameManager.setPlayerGame(player, this);
         player.setGameMode(org.bukkit.GameMode.ADVENTURE);
         switch(gameMode) {
             case GameMode.PARTY:
@@ -101,6 +102,7 @@ public class Game {
                 if(alivePlayerList.size() >=4) countdown();
                 break;
         }
+        GameListener.setPlayerRespawning(player, false);
         restrictPlayer(player);
         lives.put(player, 3);
         updateVisuals();
@@ -127,8 +129,10 @@ public class Game {
         //send them to lobby
         //checkgameend
         //uninstantialize heroes
+        GameManager.setPlayerGame(player, null);
         playerList.remove(player);
         playerTeams.remove(player);
+        GameListener.setPlayerRespawning(player, false);
         checkGameEnd();
         player.setGameMode(org.bukkit.GameMode.ADVENTURE);
         removeEffects(player);
@@ -136,20 +140,18 @@ public class Game {
         tabHealthObjective.getScoreboard().resetScores(player.getName());
         belowNameHealthObjective.getScoreboard().resetScores(player.getName());
         updateVisuals();
-        //TODO: remove player's hero
         Heroes.getInstance().teleportToLobby(player);
     }
 
     public void countdown(){
-        GameManager.waitingGames.remove(this);
-        GameManager.activeGames.add(this);
         gameState = GameState.STARTING;
+        GameManager.updateGameStatus(this);
         for(Player p : playerList) {
             if(playerTeams.getOrDefault(p, GameTeam.SPECTATOR) != GameTeam.SPECTATOR){
             Equipment.equip(p);
         }}
         new BukkitRunnable() {
-            private int timer = 10;
+            private int timer = 5;
             @Override
             public void run() {
                 timer--;
@@ -176,6 +178,7 @@ public class Game {
                 h.resetUltTimer();
         }
         gameState = GameState.IN_PROGRESS;
+        GameManager.updateGameStatus(this);
         //unrestrict players
         //unrestrict abilities
     }
@@ -188,16 +191,19 @@ public class Game {
 
         //null iteration around here somewhere
         for (Player p : playerList) {
-            if(GameManager.getPlayerGame(p) == this)
-                Heroes.getInstance().teleportToLobby(p);
-            removePlayer(p);
             if (p.getScoreboard() == scoreboard) p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard()); // ✅ Clears scoreboard
+            GameListener.setPlayerRespawning(p, false);
         }
         gameState = GameState.ENDED;
-        GameManager.cleanUpGames();
+        GameManager.updateGameStatus(this);
         Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
-            //HAVEN'T TESTED YET
-            //clear();
+            for(Player p : playerList) if(GameManager.getPlayerGame(p) == this) {
+                removePlayer(p);
+            }
+        }, 60L);
+
+        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
+            clear();
             GameMapManager.deleteWorld(gameMap);
         }, 100L);
     }
@@ -209,6 +215,7 @@ public class Game {
         Location furthestSpawn = getFurthestSpawn(player);
         player.setRespawnLocation(furthestSpawn, true);
             //respawn player if they still have lives
+        GameListener.setPlayerRespawning(player, true);
         checkGameEnd();
         updateVisuals();
         if(lives.get(player) > 0) {
@@ -223,6 +230,7 @@ public class Game {
                         cancel();
                         player.sendTitle("Welcome Back,", "Go!", 2, 10, 5);
                         player.setGameMode(org.bukkit.GameMode.ADVENTURE);
+                        GameListener.setPlayerRespawning(player, false);
                         unRestrictPlayer(player);
                     } else
                         player.sendTitle("Respawning in " + timer, "", 2, 20, 5);
@@ -234,7 +242,7 @@ public class Game {
         }
     }
 
-    public Location getFurthestSpawn(Player player){
+    Location getFurthestSpawn(Player player){
         Player nearestPlayer = null;
         double nearestDistance = Double.MAX_VALUE;
         for (Player enemy : alivePlayerList) {
@@ -298,12 +306,6 @@ public class Game {
                 }
             }
             Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), this::gameEnd, (5 * 20L));
-        }
-    }
-
-    public void checkPosition(Player player){
-        if (!gameMap.getBoundaries().contains(player.getLocation().toVector())) {
-            onDeath(player);
         }
     }
 
@@ -446,6 +448,7 @@ public class Game {
         restrictedPlayers.clear();
         playerTeams.clear();
         lives.clear();
+        GameManager.updateGameStatus(this);
     }
 
     public void restrictPlayer(Player player){restrictedPlayers.add(player);}

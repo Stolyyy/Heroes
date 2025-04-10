@@ -6,12 +6,16 @@ import me.stolyy.heroes.game.menus.PartyGUI;
 import me.stolyy.heroes.party.PartyManager;
 import org.bukkit.entity.Player;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class GameManager {
-    static Set<Game> activeGames = new HashSet<>();
-    static Set<Game> waitingGames = new HashSet<>();
+    private static final Set<Game> waitingGames = new HashSet<>();
+    private static final Set<Game> activeGames = new HashSet<>();
+    private static final Map<Player, Game> playerGames = new HashMap<>();
+
 
 
     public static Game createNewGame(GameEnums.GameMode gameMode){
@@ -31,13 +35,19 @@ public class GameManager {
             leaveGame(player);
         }
 
+        Set<Game> games = filterByMode(waitingGames, gameMode);
+        Game g;
         switch(gameMode){
             case PARTY:
-                Game game1 = createNewGame(gameMode);
-                for(Player p : PartyManager.getPlayersInParty(player)){
-                    game1.addPlayer(p);
+                if(!PartyManager.isInParty(player)){
+                    player.sendMessage("You must be in a party to join party mode!");
                 }
-                new PartyGUI(game1, player);
+                g = createNewGame(gameMode);
+                for(Player p : PartyManager.getPlayersInParty(player)){
+                    g.addPlayer(p);
+                }
+                new PartyGUI(g, player);
+                updateGameStatus(g);
                 //Create a new game
                 //Add all players in the party
                 //open GUI for leader
@@ -47,54 +57,50 @@ public class GameManager {
                 //Find game
                 //if no game, create game
                 //if game is full, start it
-                if(!PartyManager.isInParty(player)){
-                    boolean foundGame = false;
-                    if(!waitingGames.isEmpty()){
-                        loop: for(Game g : waitingGames){
-                            if(g.getGameMode().equals(gameMode)){
-                                g.addPlayer(player);
-                                foundGame = true;
-                            }
-                            break loop;
-                        }
-                    }
-                    if(!foundGame){
-                        Game game2 = createNewGame(gameMode);
-                        waitingGames.add(game2);
-                        game2.addPlayer(player);
-                        if(game2.getPlayerList().size() == 2) game2.gameStart();
-                    }
-                } else{
+                if(PartyManager.isInParty(player)) {
                     player.sendMessage("You cannot enter 1v1 in a party, please join the Party gamemode for custom games");
+                    break;
                 }
+
+                if(!games.isEmpty()){
+                    g = games.iterator().next();
+                    g.addPlayer(player);
+                }
+
+                else {
+                    g = createNewGame(gameMode);
+                    games.add(g);
+                    g.addPlayer(player);
+                    if (g.canCountdown()) g.countdown();
+                }
+                updateGameStatus(g);
                 break;
             case TWO_V_TWO:
                 //only allow joining in party of 2
                 //find game
                 //if no game, make new game
                 //add both members of party
-                //start game if its full now
-                if(PartyManager.getPartySize(player) == 2){
-                    boolean foundGame = false;
-                    if(!waitingGames.isEmpty()){
-                        loop: for(Game g : waitingGames){
-                            if(g.getGameMode().equals(gameMode)){
-                                g.addPlayer(player);
-                                foundGame = true;
-                            }
-                            break loop;
-                        }
-                    }
-                    if(!foundGame){
-                        Game game2 = createNewGame(gameMode);
-                        game2.addPlayer(player);
-                        for(Player p : PartyManager.getPlayersInParty(player)){
-                            if(!p.equals(player)) game2.addPlayer(p);
-                        }
-
-                        if(game2.getPlayerList().size() == 4) game2.gameStart();
-                    }
+                //start game if it's full now
+                if(!PartyManager.isInParty(player) || PartyManager.getPartySize(player) != 2) {
+                    player.sendMessage("You must be in a party of size 2 to join 2v2");
                 }
+
+                if(!waitingGames.isEmpty()){
+                    g = waitingGames.iterator().next();
+                    g.addPlayer(player);
+                }
+
+                else {
+                    g = createNewGame(gameMode);
+                    g.addPlayer(player);
+                }
+
+                for(Player p : PartyManager.getPlayersInParty(player)){
+                    g.addPlayer(p);
+                }
+
+                if(g.canCountdown() && g.getPlayerList().size() == 4) g.countdown();
+                updateGameStatus(g);
                 break;
         }
     }
@@ -103,42 +109,52 @@ public class GameManager {
         Game game = getPlayerGame(player);
         if(game == null) return false;
         game.removePlayer(player);
+        updateGameStatus(game);
         return true;
     }
 
-    public static void cleanUpGames(){
-        for(Game game : activeGames){
-            GameEnums.GameState gameState = game.getGameState();
-            if(gameState != GameEnums.GameState.IN_PROGRESS){
-                if(gameState == GameEnums.GameState.WAITING) waitingGames.add(game);
-                activeGames.remove(game);
-            }
+    private static Set<Game> filterByMode(Set<Game> gameSet, GameEnums.GameMode gameMode){
+        Set<Game> filtered = new HashSet<>();
+        for(Game g : gameSet){
+            if(g.getGameMode() == gameMode) filtered.add(g);
         }
-        for(Game game : waitingGames){
-            GameEnums.GameState gameState = game.getGameState();
-            if(gameState != GameEnums.GameState.WAITING){
-                if(gameState == GameEnums.GameState.IN_PROGRESS) activeGames.add(game);
+        return filtered;
+    }
+
+    static void updateGameStatus(Game game){
+        if(game == null) return;
+
+        switch(game.getGameState()){
+            case WAITING -> {
+                activeGames.remove(game);
+                waitingGames.add(game);
+            } case IN_PROGRESS, STARTING -> {
+                waitingGames.remove(game);
+                activeGames.add(game);
+            } default -> {
+                activeGames.remove(game);
                 waitingGames.remove(game);
             }
         }
-        //update activeGames list to only include games that are in progress
-        //update waitingGames to only have games that are waiting for players
-        //Clean up any games that have ended (idk)
     }
 
     public static Game getPlayerGame(Player player){
-        //iterate through active games, and get playerlist for each one
-        //if playerlist has the player's game then add them
-        for(Game game : activeGames) {
-            if (game.getPlayerList().contains(player)) return game;
-        }
-        for(Game game : waitingGames) {
-            if (game.getPlayerList().contains(player)) return game;
-        }
-        return null;
-        }
+        return playerGames.get(player);
+    }
 
+    public static boolean isPlayerInGame(Player player){
+        return playerGames.get(player) != null;
+    }
 
-    public static Set<Game> getActiveGames() {return activeGames;}
-    public static void setActiveGames(Set<Game> active) {activeGames = active;}
+    static void setPlayerGame(Player player, Game game){
+        playerGames.put(player, game);
+    }
+
+    public static Set<Game> getActiveGames(){
+        return activeGames;
+    }
+
+    public static Set<Game> getWaitingGames(){
+        return waitingGames;
+    }
 }

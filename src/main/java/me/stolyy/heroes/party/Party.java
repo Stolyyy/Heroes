@@ -7,8 +7,8 @@ import org.bukkit.entity.Player;
 import java.util.Set;
 
 public class Party {
-    Player leader;
-    Set<Player> members;
+    private Player leader;
+    private Set<Player> members;
 
     public Party(Set<Player> members, Player leader) {
         this.members = members;
@@ -32,6 +32,7 @@ public class Party {
     }
 
     public void addPlayer(Player player) {
+        PartyManager.setPlayerParty(player, this);
         player.sendMessage(Component.text("You joined " + getLeader().getName() + "'s party").color(NamedTextColor.YELLOW));
         for(Player member : members) member.sendMessage(Component.text(player.getName() + " has joined the party!").color(NamedTextColor.YELLOW));
         members.add(player);
@@ -42,6 +43,7 @@ public class Party {
             player.sendMessage(Component.text("You are not in the party!").color(NamedTextColor.RED));
             return;
         }
+        PartyManager.setPlayerParty(player, null);
         members.remove(player);
         for(Player member : members) {
             member.sendMessage(Component.text(player.getName() + " has left the party!").color(NamedTextColor.YELLOW));

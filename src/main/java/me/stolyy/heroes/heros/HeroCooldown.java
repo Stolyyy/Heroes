@@ -48,18 +48,18 @@ public abstract class HeroCooldown extends Hero {
         ability.timeUntilUse = ability.cd;
         switch (abilityType){
             case PRIMARY -> {
-                runCooldown(ability,null);
+                runCooldown(ability,1);
             }
             case SECONDARY -> {
                 ItemStack cooldownItem = player.getInventory().getItem(1);
                 if (cooldownItem != null && cooldownItem.getType() == Material.CARROT_ON_A_STICK) {
-                    runCooldown(ability,cooldownItem);
+                    runCooldown(ability,2);
                 }
             } case ULTIMATE -> {
                 ability.inUse = false;
                 ItemStack ultimateItem = player.getInventory().getItem(2);
                 if (ultimateItem != null && ultimateItem.getType() == Material.CARROT_ON_A_STICK) {
-                    runCooldown(ability,ultimateItem);
+                    runCooldown(ability,3);
                 }
             }
         }
@@ -91,8 +91,10 @@ public abstract class HeroCooldown extends Hero {
 
 
 
-    private void runCooldown(Ability ability, ItemStack cooldownItem){
+    private void runCooldown(Ability ability, int itemSlot){
         AbilityType abilityType = ability.abilityType;
+        ItemStack cooldownItem = player.getInventory().getItem(itemSlot);
+        double percentage = (ability.timeUntilUse / ability.cd);
 
         new BukkitRunnable() {
             @Override
@@ -102,10 +104,10 @@ public abstract class HeroCooldown extends Hero {
                     ability.ready = true;
                     switch (abilityType){
                         case PRIMARY -> player.sendActionBar(ChatColor.GREEN + "Primary Ability Ready!");
-                        case SECONDARY -> updateItemDurability(cooldownItem, (short) 0, 5);
+                        case SECONDARY -> updateItemDurability(cooldownItem, itemSlot, (short) 0, 5);
                         case ULTIMATE -> {
                             player.sendMessage(ChatColor.GREEN + "Ultimate Ability Ready!");
-                            updateItemDurability(cooldownItem, (short) 0, 7);
+                            updateItemDurability(cooldownItem, itemSlot, (short) 0, 7);
                         }
                     }
                     this.cancel();
@@ -113,9 +115,9 @@ public abstract class HeroCooldown extends Hero {
                 }
                 //Run every update
                 switch (abilityType){
-                    case PRIMARY -> player.sendActionBar(ChatColor.GREEN + "Primary Ability Ready!");
-                    case SECONDARY -> updateItemDurability(cooldownItem, (ability.timeUntilUse / ability.cd), 4);
-                    case ULTIMATE -> updateItemDurability(cooldownItem, (ability.timeUntilUse / ability.cd), 6);
+                    case PRIMARY -> player.sendActionBar(ChatColor.GREEN + "Primary Cooldown: " + createProgressBar(percentage));
+                    case SECONDARY -> updateItemDurability(cooldownItem, itemSlot, percentage, 4);
+                    case ULTIMATE -> updateItemDurability(cooldownItem, itemSlot, percentage, 6);
                 }
                 ability.timeUntilUse -= (1.0 / UPDATES_PER_SECOND);
             }
@@ -123,17 +125,19 @@ public abstract class HeroCooldown extends Hero {
         }.runTaskTimer(PLUGIN, 0L, 20L / UPDATES_PER_SECOND);
     }
 
-    private void updateItemDurability(ItemStack item, double percentDone, int customModelData) {
-        short durability = (short) (25 * percentDone);
+    private void updateItemDurability(ItemStack item, int slot, double percentRemaining, int customModelData) {
         ItemMeta meta = item.getItemMeta();
-        if (meta instanceof Damageable) {
-            meta.setCustomModelData(customModelData);
-            ((Damageable) meta).setDamage(25 - durability);
-            item.setItemMeta(meta);
+        if (meta instanceof Damageable dMeta) {
+            dMeta.setCustomModelData(customModelData);
+            short maxDurability = item.getType().getMaxDurability();
+            short damage = (short) (maxDurability * (1 - percentRemaining));
+            dMeta.setDamage(damage);
+            item.setItemMeta(dMeta);
+            player.getInventory().setItem(slot, item);
         }
     }
 
-    private String createProgressBar(int percentage) {
+    private String createProgressBar(double percentage) {
         int totalBars = 10;
         int filledBars = (int) (percentage / 10.0);
         return ChatColor.GREEN +

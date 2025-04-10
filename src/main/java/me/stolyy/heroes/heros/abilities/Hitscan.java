@@ -67,6 +67,7 @@ public interface Hitscan {
             Location spawnLocation = startLocation.clone().add(normalizedDirection.clone().multiply(i)).subtract(0, 2, 0);
 
             ArmorStand armorStand = (ArmorStand) world.spawnEntity(spawnLocation, EntityType.ARMOR_STAND);
+            armorStand.teleport(armorStand.getLocation().setDirection(direction));
             armorStand.setVisible(false);
             armorStand.setGravity(false);
             armorStand.setMarker(true);

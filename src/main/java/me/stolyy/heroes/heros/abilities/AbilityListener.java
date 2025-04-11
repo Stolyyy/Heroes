@@ -223,7 +223,11 @@ public class AbilityListener implements Listener {
     }
 
     public static void setJabDamage(Player player, double damage) {
-        jabDamage.put(player, damage);
+        if(damage < 0){
+            jabDamage.remove(player);
+        } else
+            jabDamage.put(player, damage);
+
         player.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(getJabDamage(player));
     }
 

@@ -207,7 +207,7 @@ public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload
     @Override
     public void useUltimateAbility() {
         if(!ultimate.ready || ultimate.inUse) {
-            player.sendMessage(ChatColor.RED + "Ultimate ability is on cooldown! " + ultimate.timeUntilUse + " seconds remaining.");
+            player.sendMessage(ChatColor.RED + "Ultimate ability is on cooldown! " + (int) ultimate.timeUntilUse + " seconds remaining.");
             return;
         }
 
@@ -316,7 +316,7 @@ public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload
         weight = 2;
         heroType = HeroType.RANGED;
 
-        primary = new Ability(AbilityType.PRIMARY, 3, 0.9,1.5);
+        primary = new Ability(AbilityType.PRIMARY, 3, 0.9,2);
         consecutiveHits = 0;
         ammo = 7;
         isReloading = false;

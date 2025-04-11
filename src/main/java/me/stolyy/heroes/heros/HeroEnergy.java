@@ -30,7 +30,7 @@ public abstract class HeroEnergy extends HeroCooldown {
                     this.cancel();
                     return;
                 }
-                if(energy < maxEnergy && canIncreaseEnergy){
+                if(canIncreaseEnergy){
                     energy = Math.min(maxEnergy, Math.max(energy + energyPerTick, 0));
                 }
                 updateXpBar();

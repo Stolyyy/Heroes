@@ -118,8 +118,8 @@ public class Interactions {
 
             //increase based on victim's hp
             double missingHealth = victim.getMaxHealth() - victim.getHealth();
-            knockback += missingHealth * knockback * 0.325;
-            yKnockback += missingHealth * yKnockback * 0.325;
+            knockback += missingHealth * knockback * 0.125;
+            yKnockback += missingHealth * yKnockback * 0.125;
         }
 
         //ensure upwards kb if player is on ground

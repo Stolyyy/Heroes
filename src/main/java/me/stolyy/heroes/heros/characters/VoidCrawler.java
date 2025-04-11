@@ -45,6 +45,7 @@ public class VoidCrawler extends HeroEnergy implements Dash {
     @Override
     public void useSecondaryAbility() {
         if(!secondary.ready) return;
+        cooldown(secondary);
 
         Location startLocation = player.getLocation();
         Location eyeLocation = player.getEyeLocation();
@@ -80,7 +81,7 @@ public class VoidCrawler extends HeroEnergy implements Dash {
     @Override
     public void useUltimateAbility() {
         if(ultimate.inUse || !ultimate.ready){
-            player.sendMessage(ChatColor.RED + "Ultimate ability is on cooldown! " + ultimate.timeUntilUse + " seconds remaining.");
+            player.sendMessage(ChatColor.RED + "Ultimate ability is on cooldown! " + (int) ultimate.timeUntilUse + " seconds remaining.");
             return;
         }
 
@@ -137,15 +138,22 @@ public class VoidCrawler extends HeroEnergy implements Dash {
             case HYBRID -> reduce = 1;
         }
         ultimate.timeUntilUse -= reduce;
-        energy += 20;
+        energy = Math.min(maxEnergy, energy + 20);
     }
 
     public void updateAttackDamage() {
+        Hero h = this;
         new BukkitRunnable() {
             @Override
             public void run() {
+                if(HeroManager.getHero(player) != h){
+                    this.cancel();
+                    AbilityListener.setJabDamage(player,-1);
+                    return;
+                }
+
                 AbilityListener.setJabDamage(player,
-                        AbilityListener.getJabDamage(player)
+                        5
                                 + energy / 50);
                 primary.dmg = 6 + energy/50;
                 secondary.dmg = 7 + energy/50;
@@ -161,7 +169,7 @@ public class VoidCrawler extends HeroEnergy implements Dash {
         primaryRange = 8;
         secondary = new Ability(AbilityType.SECONDARY, 7, 2.5, 5);
         secondaryRange = 15;
-        ultimate = new Ability(AbilityType.ULTIMATE, 0, 0, 90, 12);
+        ultimate = new Ability(AbilityType.ULTIMATE, 0, 0, 90, 10);
 
         setEnergyStats(0,100,-0.5,true);
         initializeEnergyUpdates();

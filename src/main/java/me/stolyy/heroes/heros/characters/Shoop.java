@@ -41,7 +41,7 @@ public class Shoop extends HeroEnergy implements Projectile, Hitscan, Listener {
     @Override
     public void usePrimaryAbility() {
         if(!primary.ready) return;
-        Projectile.projectile(player, AbilityType.PRIMARY, primarySpeed,1, false, 14003);
+        Projectile.projectile(player, AbilityType.PRIMARY, primarySpeed,1.5, false, 14003);
         cooldown(primary);
         player.playSound(player.getLocation(), "shoopdawhoop.active", SoundCategory.MASTER, 1.0f, 1.0f);
     }
@@ -165,6 +165,7 @@ public class Shoop extends HeroEnergy implements Projectile, Hitscan, Listener {
     public void useUltimateAbility() {
         if(!ultimate.ready || ultimate.inUse) {
             player.sendMessage(ChatColor.RED + "Ultimate ability is on cooldown! " + (int) ultimate.timeUntilUse + " seconds remaining.");
+            return;
         }
         ultTimer();
         ultimate.inUse = true;

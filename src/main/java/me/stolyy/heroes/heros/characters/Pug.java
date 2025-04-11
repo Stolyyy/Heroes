@@ -51,7 +51,7 @@ public class Pug extends HeroEnergy implements Dash {
 
         new BukkitRunnable() {
             int tick = 0;
-            final int totalTicks = 20;
+            final int totalTicks = 8;
             @Override
             public void run() {
                 if (tick >= totalTicks) {
@@ -104,6 +104,7 @@ public class Pug extends HeroEnergy implements Dash {
     @Override
     public void useUltimateAbility() {
         if(ultimate.inUse || !ultimate.ready) {
+            player.sendMessage(ChatColor.RED + "Ultimate ability is on cooldown! " + (int) ultimate.timeUntilUse + " seconds remaining.");
             return;
         }
         ultimate.inUse = true;

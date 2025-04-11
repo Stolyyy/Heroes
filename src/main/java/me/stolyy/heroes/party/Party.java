@@ -13,6 +13,7 @@ public class Party {
     public Party(Set<Player> members, Player leader) {
         this.members = members;
         this.leader = leader;
+        for(Player member : members) PartyManager.setPlayerParty(member, this);
     }
 
     public Player getLeader() {

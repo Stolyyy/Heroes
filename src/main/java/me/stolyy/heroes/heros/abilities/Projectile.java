@@ -61,8 +61,8 @@ public interface Projectile {
                 Location newLocation = armorStand.getLocation().add(velocity);
                 distanceTraveled += newLocation.distance(lastLocation);
 
-                Location checkLocation = newLocation.clone().add(0, 2, 0);
-                if (WallDetection.detectWall(lastLocation.clone().add(0, 2, 0), checkLocation, 0.5) || distanceTraveled >= 100) {
+                Location checkLocation = newLocation.clone().add(0, 1.85, 0);
+                if (WallDetection.detectWall(lastLocation.clone().add(0, 1.85, 0), checkLocation, 0.1) || distanceTraveled >= 100) {
                     ((Projectile) HeroManager.getHero(player)).onProjectileHitWall(armorStand.getLocation(), abilityType);
                     armorStand.remove();
                     this.cancel();

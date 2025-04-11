@@ -48,18 +48,18 @@ public abstract class HeroCooldown extends Hero {
         ability.timeUntilUse = ability.cd;
         switch (abilityType){
             case PRIMARY -> {
-                runCooldown(ability,1);
+                runCooldown(ability, null);
             }
             case SECONDARY -> {
                 ItemStack cooldownItem = player.getInventory().getItem(1);
                 if (cooldownItem != null && cooldownItem.getType() == Material.CARROT_ON_A_STICK) {
-                    runCooldown(ability,2);
+                    runCooldown(ability, cooldownItem);
                 }
             } case ULTIMATE -> {
                 ability.inUse = false;
                 ItemStack ultimateItem = player.getInventory().getItem(2);
                 if (ultimateItem != null && ultimateItem.getType() == Material.CARROT_ON_A_STICK) {
-                    runCooldown(ability,3);
+                    runCooldown(ability, ultimateItem);
                 }
             }
         }
@@ -78,7 +78,7 @@ public abstract class HeroCooldown extends Hero {
                 } else {
                     title = "" + ChatColor.RED;
                 }
-                player.sendTitle(title  + (ultimate.duration - elapsedTime), "", 5, 25, 10);
+                player.sendTitle(title  + (int) (ultimate.duration - elapsedTime), "", 5, 25, 10);
                 elapsedTime++;
 
                 if (elapsedTime == ultimate.duration) {
@@ -91,23 +91,22 @@ public abstract class HeroCooldown extends Hero {
 
 
 
-    private void runCooldown(Ability ability, int itemSlot){
+    private void runCooldown(Ability ability, ItemStack cooldownItem){
         AbilityType abilityType = ability.abilityType;
-        ItemStack cooldownItem = player.getInventory().getItem(itemSlot);
-        double percentage = (ability.timeUntilUse / ability.cd);
 
         new BukkitRunnable() {
             @Override
             public void run() {
+                double percentage = (ability.timeUntilUse / ability.cd);
                 //End Logic
                 if (ability.timeUntilUse <= 0) {
                     ability.ready = true;
                     switch (abilityType){
                         case PRIMARY -> player.sendActionBar(ChatColor.GREEN + "Primary Ability Ready!");
-                        case SECONDARY -> updateItemDurability(cooldownItem, itemSlot, (short) 0, 5);
+                        case SECONDARY -> updateItemDurability(cooldownItem, 1, (short) 0, 5);
                         case ULTIMATE -> {
                             player.sendMessage(ChatColor.GREEN + "Ultimate Ability Ready!");
-                            updateItemDurability(cooldownItem, itemSlot, (short) 0, 7);
+                            updateItemDurability(cooldownItem, 2, (short) 0, 7);
                         }
                     }
                     this.cancel();
@@ -116,16 +115,17 @@ public abstract class HeroCooldown extends Hero {
                 //Run every update
                 switch (abilityType){
                     case PRIMARY -> player.sendActionBar(ChatColor.GREEN + "Primary Cooldown: " + createProgressBar(percentage));
-                    case SECONDARY -> updateItemDurability(cooldownItem, itemSlot, percentage, 4);
-                    case ULTIMATE -> updateItemDurability(cooldownItem, itemSlot, percentage, 6);
+                    case SECONDARY -> updateItemDurability(cooldownItem, 1, percentage, 4);
+                    case ULTIMATE -> updateItemDurability(cooldownItem, 2, percentage, 6);
                 }
-                ability.timeUntilUse -= (1.0 / UPDATES_PER_SECOND);
+                ability.timeUntilUse = Math.max(0, ability.timeUntilUse - (1.0 / UPDATES_PER_SECOND));
             }
 
         }.runTaskTimer(PLUGIN, 0L, 20L / UPDATES_PER_SECOND);
     }
 
     private void updateItemDurability(ItemStack item, int slot, double percentRemaining, int customModelData) {
+        percentRemaining = Math.min(1, percentRemaining);
         ItemMeta meta = item.getItemMeta();
         if (meta instanceof Damageable dMeta) {
             dMeta.setCustomModelData(customModelData);
@@ -138,6 +138,7 @@ public abstract class HeroCooldown extends Hero {
     }
 
     private String createProgressBar(double percentage) {
+        percentage = Math.min(1, percentage);
         int totalBars = 10;
         int filledBars = (int) (percentage / 10.0);
         return ChatColor.GREEN +

@@ -194,8 +194,6 @@ public class Game {
             if (p.getScoreboard() == scoreboard) p.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard()); // ✅ Clears scoreboard
             GameListener.setPlayerRespawning(p, false);
         }
-        gameState = GameState.ENDED;
-        GameManager.updateGameStatus(this);
         Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
             for(Player p : playerList) if(GameManager.getPlayerGame(p) == this) {
                 removePlayer(p);
@@ -206,6 +204,8 @@ public class Game {
             clear();
             GameMapManager.deleteWorld(gameMap);
         }, 100L);
+        gameState = GameState.ENDED;
+        GameManager.updateGameStatus(this);
     }
 
     public void onDeath(Player player){
@@ -232,6 +232,7 @@ public class Game {
                         player.setGameMode(org.bukkit.GameMode.ADVENTURE);
                         GameListener.setPlayerRespawning(player, false);
                         unRestrictPlayer(player);
+                        applyEffects(player);
                     } else
                         player.sendTitle("Respawning in " + timer, "", 2, 20, 5);
                 }
@@ -284,19 +285,19 @@ public class Game {
             }
         }
         //end game if only one team has players
-        if(gameState != GameState.ENDED && teamsWithPlayers <2){
+        if(gameState != GameState.ENDED && teamsWithPlayers < 2){
             //find winning team
-                gameState = GameState.ENDED;
-                GameTeam winningTeam = null;
-                Set<GameTeam> teamsWithPlayersLeft = new HashSet<>();
-                for (Map.Entry<GameTeam, Integer> entry : teamCounts.entrySet()) {
-                    if (entry.getValue() > 0) {
-                        teamsWithPlayersLeft.add(entry.getKey());
-                    }
+            gameState = GameState.ENDED;
+            GameTeam winningTeam = null;
+            Set<GameTeam> teamsWithPlayersLeft = new HashSet<>();
+            for (Map.Entry<GameTeam, Integer> entry : teamCounts.entrySet()) {
+                if (entry.getValue() > 0) {
+                    teamsWithPlayersLeft.add(entry.getKey());
                 }
-                if (!teamsWithPlayersLeft.isEmpty()) {
-                    winningTeam = teamsWithPlayersLeft.iterator().next();
-                }
+            }
+            if (!teamsWithPlayersLeft.isEmpty()) {
+                winningTeam = teamsWithPlayersLeft.iterator().next();
+            }
             if (winningTeam != null) {
                 String message = "The winning team is: " + winningTeam + " team!";
                 for (Player player : playerList) {
@@ -305,7 +306,7 @@ public class Game {
                     //TODO: Add statlines (Kills, Damage, Damage + DMG by Void)
                 }
             }
-            Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), this::gameEnd, (5 * 20L));
+            gameEnd();
         }
     }
 

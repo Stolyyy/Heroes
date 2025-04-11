@@ -45,7 +45,6 @@ public class GameListener implements Listener {
             e.setKeepLevel(true);
             e.getDrops().clear();
             e.setDroppedExp(0);
-            game.onDeath(p);
         }
     }
 
@@ -56,6 +55,7 @@ public class GameListener implements Listener {
         if (isValidGame(game)) {
             Location respawnLocation = game.getFurthestSpawn(player);
             event.setRespawnLocation(respawnLocation);
+            game.onDeath(player);
         }
     }
 

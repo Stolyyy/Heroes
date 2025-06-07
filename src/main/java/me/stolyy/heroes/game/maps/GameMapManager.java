@@ -1,5 +1,6 @@
 package me.stolyy.heroes.game.maps;
 
+import me.stolyy.heroes.Heroes;
 import org.bukkit.*;
 import org.bukkit.util.BoundingBox;
 
@@ -77,21 +78,24 @@ public class GameMapManager {
         try {
             copyWorld(templateMapFolder, newWorldFolder);
         } catch (IOException e) {
-            Bukkit.getLogger().severe("Failed to copy world: " + e.getMessage());
+            Heroes.getInstance().getLogger().severe("Failed to copy world: " + e.getMessage());
             return null;
         }
 
         WorldCreator creator = new WorldCreator(newWorldName);
         World world = creator.createWorld();
 
-        world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
-        world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
-        world.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
-        world.setGameRule(GameRule.KEEP_INVENTORY, true);
-        world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
-        world.setGameRule(GameRule.NATURAL_REGENERATION, false);
-        world.setGameRule(GameRule.DISABLE_ELYTRA_MOVEMENT_CHECK, true);
-        world.setFullTime(10000L);
+        if (world != null) {
+            world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
+            world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
+            world.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
+            world.setGameRule(GameRule.KEEP_INVENTORY, true);
+            world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
+            world.setGameRule(GameRule.NATURAL_REGENERATION, false);
+            world.setGameRule(GameRule.DISABLE_ELYTRA_MOVEMENT_CHECK, true);
+            world.setFullTime(10000L);
+        }
+
 
         Location[] updatedSpawnLocations = Arrays.stream(map.spawnLocations)
                 .map(loc -> new Location(world, loc.getX(), loc.getY(), loc.getZ()))
@@ -174,8 +178,3 @@ public class GameMapManager {
         templateMaps.add(new GameMap(name, spawnLocations, crystalLocations, boundaries, spectatorLocation, null));
     }
 }
-
-//static int for each map
-//new folder: royale + int
-//int represents number of instances of that map
-//idk

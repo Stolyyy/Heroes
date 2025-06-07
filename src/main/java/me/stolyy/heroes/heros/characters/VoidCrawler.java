@@ -1,29 +1,28 @@
 package me.stolyy.heroes.heros.characters;
 
 import me.stolyy.heroes.*;
-import me.stolyy.heroes.game.minigame.GameManager;
 import me.stolyy.heroes.heros.*;
 import me.stolyy.heroes.heros.abilities.Ability;
-import me.stolyy.heroes.heros.abilities.AbilityListener;
 import me.stolyy.heroes.heros.abilities.AbilityType;
+import me.stolyy.heroes.heros.abilities.data.DashData;
 import me.stolyy.heroes.utility.Interactions;
-import me.stolyy.heroes.heros.abilities.Dash;
+import me.stolyy.heroes.heros.abilities.interfaces.Dash;
+import me.stolyy.heroes.utility.effects.Sounds;
+import me.stolyy.heroes.utility.physics.Hitbox;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Listener;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import java.util.List;
+import java.util.Set;
 
 
 public class VoidCrawler extends HeroEnergy implements Dash {
-    private double primaryRange;
     private double secondaryRange;
-
 
     public VoidCrawler(Player player) {
         super(player);
@@ -31,21 +30,23 @@ public class VoidCrawler extends HeroEnergy implements Dash {
 
     @Override
     public void usePrimaryAbility() {
-        if(!primary.ready) return;
-        Dash.dash(player, AbilityType.PRIMARY, primaryRange);
+        if(!primary.ready()) return;
+        dash(player, AbilityType.PRIMARY, (DashData) primary.abilityData());
         cooldown(primary);
     }
 
     @Override
     public void onDashHit(Player target, Location location, AbilityType abilityType){
-        Interactions.handleInteraction(player.getEyeLocation().getDirection(), primary.dmg, primary.kb, player, target);
-        player.playSound(player.getLocation(), "melee.sword.meleehit", SoundCategory.MASTER, 1.0f, 1.0f);
+        Interactions.handleInteraction(player.getEyeLocation().getDirection(), primary.dmg(), primary.kb(), player, target);
+        Sounds.playSoundToPlayer(player, "melee.sword.meleehit", 1.0f, 1.0f);
     }
 
     @Override
     public void useSecondaryAbility() {
-        if(!secondary.ready) return;
+        if(!secondary.ready()) return;
         cooldown(secondary);
+
+
 
         Location startLocation = player.getLocation();
         Location eyeLocation = player.getEyeLocation();
@@ -54,6 +55,7 @@ public class VoidCrawler extends HeroEnergy implements Dash {
 
         for (double i = 0; i < secondaryRange; i += 0.5) {
             Location currentLocation = eyeLocation.clone().add(direction.clone().multiply(i));
+            teleportSpot = currentLocation;
 
             if (currentLocation.getBlock().getType().isSolid() || currentLocation.clone().add(0, 1, 0).getBlock().getType().isSolid()) {
                 player.teleport(currentLocation.subtract(direction.clone().multiply(0.5)));
@@ -61,84 +63,67 @@ public class VoidCrawler extends HeroEnergy implements Dash {
             }
 
             //hit logic
-            List<Player> nearbyPlayers = (List<Player>) player.getWorld().getNearbyPlayers(currentLocation, 1);
+            Set<Player> nearbyPlayers = Hitbox.sphere(currentLocation, 1);
+            nearbyPlayers.remove(player);
             for (Player nearbyPlayer : nearbyPlayers) {
-                if (nearbyPlayer != player) {
-                    Interactions.handleInteraction(startLocation, secondary.dmg, secondary.kb, player, nearbyPlayer);
-                    i = secondaryRange +1;
+                    Interactions.handleInteraction(startLocation, secondary.dmg(), secondary.kb(), player, nearbyPlayer);
+                    i = secondaryRange + 1;
                     player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
-                }
-
             }
-            teleportSpot = currentLocation;
         }
 
         player.teleport(teleportSpot);
-        player.playSound(player.getLocation(), Sound.ENTITY_BLAZE_SHOOT, 3, 0.0f);
+        Sounds.playSoundToWorld(player, Sound.ENTITY_BLAZE_SHOOT, 3, 0f);
     }
 
 
     @Override
     public void useUltimateAbility() {
-        if(ultimate.inUse || !ultimate.ready){
-            player.sendMessage(ChatColor.RED + "Ultimate ability is on cooldown! " + (int) ultimate.timeUntilUse + " seconds remaining.");
+        if(ultimate.inUse() || !ultimate.ready()){
+            player.sendMessage(NamedTextColor.RED + "Ultimate ability is on cooldown! " + (int) ultimate.timeUntilUse() + " seconds remaining.");
             return;
         }
 
-        player.playSound(player.getLocation(), "duskcrawler.crystal", SoundCategory.MASTER, 5.0f, 1.0f);
+        Sounds.playSoundToWorld(player, "duskcrawler.crystal", 5.0f, 1.0f);
         ultTimer();
-        AbilityListener.setJabCooldown(player, 300);
-        AbilityListener.setJabReach(player ,6.5);
+        setJabCooldown(300);
+        setJabReach(6.5);
         player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.18);
         //perma 100 void energy
-        energy = 100;
-        canIncreaseEnergy = false;
+        setEnergy(100);
+        setCanIncreaseEnergy(false);
 
         //darkness
-        List<Player> Targets = (List<Player>) player.getLocation().getNearbyPlayers(75);
-        for (Player target : Targets) {
-            boolean onSameTeam = GameManager.getPlayerGame(player).getPlayerTeams().get(target).equals(GameManager.getPlayerGame(player).getPlayerTeams().get(player));
-            if (target.getGameMode() == GameMode.ADVENTURE && !onSameTeam) {
-                PotionEffect darknessEffect = new PotionEffect(PotionEffectType.DARKNESS, 20 * (int) ultimate.duration, 0);
+        Set<Player> targets = Hitbox.sphere(player.getLocation(), 75);
+        for (Player target : targets) {
+            if (Interactions.canInteract(player, target)) {
+                PotionEffect darknessEffect = new PotionEffect(PotionEffectType.DARKNESS, 20 * (int) ultimate.duration(), 0);
                 target.addPotionEffect(darknessEffect);
             }
         }
 
-        primary.cd = 1.5;
-        secondary.cd = 3.5;
+        primary.setCd(1.5);
+        secondary.setCd(3.5);
 
         //end logic
         new BukkitRunnable() {
             @Override
             public void run() {
-                AbilityListener.setJabCooldown(player, 500);
-                AbilityListener.setJabReach(player, 5);
+                setJabCooldown(500);
+                setJabReach(5);
+                primary.setCd(2);
+                secondary.setCd(5);
                 player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.14);
-                canIncreaseEnergy = true;
+                setCanIncreaseEnergy(true);
                 cooldown(ultimate);
             }
-        }.runTaskLater(Heroes.getInstance(), (int) ultimate.duration * 20L);
-    }
-
-    @Override
-    public void passiveAbility1() {
-
-    }
-
-    @Override
-    public void passiveAbility2() {
-
+        }.runTaskLater(Heroes.getInstance(), (int) ultimate.duration() * 20L);
     }
 
     @Override
     public void onPunch(){
-        int reduce = 0;
-        switch (heroType) {
-            case MELEE -> reduce = 3;
-            case HYBRID -> reduce = 1;
-        }
-        ultimate.timeUntilUse -= reduce;
-        energy = Math.min(maxEnergy, energy + 20);
+        super.onPunch();
+        addEnergy(20);
     }
 
     public void updateAttackDamage() {
@@ -148,25 +133,22 @@ public class VoidCrawler extends HeroEnergy implements Dash {
             public void run() {
                 if(HeroManager.getHero(player) != h){
                     this.cancel();
-                    AbilityListener.setJabDamage(player,-1);
                     return;
                 }
 
-                AbilityListener.setJabDamage(player,
-                        5
-                                + energy / 50);
-                primary.dmg = 6 + energy/50;
-                secondary.dmg = 7 + energy/50;
+                setJabDamage(5 + energy() / 50);
+                primary.setDmg(6 + energy() / 50);
+                secondary.setDmg(7 + energy() / 50);
             }
         }.runTaskTimer(Heroes.getInstance(), 0L, 1L);
     }
 
     @Override
     protected void stats(){
-        weight = 2;
-        heroType = HeroType.MELEE;
-        primary = new Ability(AbilityType.PRIMARY, 6, 2, 2);
-        primaryRange = 8;
+        setWeight(2.0);
+        setHeroType(HeroType.MELEE);
+
+        primary = new Ability(AbilityType.PRIMARY, 6, 2, 2, new DashData());
         secondary = new Ability(AbilityType.SECONDARY, 7, 2.5, 5);
         secondaryRange = 15;
         ultimate = new Ability(AbilityType.ULTIMATE, 0, 0, 90, 10);

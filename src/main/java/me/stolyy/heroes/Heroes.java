@@ -3,15 +3,17 @@ package me.stolyy.heroes;
 import me.stolyy.heroes.game.maps.GameMapManager;
 import me.stolyy.heroes.game.menus.GUIListener;
 import me.stolyy.heroes.game.minigame.*;
-import me.stolyy.heroes.heros.abilities.AbilityListener;
+import me.stolyy.heroes.heros.listeners.AbilityListener;
 import me.stolyy.heroes.heros.HeroManager;
 import me.stolyy.heroes.heros.SetHeroCommand;
+import me.stolyy.heroes.heros.listeners.DoubleJumpListener;
+import me.stolyy.heroes.heros.listeners.JabListener;
 import me.stolyy.heroes.party.PartyChatCommand;
 import me.stolyy.heroes.party.PartyCommand;
 import me.stolyy.heroes.party.PartyManager;
-import me.stolyy.heroes.utility.LobbyCommand;
-import me.stolyy.heroes.utility.SpectateCommand;
-import me.stolyy.heroes.utility.StuckCommand;
+import me.stolyy.heroes.utility.commands.LobbyCommand;
+import me.stolyy.heroes.utility.commands.SpectateCommand;
+import me.stolyy.heroes.utility.commands.StuckCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -52,15 +54,40 @@ public final class Heroes extends JavaPlugin implements Listener {
 
         // Register event listeners
         GameMapManager.initializeMaps();
-        Bukkit.getPluginManager().registerEvents(this, this);
-        Bukkit.getPluginManager().registerEvents(new AbilityListener(), this);
-        Bukkit.getPluginManager().registerEvents(new GUIListener(), this);
-        Bukkit.getPluginManager().registerEvents(new GameListener(), this);
 
+        registerListeners();
         registerCommands();
+
         startPeriodicTasks();
 
         getLogger().info("Heroes plugin has been enabled!");
+    }
+
+    @Override
+    public void onDisable() {
+        Bukkit.getScheduler().cancelTasks(this);
+
+        // End all active games
+        for (Game game : GameManager.getActiveGames()) {
+            game.gameEnd();
+        }
+
+        // Clear data structures
+        HeroManager.clear();
+        //GameManager.clear();
+        //PartyManager.clear();
+
+        getLogger().info("Heroes plugin has been disabled!");
+    }
+
+
+    private void registerListeners() {
+        Bukkit.getPluginManager().registerEvents(this, this);
+        Bukkit.getPluginManager().registerEvents(new AbilityListener(), this);
+        Bukkit.getPluginManager().registerEvents(new DoubleJumpListener(), this);
+        Bukkit.getPluginManager().registerEvents(new JabListener(), this);
+        Bukkit.getPluginManager().registerEvents(new GUIListener(), this);
+        Bukkit.getPluginManager().registerEvents(new GameListener(), this);
     }
 
     private void registerCommands() {
@@ -93,6 +120,8 @@ public final class Heroes extends JavaPlugin implements Listener {
         }
     }
 
+
+
     private void startPeriodicTasks() {
         // Task to update player health and check positions
         new BukkitRunnable() {
@@ -110,6 +139,9 @@ public final class Heroes extends JavaPlugin implements Listener {
             }
         }.runTaskTimer(this, 20L, 20L); // Run every second
     }
+
+
+
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -129,7 +161,7 @@ public final class Heroes extends JavaPlugin implements Listener {
         if (lobbyLocation != null) {
             player.teleport(lobbyLocation);
             player.getInventory().clear();
-            player.setHealth(player.getMaxHealth());
+            player.setHealth(player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue());
             player.setFoodLevel(20);
             player.setExp(0);
             player.setLevel(0);
@@ -143,23 +175,5 @@ public final class Heroes extends JavaPlugin implements Listener {
         } else {
             getLogger().warning("Attempted to teleport player to lobby, but lobby location is not set.");
         }
-    }
-
-    @Override
-    public void onDisable() {
-        // Cancel all tasks
-        Bukkit.getScheduler().cancelTasks(this);
-
-        // End all active games
-        for (Game game : GameManager.getActiveGames()) {
-            game.gameEnd();
-        }
-
-        // Clear data structures
-        HeroManager.clear();
-        //GameManager.clear();
-        //PartyManager.clear();
-
-        getLogger().info("Heroes plugin has been disabled!");
     }
 }

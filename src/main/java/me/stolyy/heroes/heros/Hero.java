@@ -1,24 +1,21 @@
 package me.stolyy.heroes.heros;
 
-import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.heros.abilities.Ability;
-import me.stolyy.heroes.heros.abilities.AbilityType;
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.Damageable;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public abstract class Hero {
     protected final Player player;
-    public HeroType heroType;
-    public double weight;
+    private HeroType heroType;
+    private double weight;
+
+    private double jabCooldown = 0.5;
+    private double jabDamage = 1.0;
+    private double jabReach = 5.0;
+
+    private int maxDoubleJumps = 2;
+
+    private double damageMultiplier = 1.0;
+    private double knockbackMultiplier = 1.0;
 
     protected Ability primary;
     protected Ability secondary;
@@ -27,13 +24,81 @@ public abstract class Hero {
     public Hero(Player player){
         this.player = player;
         stats();
+        baseStats();
     }
 
     public abstract void usePrimaryAbility();
     public abstract void useSecondaryAbility();
     public abstract void useUltimateAbility();
-    public abstract void passiveAbility1();
-    public abstract void passiveAbility2();
 
     protected abstract void stats();
+
+    private void baseStats() {
+        switch (heroType) {
+            case MELEE -> jabDamage = 5.0;
+            case HYBRID -> jabDamage = 4.0;
+            case RANGED -> jabDamage = 2.0;
+        }
+    }
+
+    protected Hero setHeroType(HeroType heroType) {
+        this.heroType = heroType;
+        return this;
+    }
+    protected Hero setWeight(double weight) {
+        this.weight = weight;
+        return this;
+    }
+    protected Hero setJabCooldown(double jabCooldown) {
+        this.jabCooldown = jabCooldown;
+        return this;
+    }
+    protected Hero setJabDamage(double jabDamage) {
+        this.jabDamage = jabDamage;
+        return this;
+    }
+    protected Hero setJabReach(double jabReach) {
+        this.jabReach = jabReach;
+        return this;
+    }
+    protected Hero setMaxDoubleJumps(int maxDoubleJumps) {
+        this.maxDoubleJumps = maxDoubleJumps;
+        return this;
+    }
+    protected Hero setDamageMultiplier(double damageMultiplier) {
+        this.damageMultiplier = damageMultiplier;
+        return this;
+    }
+    protected Hero setKnockbackMultiplier(double knockbackMultiplier) {
+        this.knockbackMultiplier = knockbackMultiplier;
+        return this;
+    }
+
+    public Player player() {
+        return player;
+    }
+    public HeroType heroType() {
+        return heroType;
+    }
+    public double weight() {
+        return weight;
+    }
+    public double jabCooldown() {
+        return jabCooldown;
+    }
+    public double jabDamage() {
+        return jabDamage;
+    }
+    public double jabReach() {
+        return jabReach;
+    }
+    public int maxDoubleJumps() {
+        return maxDoubleJumps;
+    }
+    public double damageMultiplier() {
+        return damageMultiplier;
+    }
+    public double knockbackMultiplier() {
+        return knockbackMultiplier;
+    }
 }

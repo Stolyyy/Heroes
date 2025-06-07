@@ -25,16 +25,6 @@ public class Punishgers extends Hero {
     }
 
     @Override
-    public void passiveAbility1() {
-        //shift to swap
-    }
-
-    @Override
-    public void passiveAbility2() {
-
-    }
-
-    @Override
     protected void stats() {
 
     }

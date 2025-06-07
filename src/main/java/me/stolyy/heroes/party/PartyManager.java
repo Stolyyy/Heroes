@@ -11,9 +11,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.*;
 
 public class PartyManager {
-    private static Set<Party> parties = new HashSet<>();
-    private static Map<Player, Set<Player>> invitesPerPlayer = new HashMap<>();
-    private static Map<Player, Party> playerPartyMap = new HashMap<>();
+    private static final Set<Party> parties = new HashSet<>();
+    private static final Map<Player, Set<Player>> invitesPerPlayer = new HashMap<>();
+    private static final Map<Player, Party> playerPartyMap = new HashMap<>();
     private final static long EXPIRATION_TIME = 1200;
 
     public static void invitePlayer(Player inviter, Player invited){

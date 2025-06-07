@@ -1,28 +1,30 @@
-package me.stolyy.heroes.heros.abilities;
+package me.stolyy.heroes.heros.abilities.interfaces;
 
 import me.stolyy.heroes.Heroes;
-import me.stolyy.heroes.heros.Hero;
 import me.stolyy.heroes.heros.HeroManager;
+import me.stolyy.heroes.heros.abilities.AbilityType;
+import me.stolyy.heroes.heros.abilities.data.DashData;
+import me.stolyy.heroes.utility.physics.Hitbox;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public interface Dash {
-    static void dash(Player player, AbilityType abilityType, double length) {
+    default void dash(Player player, AbilityType abilityType, DashData dashData) {
         Location startLocation = player.getLocation();
         Vector direction = player.getEyeLocation().getDirection();
-        double dashSpeed = 3.5; // Speed of the dash movement
-        int maxDurationTicks = 6; // Maximum duration of the dash in ticks
+        double dashSpeed = dashData.speed(); // Speed of the dash movement
+        int maxDurationTicks = 7; // Maximum duration of the dash in ticks
 
         player.setVelocity(direction.multiply(dashSpeed));
 
         new BukkitRunnable() {
             double distanceTravelled = 0.0;
-            HashMap<Player, Boolean> hitPlayer = new HashMap<>();
+            final Set<Player> nearbyPlayers = new HashSet<>();
+            final HashMap<Player, Boolean> hitPlayer = new HashMap<>();
             Location lastLocation = startLocation.clone();
             int ticksElapsed = 0;
 
@@ -32,7 +34,7 @@ public interface Dash {
                 Location currentLocation = player.getLocation();
                 distanceTravelled += lastLocation.distance(currentLocation);
 
-                if (distanceTravelled >= length || ticksElapsed >= maxDurationTicks) {
+                if (distanceTravelled >= dashData.distance() || ticksElapsed >= maxDurationTicks) {
                     endDash();
                     return;
                 }
@@ -44,7 +46,7 @@ public interface Dash {
                 //}
 
                 //hitbox detection
-                List<Player> nearbyPlayers = (List<Player>) player.getWorld().getNearbyPlayers(currentLocation, 2);
+                nearbyPlayers.addAll(Hitbox.cube(currentLocation, 2));
                 for (Player nearbyPlayer : nearbyPlayers) {
                     if (nearbyPlayer != player && !hitPlayer.getOrDefault(nearbyPlayer, false)) {
                         ((Dash) HeroManager.getHero(player)).onDashHit(nearbyPlayer, currentLocation, abilityType);
@@ -63,4 +65,5 @@ public interface Dash {
     }
 
     void onDashHit(Player target, Location location, AbilityType abilityType);
+    default void onDashEnd(Location location, AbilityType abilityType) {}
 }

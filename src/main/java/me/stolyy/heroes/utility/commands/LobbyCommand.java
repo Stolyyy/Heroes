@@ -1,4 +1,4 @@
-package me.stolyy.heroes.utility;
+package me.stolyy.heroes.utility.commands;
 
 import me.stolyy.heroes.game.minigame.GameManager;
 import me.stolyy.heroes.Heroes;
@@ -11,7 +11,6 @@ import java.util.Arrays;
 
 public class LobbyCommand extends Command {
     //makes player leave game if in one
-    //
     public LobbyCommand() {
         super("lobby");
         this.setDescription("Leave the current game");

@@ -1,6 +1,6 @@
 package me.stolyy.heroes.heros.minions;
 
-import me.stolyy.heroes.utility.Equipment;
+import me.stolyy.heroes.utility.effects.Equipment;
 import me.stolyy.heroes.utility.Interactions;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -9,7 +9,6 @@ import org.bukkit.entity.Zombie;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.Vector;
 
 public class BasherEntity {
     //Basher mob for pug's ultimate

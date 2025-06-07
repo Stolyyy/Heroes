@@ -5,10 +5,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public abstract class HeroEnergy extends HeroCooldown {
-    protected double energy;
-    protected double maxEnergy;
-    protected double energyPerTick;
-    protected boolean canIncreaseEnergy;
+    private double energy;
+    private double maxEnergy;
+    private double energyPerTick;
+    private boolean canIncreaseEnergy;
 
     public HeroEnergy(Player player){
         super(player);
@@ -44,6 +44,44 @@ public abstract class HeroEnergy extends HeroCooldown {
         xpProgress = Math.max(0.0f, Math.min(1.0f, xpProgress));
         player.setLevel(xpLevels);
         player.setExp(xpProgress);
+    }
+
+    protected HeroEnergy setEnergy(double energy) {
+        this.energy = Math.min(Math.max(energy, 0), maxEnergy);
+        return this;
+    }
+    protected HeroEnergy addEnergy(double energy) {
+        this.energy = Math.min(Math.max(this.energy + energy, 0), maxEnergy);
+        return this;
+    }
+    protected HeroEnergy subtractEnergy(double energy) {
+        this.energy = Math.min(Math.max(this.energy - energy, 0), maxEnergy);
+        return this;
+    }
+    protected HeroEnergy setMaxEnergy(double maxEnergy) {
+        this.maxEnergy = maxEnergy;
+        return this;
+    }
+    protected HeroEnergy setEnergyPerTick(double energyPerTick) {
+        this.energyPerTick = energyPerTick;
+        return this;
+    }
+    protected HeroEnergy setCanIncreaseEnergy(boolean canIncreaseEnergy) {
+        this.canIncreaseEnergy = canIncreaseEnergy;
+        return this;
+    }
+
+    protected double energy() {
+        return energy;
+    }
+    protected double maxEnergy() {
+        return maxEnergy;
+    }
+    protected double energyPerTick() {
+        return energyPerTick;
+    }
+    protected boolean canIncreaseEnergy() {
+        return canIncreaseEnergy;
     }
 }
 

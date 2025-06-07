@@ -4,12 +4,14 @@ import me.stolyy.heroes.game.maps.GameMap;
 import me.stolyy.heroes.game.maps.GameMapManager;
 import me.stolyy.heroes.heros.HeroCooldown;
 import me.stolyy.heroes.heros.HeroManager;
-import me.stolyy.heroes.utility.Equipment;
+import me.stolyy.heroes.heros.abilities.interfaces.Reload;
+import me.stolyy.heroes.utility.effects.Equipment;
 import me.stolyy.heroes.game.minigame.GameEnums.GameMode;
 import me.stolyy.heroes.game.minigame.GameEnums.GameTeam;
 import me.stolyy.heroes.game.minigame.GameEnums.GameState;
 
 import me.stolyy.heroes.Heroes;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -26,16 +28,15 @@ import java.util.*;
 public class Game {
     private Set<Player> playerList = new HashSet<>();
     private Set<Player> alivePlayerList = new HashSet<>();
-    private Set<Player> restrictedPlayers = new HashSet<>();
+    private final Set<Player> restrictedPlayers = new HashSet<>();
     private GameMode gameMode;
     private Map<Player, GameTeam> playerTeams = new HashMap<>();
     private GameMap gameMap;
     private GameState gameState;
-    private Map<Player, Integer> lives = new HashMap<>();
-    private Scoreboard scoreboard;
-    private Objective tabHealthObjective;
-    private Objective belowNameHealthObjective;
-    private Objective objective;
+    private final Map<Player, Integer> lives = new HashMap<>();
+    private final Scoreboard scoreboard;
+    private final Objective tabHealthObjective;
+    private final Objective belowNameHealthObjective;
 
     public Game(GameMap gameMap, GameMode gameMode) {
         this.gameMap = GameMapManager.createWorld(gameMap);
@@ -51,7 +52,7 @@ public class Game {
         this.belowNameHealthObjective = scoreboard.registerNewObjective("belowNameHealth", "health", "❤");
         this.belowNameHealthObjective.setDisplaySlot(DisplaySlot.BELOW_NAME);
 
-        objective = scoreboard.registerNewObjective("GameInfo", "dummy", ChatColor.GOLD + "SMASH HEROES 4");
+        Objective objective = scoreboard.registerNewObjective("GameInfo", "dummy", NamedTextColor.GOLD + "SMASH HEROES 4");
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
     }
 
@@ -113,22 +114,21 @@ public class Game {
     }
 
     public void addSpectator(Player player){
-        if(!playerList.contains(player)) playerList.add(player);
+        playerList.add(player);
         alivePlayerList.remove(player);
         playerTeams.put(player, GameTeam.SPECTATOR);
         player.setGameMode(org.bukkit.GameMode.SPECTATOR);
         unRestrictPlayer(player);
         removeEffects(player);
         //add player to spec team
-        //unrestrict and remove effects
+        //un restrict and remove effects
         //put them in spec
     }
 
     public void removePlayer(Player player){
-        //remove from playerlist and playerteams
+        //remove from player list and player teams
         //send them to lobby
-        //checkgameend
-        //uninstantialize heroes
+        //check game end
         GameManager.setPlayerGame(player, null);
         playerList.remove(player);
         playerTeams.remove(player);
@@ -179,8 +179,8 @@ public class Game {
         }
         gameState = GameState.IN_PROGRESS;
         GameManager.updateGameStatus(this);
-        //unrestrict players
-        //unrestrict abilities
+        //un restrict players
+        //un restrict abilities
     }
 
     public void gameEnd(){
@@ -221,6 +221,7 @@ public class Game {
         if(lives.get(player) > 0) {
             player.setGameMode(org.bukkit.GameMode.SPECTATOR);
             restrictPlayer(player);
+            if(HeroManager.getHero(player) instanceof Reload h) h.reload();
             new BukkitRunnable() {
                 private int timer = 6;
                 @Override
@@ -328,7 +329,7 @@ public class Game {
             }
 
             // Set team prefix with color
-            scoreboardTeam.setColor(getTeamChatColor(team));
+            scoreboardTeam.color(getTeamChatColor(team));
         }
 
         // Assign players to their teams and update scoreboard scores
@@ -392,28 +393,22 @@ public class Game {
     public void setPlayerTeam(Player player, GameTeam gameTeam){
         playerTeams.put(player, gameTeam);
         player.setGameMode(org.bukkit.GameMode.ADVENTURE);
+
+        if(gameTeam != GameTeam.SPECTATOR) {
+            alivePlayerList.add(player);
+            restrictPlayer(player);
+        }
+
         switch (gameTeam){
-            case GameTeam.RED:
-                player.teleport(gameMap.getSpawnLocations()[0]);
-                alivePlayerList.add(player);
-                break;
-            case GameTeam.BLUE:
-                player.teleport(gameMap.getSpawnLocations()[1]);
-                alivePlayerList.add(player);
-                break;
-            case GameTeam.GREEN:
-                player.teleport(gameMap.getSpawnLocations()[2]);
-                alivePlayerList.add(player);
-                break;
-            case GameTeam.YELLOW:
-                player.teleport(gameMap.getSpawnLocations()[3]);
-                alivePlayerList.add(player);
-                break;
-            case GameTeam.SPECTATOR:
+            case GameTeam.RED -> player.teleport(gameMap.getSpawnLocations()[0]);
+            case GameTeam.BLUE -> player.teleport(gameMap.getSpawnLocations()[1]);
+            case GameTeam.GREEN -> player.teleport(gameMap.getSpawnLocations()[2]);
+            case GameTeam.YELLOW -> player.teleport(gameMap.getSpawnLocations()[3]);
+            case GameTeam.SPECTATOR -> {
                 addSpectator(player);
                 player.teleport(gameMap.getSpectatorLocation());
                 alivePlayerList.remove(player);
-                break;
+            }
         }
     }
 
@@ -428,19 +423,14 @@ public class Game {
         return teamsWithPlayers >= 2;
     }
 
-    private ChatColor getTeamChatColor(GameTeam team) {
-        switch (team) {
-            case RED:
-                return ChatColor.RED;
-            case BLUE:
-                return ChatColor.BLUE;
-            case GREEN:
-                return ChatColor.GREEN;
-            case YELLOW:
-                return ChatColor.YELLOW;
-            default:
-                return ChatColor.WHITE;
-        }
+    private NamedTextColor getTeamChatColor(GameTeam team) {
+        return switch (team) {
+            case RED -> NamedTextColor.RED;
+            case BLUE -> NamedTextColor.BLUE;
+            case GREEN -> NamedTextColor.GREEN;
+            case YELLOW -> NamedTextColor.YELLOW;
+            default -> NamedTextColor.WHITE;
+        };
     }
 
     private void clear(){

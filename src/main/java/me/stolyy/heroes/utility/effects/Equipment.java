@@ -1,9 +1,8 @@
-package me.stolyy.heroes.utility;
+package me.stolyy.heroes.utility.effects;
 
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import me.stolyy.heroes.heros.Hero;
-import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.heros.HeroManager;
 import me.stolyy.heroes.heros.characters.Pug;
 import me.stolyy.heroes.heros.characters.Shoop;
@@ -28,8 +27,8 @@ public class Equipment {
         ItemStack legs = customArmor("legs", 255, 255, 255, "Legs");;
         ItemStack boots = customArmor("boots", 255, 255, 255, "Boots");;
         ItemStack fist = customItem(0, "Pick a character");;
-        ItemStack secondary = customItem(5, "Secondary");;
-        ItemStack ult = customItem(6, "Ultimate!");;
+        ItemStack secondary = breakableItem(5, "Secondary");;
+        ItemStack ult = breakableItem(6, "Ultimate!");;
         if(h instanceof VoidCrawler) {
             head = customItem(16000, "Void Crawler Helmet");
             chest = customArmor("chest", 199, 219, 236, "Void Crawler Chestplate");
@@ -68,47 +67,61 @@ public class Equipment {
     }
 
     //Create carrot on a stick with custom model data
-                public static ItemStack customItem(int customModelData, String name) {
-                    ItemStack item = new ItemStack(Material.CARROT_ON_A_STICK);
-                    ItemMeta meta = item.getItemMeta();
+    public static ItemStack customItem(int customModelData, String name) {
+        ItemStack item = new ItemStack(Material.CARROT_ON_A_STICK);
+        ItemMeta meta = item.getItemMeta();
 
-                    if (meta != null) {
-                        meta.setDisplayName(name);
-                        meta.setCustomModelData(customModelData);
-                        meta.setUnbreakable(true);
-                        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+        if (meta != null) {
+            meta.setDisplayName(name);
+            meta.setCustomModelData(customModelData);
+            meta.setUnbreakable(true);
+            meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
 
-                        item.setItemMeta(meta);
-                    }
+            item.setItemMeta(meta);
+        }
 
-                    return item;
-                }
+        return item;
+    }
 
-                //Create armor with RGB coloring
-                public static ItemStack customArmor(String type, int r, int g, int b, String name) {
-                    Material material = switch (type.toLowerCase()) {
-                        case "chest" -> Material.LEATHER_CHESTPLATE;
-                        case "legs" -> Material.LEATHER_LEGGINGS;
-                        case "boots" -> Material.LEATHER_BOOTS;
-                        default ->
-                                throw new IllegalArgumentException("Invalid armor type. Use 'chest', 'legs', or 'boots'.");
-                    };
+    public static ItemStack breakableItem(int customModelData, String name) {
+        ItemStack item = new ItemStack(Material.CARROT_ON_A_STICK);
+        ItemMeta meta = item.getItemMeta();
 
-                    ItemStack armor = new ItemStack(material);
-                    LeatherArmorMeta meta = (LeatherArmorMeta) armor.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(name);
+            meta.setCustomModelData(customModelData);
 
-                    if (meta != null) {
-                        meta.setColor(Color.fromRGB(r, g, b));
-                        meta.setDisplayName(name);
-                        meta.setUnbreakable(true);
-                        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_ATTRIBUTES);
+            item.setItemMeta(meta);
+        }
 
-                        // Remove all attribute modifiers
-                        Multimap<Attribute, AttributeModifier> emptyModifiers = LinkedHashMultimap.create();
-                        meta.setAttributeModifiers(emptyModifiers);
+        return item;
+    }
 
-                        armor.setItemMeta(meta);
-                    }
+    //Create armor with RGB coloring
+    public static ItemStack customArmor(String type, int r, int g, int b, String name) {
+        Material material = switch (type.toLowerCase()) {
+            case "chest" -> Material.LEATHER_CHESTPLATE;
+            case "legs" -> Material.LEATHER_LEGGINGS;
+            case "boots" -> Material.LEATHER_BOOTS;
+            default ->
+                    throw new IllegalArgumentException("Invalid armor type. Use 'chest', 'legs', or 'boots'.");
+        };
+
+        ItemStack armor = new ItemStack(material);
+        LeatherArmorMeta meta = (LeatherArmorMeta) armor.getItemMeta();
+
+        if (meta != null) {
+            meta.setColor(Color.fromRGB(r, g, b));
+            meta.setDisplayName(name);
+            meta.setUnbreakable(true);
+            meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_ATTRIBUTES);
+
+            // Remove all attribute modifiers
+            Multimap<Attribute, AttributeModifier> emptyModifiers = LinkedHashMultimap.create();
+            meta.setAttributeModifiers(emptyModifiers);
+
+            armor.setItemMeta(meta);
+        }
 
         return armor;
     }

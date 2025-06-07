@@ -2,11 +2,12 @@ package me.stolyy.heroes.heros.characters;
 
 import me.stolyy.heroes.heros.HeroEnergy;
 import me.stolyy.heroes.heros.abilities.*;
-import me.stolyy.heroes.heros.HeroType;
+import me.stolyy.heroes.heros.abilities.interfaces.Dash;
+import me.stolyy.heroes.heros.abilities.interfaces.Hitscan;
+import me.stolyy.heroes.heros.abilities.interfaces.Projectile;
+import me.stolyy.heroes.heros.abilities.AbilityType;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
-
-import javax.swing.*;
 
 public class Blud extends HeroEnergy implements Hitscan, Dash, Projectile {
     private PrimaryType primaryType;
@@ -25,24 +26,24 @@ public class Blud extends HeroEnergy implements Hitscan, Dash, Projectile {
     //swaps between primaries, uses energy for cooldowns
     @Override
     public void usePrimaryAbility() {
-        switch (primaryType){
+        /*switch (primaryType){
             case DASH -> {
                 if(!dash.ready || energy < 60) return;
-                Dash.dash(player, AbilityType.PRIMARY, dashLength);
+                dash(player, AbilityType.PRIMARY, dashLength);
                 cooldown(dash);
                 energy -= 60;
             } case BULLET -> {
                 if(!bullet.ready || energy < 30) return;
-                Projectile.projectile(player, AbilityType.PRIMARY, bulletSpeed, bulletRadius, false, 17001);
+                projectile(player, AbilityType.PRIMARY, bulletSpeed, bulletRadius, false, 17001);
                 cooldown(bullet);
                 energy -= 30;
             } case PIERCE -> {
                 if(!pierce.ready || energy < 2) return;
-                Hitscan.hitscan(player, AbilityType.PRIMARY, 0.5, 100, Particle.DUST, Color.RED);
+                hitscan(player, AbilityType.PRIMARY, 0.5, 100, Particle.DUST, Color.RED);
                 cooldown(pierce);
                 energy -= 2;
             }
-        }
+        }*/
     }
 
     @Override
@@ -72,7 +73,7 @@ public class Blud extends HeroEnergy implements Hitscan, Dash, Projectile {
 
     @Override
     public void useSecondaryAbility() {
-        switch(primaryType) {
+        /*switch(primaryType) {
             case DASH:
                 if(player.isSneaking()){
                     primaryType = PrimaryType.BULLET;
@@ -94,7 +95,7 @@ public class Blud extends HeroEnergy implements Hitscan, Dash, Projectile {
                     primaryType = PrimaryType.DASH;
                 }
                 break;
-        }
+        }*/
     }
 
     @Override
@@ -103,18 +104,8 @@ public class Blud extends HeroEnergy implements Hitscan, Dash, Projectile {
     }
 
     @Override
-    public void passiveAbility1() {
-
-    }
-
-    @Override
-    public void passiveAbility2() {
-
-    }
-
-    @Override
     protected void stats() {
-        heroType = HeroType.HYBRID;
+        /*heroType = HeroType.HYBRID;
         weight = 3.5;
         dash = new Ability(AbilityType.PRIMARY, 6, 2,1.5);
         dashLength = 7;
@@ -127,7 +118,7 @@ public class Blud extends HeroEnergy implements Hitscan, Dash, Projectile {
         energy = 100;
         maxEnergy = 100;
         energyPerTick = 1.5;
-        initializeEnergyUpdates();
+        initializeEnergyUpdates();*/
     }
 
     enum PrimaryType{

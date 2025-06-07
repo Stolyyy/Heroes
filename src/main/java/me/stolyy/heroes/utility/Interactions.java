@@ -5,104 +5,79 @@ import me.stolyy.heroes.game.minigame.GameEnums;
 import me.stolyy.heroes.game.minigame.GameListener;
 import me.stolyy.heroes.game.minigame.GameManager;
 import me.stolyy.heroes.heros.HeroManager;
-import me.stolyy.heroes.Heroes;
-import me.stolyy.heroes.heros.Hero;
+import me.stolyy.heroes.heros.characters.Bug;
+import me.stolyy.heroes.utility.effects.Particles;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class Interactions {
-    public static Map<Player, Integer> dmgMitigation = new HashMap<>();
-    public static Map<Player, Integer> kbMitigation = new HashMap<>();
+    //Knockback direction is calculated based on one of the following:
+    //1. Attacker + Victim locations
+    //2. Direction vector
+    //3. Hit location + Victim locations
 
     //Normal knockback
-    //Calculates direction based on attacker + victim locations
     public static void handleInteraction(double damage, double knockback, Player attacker, Player victim){
-        if(!canInteract(attacker, victim)) return;
-        Vector direction = victim.getLocation().toVector().subtract(attacker.getLocation().toVector());
-        handleKnockback(direction,knockback,0,false,victim);
-        blood(victim);
-        handleDamage(damage, attacker, victim);
+        handleInteraction(victim.getLocation().toVector().subtract(attacker.getLocation().toVector()), damage, knockback, 0, false, attacker, victim);
     }
-    //Calculates direction based on direction vector
     public static void handleInteraction(Vector direction, double damage, double knockback, Player attacker, Player victim){
-        if(!canInteract(attacker, victim)) return;
-        handleKnockback(direction,knockback,0,false,victim);
-        blood(victim);
-        handleDamage(damage, attacker, victim);
+        handleInteraction(direction, damage, knockback, 0, false, attacker, victim);
     }
-    //Calculates direction based on hit + victim locations
     public static void handleInteraction(Location hitLocation, double damage, double knockback, Player attacker, Player victim){
-        if(!canInteract(attacker, victim)) return;
-        Vector direction = victim.getLocation().toVector().subtract(hitLocation.toVector());
-        handleKnockback(direction,knockback,0,false,victim);
-        blood(victim);
-        handleDamage(damage, attacker, victim);
+        handleInteraction(victim.getLocation().toVector().subtract(hitLocation.toVector()), damage, knockback, 0, false, attacker, victim);
     }
-
-
 
     //Vertical = distinct y-kb
     public static void handleVerticalInteraction(double damage, double knockback, double yKnockback, Player attacker, Player victim){
-        if(!canInteract(attacker, victim)) return;
-        Vector direction = victim.getLocation().toVector().subtract(attacker.getLocation().toVector());
-        handleKnockback(direction,knockback,yKnockback,false,victim);
-        blood(victim);
-        handleDamage(damage, attacker, victim);
+        handleInteraction(victim.getLocation().toVector().subtract(attacker.getLocation().toVector()), damage, knockback, yKnockback, false, attacker, victim);
     }
     public static void handleVerticalInteraction(Vector direction, double damage, double knockback, double yKnockback, Player attacker, Player victim){
-        if(!canInteract(attacker, victim)) return;
-        handleKnockback(direction,knockback,yKnockback,false,victim);
-        blood(victim);
-        handleDamage(damage, attacker, victim);
+        handleInteraction(direction, damage, knockback, yKnockback, false, attacker, victim);
     }
     public static void handleVerticalInteraction(Location hitLocation, double damage, double knockback, double yKnockback, Player attacker, Player victim){
-        if(!canInteract(attacker, victim)) return;
-        Vector direction = victim.getLocation().toVector().subtract(hitLocation.toVector());
-        handleKnockback(direction,knockback,yKnockback,false,victim);
-        blood(victim);
-        handleDamage(damage, attacker, victim);
+        handleInteraction(victim.getLocation().toVector().subtract(hitLocation.toVector()), damage, knockback, yKnockback, false, attacker, victim);
     }
-
-
 
     //Static = KB independent of health
     public static void handleStaticInteraction(double damage, double knockback, Player attacker, Player victim){
-        if(!canInteract(attacker, victim)) return;
-        Vector direction = victim.getLocation().toVector().subtract(attacker.getLocation().toVector());
-        handleKnockback(direction,knockback,0,true,victim);
-        blood(victim);
-        handleDamage(damage, attacker, victim);
+        handleInteraction(victim.getLocation().toVector().subtract(attacker.getLocation().toVector()), damage, knockback, 0, true, attacker, victim);
     }
     public static void handleStaticInteraction(Vector direction, double damage, double knockback, Player attacker, Player victim){
-        if(!canInteract(attacker, victim)) return;
-        handleKnockback(direction,knockback,0,true,victim);
-        blood(victim);
-        handleDamage(damage, attacker, victim);
+        handleInteraction(direction, damage, knockback, 0, true, attacker, victim);
     }
     public static void handleStaticInteraction(Location hitLocation, double damage, double knockback, Player attacker, Player victim){
-        if(!canInteract(attacker, victim)) return;
-        Vector direction = victim.getLocation().toVector().subtract(hitLocation.toVector());
-        handleKnockback(direction,knockback,0,true,victim);
-        blood(victim);
-        handleDamage(damage, attacker, victim);
+        handleInteraction(victim.getLocation().toVector().subtract(hitLocation.toVector()), damage, knockback, 0, true, attacker, victim);
     }
+
+
 
 
 
     //Private helpers
+    private static void handleInteraction(Vector direction, double damage, double knockback, double yKnockback, boolean staticKB, Player attacker, Player victim) {
+        if(!canInteract(attacker, victim)) return;
+        handleKnockback(direction, knockback, yKnockback, staticKB, victim);
+        Particles.blood(victim);
+        handleDamage(damage, attacker, victim);
+    }
+
+
     private static void handleDamage(double damage, Player attacker, Player victim) {
         double currentHealth = victim.getHealth();
-        damage *= dmgMitigation.getOrDefault(victim,1);
+        damage *= HeroManager.getHero(victim).damageMultiplier();
         victim.damage(1);
         if (currentHealth > 1.0) {
             victim.setHealth(Math.max(1.0, currentHealth - damage));
         }
+
+        if(HeroManager.getHero(victim) instanceof Bug bug){
+            bug.onHit();
+        }
     }
+
 
     private static void handleKnockback(Vector direction, double knockback, double yKnockback, boolean staticKB, Player victim){
         knockback *= 0.16;
@@ -137,8 +112,8 @@ public class Interactions {
             direction = new Vector(0, 1, 0);
 
 
-        double weightMultiplier = 1 + (3 - HeroManager.getHero(victim).weight) / 5;
-        double mitigationMultiplier = kbMitigation.getOrDefault(victim,1);
+        double weightMultiplier = 1 + (3 - HeroManager.getHero(victim).weight()) / 5;
+        double mitigationMultiplier = HeroManager.getHero(victim).knockbackMultiplier();
 
         victim.setVelocity(new Vector(0,0,0));
         Vector kb = direction.normalize();
@@ -147,36 +122,6 @@ public class Interactions {
         victim.setVelocity(kb);
     }
 
-    private static void blood(Player victim) {
-        new BukkitRunnable() {
-            int g = 200;
-            public void run() {
-                if (!victim.isOnGround() && victim.getVelocity().getY() >= 0.35) {
-                    for (int i = 0; i < 6; i++) {
-                        if (victim.getVelocity().getY() <= 0.0) {
-                            this.cancel();
-                            return;
-                        }
-                        this.g = Math.max(this.g - 6, 0);
-                        Particle.DustTransition dustOptions = new Particle.DustTransition(
-                                Color.fromRGB(255, this.g, 0),  // Start color
-                                Color.fromRGB(150, 0, 0),      // Transition to darker red
-                                1.2f                           // Particle size
-                        );
-                        victim.getWorld().spawnParticle(
-                                Particle.DUST_COLOR_TRANSITION,
-                                victim.getLocation(),
-                                1, // Must be 1 for DUST_COLOR_TRANSITION
-                                0.2, 0.2, 0.2, // Slight random spread
-                                dustOptions
-                        );
-                    }
-                } else {
-                    this.cancel();
-                }
-            }
-        }.runTaskTimer(Heroes.getInstance(), 2L, 1L);
-    }
 
     //returns array with the magnitude of reduction for each component of velocity
     private static double[] reduceVelocity(Player victim){
@@ -192,6 +137,7 @@ public class Interactions {
 
         return xyzReduction;
     }
+
 
     //check for gamemode adventure, same game, different teams, and if alive
     public static boolean canInteract(Player attacker, Player victim){

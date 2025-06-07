@@ -1,4 +1,4 @@
-package me.stolyy.heroes.utility;
+package me.stolyy.heroes.utility.commands;
 
 import me.stolyy.heroes.game.minigame.Game;
 import me.stolyy.heroes.game.minigame.GameManager;
@@ -52,6 +52,7 @@ public class StuckCommand extends Command {
         return true;
     }
 
+    //replace with wall detection
     public boolean isInBlock(Player player) {
         Location loc = player.getLocation();
         World world = loc.getWorld();

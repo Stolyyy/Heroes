@@ -6,6 +6,7 @@ import me.stolyy.heroes.party.Party;
 import me.stolyy.heroes.party.PartyManager;
 import me.stolyy.heroes.heros.HeroManager;
 import me.stolyy.heroes.Heroes;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -48,8 +49,8 @@ public class PartyGUI extends GUI{
         members.remove(player);
         inventoryItems.put(27, createPlayerHead(player));
         game.setPlayerTeam(player, GameTeam.RED);
-        inventoryItems.put(29, createPlayerHead(members.get(0)));
-        game.setPlayerTeam(members.get(0), GameTeam.BLUE);
+        inventoryItems.put(29, createPlayerHead(members.getFirst()));
+        game.setPlayerTeam(members.getFirst(), GameTeam.BLUE);
         for (int i = 1; i < members.size() && i < 18; i++) {
             inventoryItems.put(i-1, createPlayerHead(members.get(i)));
             game.addSpectator(members.get(i));
@@ -76,7 +77,7 @@ public class PartyGUI extends GUI{
             case 22 -> {
                 //map
                 GUIListener.playerGUIMap.put(player, null);
-                PartyMapGUI mapGUI = new PartyMapGUI(game, player, this);
+                new PartyMapGUI(game, player, this);
             } case 31 -> {
                 //settings
                 //GUIListener.playerGUIMap.put(player, this);
@@ -89,7 +90,7 @@ public class PartyGUI extends GUI{
                     GUIListener.playerGUIMap.put(player, null);
                     player.closeInventory();
                 } else {
-                    player.sendMessage(ChatColor.RED + "Cannot Start! Check Team sizes.");
+                    player.sendMessage(NamedTextColor.RED + "Cannot Start! Check Team sizes.");
                 }
             } case 49 -> {
                 //cancel
@@ -161,7 +162,7 @@ public class PartyGUI extends GUI{
         SkullMeta meta = (SkullMeta) head.getItemMeta();
         meta.setOwningPlayer(player);
         List<String> lore = new ArrayList<>();
-        lore.add(ChatColor.WHITE + HeroManager.heroToString(HeroManager.getHero(player)));
+        lore.add(NamedTextColor.WHITE + HeroManager.heroToString(HeroManager.getHero(player)));
         meta.setLore(lore);
         meta.setDisplayName(player.getName());
         head.setItemMeta(meta);

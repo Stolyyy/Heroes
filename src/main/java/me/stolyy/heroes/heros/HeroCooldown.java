@@ -3,8 +3,14 @@ package me.stolyy.heroes.heros;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.heros.abilities.Ability;
 import me.stolyy.heroes.heros.abilities.AbilityType;
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
+import me.stolyy.heroes.utility.Interactions;
+import me.stolyy.heroes.utility.effects.Particles;
+import me.stolyy.heroes.utility.effects.Sounds;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
@@ -14,55 +20,66 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public abstract class HeroCooldown extends Hero {
     private static final Plugin PLUGIN = Heroes.getInstance();
+    private static final int BAR_LENGTH = 10;
     private static final int UPDATES_PER_SECOND = 10;
+
+    private boolean canJab;
+    private int doubleJumpCount = 0;
+    private boolean canDoubleJump = true;
 
     public HeroCooldown(Player player){
         super(player);
     }
 
+    public void doubleJump(){
+        doubleJumpCount++;
+        if(doubleJumpCount >= maxDoubleJumps()) canDoubleJump = false;
+        Particles.ring(player.getLocation(), .75, Particle.CLOUD);
+        Sounds.playSoundToPlayer(player, Sound.ENTITY_BAT_TAKEOFF, 1.0f, 1.0f);
+        player.setVelocity(player.getLocation().getDirection().multiply(0.90).setY(0.85));
+    }
+
+    public boolean canDoubleJump(){
+        return canDoubleJump && doubleJumpCount < maxDoubleJumps();
+    }
+
+    public void resetDoubleJumps() {
+        doubleJumpCount = 0;
+        setMaxDoubleJumps(2);
+        canDoubleJump = true;
+    }
+
+    public void jab(Player target){
+        canJab = false;
+        Bukkit.getScheduler().runTaskLater(PLUGIN, () -> canJab = true, (long) jabCooldown() * 20);
+        Interactions.handleStaticInteraction(jabDamage(), 5, player, target);
+        onPunch();
+    }
+
+    public boolean canJab() {
+        return canJab;
+    }
+
     public void onPunch() {
         int reduce = 0;
-        switch (heroType) {
+        switch (heroType()) {
             case MELEE -> reduce = 3;
             case HYBRID -> reduce = 1;
         }
-        ultimate.timeUntilUse -= reduce;
+        ultimate.setTimeUntilUse(ultimate.timeUntilUse() - reduce);
     }
 
     public void onRangedHit() {
         int reduce = 0;
-        switch (heroType) {
+        switch (heroType()) {
             case RANGED -> reduce = 2;
             case HYBRID -> reduce = 1;
         }
-        ultimate.timeUntilUse -= reduce;
+        ultimate.setTimeUntilUse(ultimate.timeUntilUse() - reduce);
     }
 
     public void resetUltTimer(){
         cooldown(ultimate);
-    }
-
-    protected void cooldown(Ability ability){
-        AbilityType abilityType = ability.abilityType;
-        ability.ready = false;
-        ability.timeUntilUse = ability.cd;
-        switch (abilityType){
-            case PRIMARY -> {
-                runCooldown(ability, null);
-            }
-            case SECONDARY -> {
-                ItemStack cooldownItem = player.getInventory().getItem(1);
-                if (cooldownItem != null && cooldownItem.getType() == Material.CARROT_ON_A_STICK) {
-                    runCooldown(ability, cooldownItem);
-                }
-            } case ULTIMATE -> {
-                ability.inUse = false;
-                ItemStack ultimateItem = player.getInventory().getItem(2);
-                if (ultimateItem != null && ultimateItem.getType() == Material.CARROT_ON_A_STICK) {
-                    runCooldown(ability, ultimateItem);
-                }
-            }
-        }
     }
 
     protected void ultTimer(){
@@ -71,66 +88,76 @@ public abstract class HeroCooldown extends Hero {
             @Override
             public void run() {
                 String title;
-                if (elapsedTime < 0.4 * ultimate.duration) {
-                    title = "" + ChatColor.DARK_GREEN;
-                } else if (elapsedTime < 0.7 * ultimate.duration) {
-                    title = "" + ChatColor.YELLOW;
+                if (elapsedTime < 0.4 * ultimate.duration()) {
+                    title = "" + NamedTextColor.DARK_GREEN;
+                } else if (elapsedTime < 0.7 * ultimate.duration()) {
+                    title = "" + NamedTextColor.YELLOW;
                 } else {
-                    title = "" + ChatColor.RED;
+                    title = "" + NamedTextColor.RED;
                 }
-                player.sendTitle(title  + (int) (ultimate.duration - elapsedTime), "", 5, 25, 10);
+                player.sendTitle(title  + (int) (ultimate.duration() - elapsedTime), "", 5, 25, 10);
                 elapsedTime++;
 
-                if (elapsedTime == ultimate.duration) {
+                if (elapsedTime == ultimate.duration()) {
                     this.cancel();
                 }
             }
         }.runTaskTimer(PLUGIN, 0L, 20L);
-
     }
 
+    protected void cooldown(Ability ability) {
+        ability.cooldown();
+        AbilityType abilityType = ability.abilityType();
 
+        Runnable endLogic = null;
+        Runnable updateLogic = null;
 
-    private void runCooldown(Ability ability, ItemStack cooldownItem){
-        AbilityType abilityType = ability.abilityType;
+        switch (abilityType) {
+            case PRIMARY -> {
+                endLogic = () -> player.sendActionBar(Component.text(NamedTextColor.GREEN + "Primary Ability Ready!"));
+                updateLogic = () -> player.sendActionBar(Component.text(NamedTextColor.GREEN + "Primary Cooldown: " + createProgressBar(ability.timeUntilUse() / ability.cd())));
+            }
+            case SECONDARY -> {
+                endLogic = () -> updateItemDurability(1, (short) 0, 5);
+                updateLogic = () -> updateItemDurability(1, ability.timeUntilUse() / ability.cd(), 4);
+            }
+            case ULTIMATE -> {
+                endLogic = () -> {
+                    player.sendMessage(NamedTextColor.GREEN + "Ultimate Ability Ready!");
+                    updateItemDurability(2, (short) 0, 7);
+                };
+                updateLogic = () -> updateItemDurability(2, ability.timeUntilUse() / ability.cd(), 4);
+            }
+        }
 
+        updateUI(ability, endLogic, updateLogic);
+    }
+
+    private void updateUI(Ability ability, Runnable endLogic, Runnable updateLogic) {
         new BukkitRunnable() {
             @Override
             public void run() {
-                double percentage = (ability.timeUntilUse / ability.cd);
-                //End Logic
-                if (ability.timeUntilUse <= 0) {
-                    ability.ready = true;
-                    switch (abilityType){
-                        case PRIMARY -> player.sendActionBar(ChatColor.GREEN + "Primary Ability Ready!");
-                        case SECONDARY -> updateItemDurability(cooldownItem, 1, (short) 0, 5);
-                        case ULTIMATE -> {
-                            player.sendMessage(ChatColor.GREEN + "Ultimate Ability Ready!");
-                            updateItemDurability(cooldownItem, 2, (short) 0, 7);
-                        }
-                    }
-                    this.cancel();
-                    return;
-                }
-                //Run every update
-                switch (abilityType){
-                    case PRIMARY -> player.sendActionBar(ChatColor.GREEN + "Primary Cooldown: " + createProgressBar(percentage));
-                    case SECONDARY -> updateItemDurability(cooldownItem, 1, percentage, 4);
-                    case ULTIMATE -> updateItemDurability(cooldownItem, 2, percentage, 6);
-                }
-                ability.timeUntilUse = Math.max(0, ability.timeUntilUse - (1.0 / UPDATES_PER_SECOND));
-            }
+                ability.updateCooldown(1.0 / UPDATES_PER_SECOND);
 
+                if (ability.ready()) {
+                    endLogic.run();
+                    this.cancel();
+                }
+                else {
+                    updateLogic.run();
+                }
+            }
         }.runTaskTimer(PLUGIN, 0L, 20L / UPDATES_PER_SECOND);
     }
 
-    private void updateItemDurability(ItemStack item, int slot, double percentRemaining, int customModelData) {
-        percentRemaining = Math.min(1, percentRemaining);
-        ItemMeta meta = item.getItemMeta();
+    protected void updateItemDurability(int slot, double percentComplete, int customModelData) {
+        ItemStack item = player.getInventory().getItem(slot);
+        percentComplete = Math.min(1, percentComplete);
+        ItemMeta meta = item != null ? item.getItemMeta() : null;
         if (meta instanceof Damageable dMeta) {
             dMeta.setCustomModelData(customModelData);
             short maxDurability = item.getType().getMaxDurability();
-            short damage = (short) (maxDurability * (1 - percentRemaining));
+            short damage = (short) (maxDurability * (percentComplete));
             dMeta.setDamage(damage);
             item.setItemMeta(dMeta);
             player.getInventory().setItem(slot, item);
@@ -139,11 +166,23 @@ public abstract class HeroCooldown extends Hero {
 
     private String createProgressBar(double percentage) {
         percentage = Math.min(1, percentage);
-        int totalBars = 10;
-        int filledBars = (int) (percentage / 10.0);
-        return ChatColor.GREEN +
+        int filledBars = (int) (percentage / BAR_LENGTH);
+        return NamedTextColor.GREEN +
                 "|".repeat(Math.max(0, filledBars)) +
-                ChatColor.RED +
-                "|".repeat(Math.max(0, totalBars - filledBars));
+                NamedTextColor.RED +
+                "|".repeat(Math.max(0, BAR_LENGTH - filledBars));
+    }
+
+    protected int doubleJumpCount() {
+        return doubleJumpCount;
+    }
+
+    protected void setDoubleJumpCount(int doubleJumpCount){
+        this.doubleJumpCount = doubleJumpCount;
+    }
+
+    public HeroCooldown setCanDoubleJump(boolean canDoubleJump) {
+        this.canDoubleJump = canDoubleJump;
+        return this;
     }
 }

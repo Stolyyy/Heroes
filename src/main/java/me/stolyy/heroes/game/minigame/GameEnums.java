@@ -1,5 +1,6 @@
 package me.stolyy.heroes.game.minigame;
 
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 
 public class GameEnums {
@@ -18,19 +19,19 @@ public class GameEnums {
     }
 
     public enum GameTeam {
-        RED(ChatColor.RED),
-        BLUE(ChatColor.BLUE),
-        GREEN(ChatColor.GREEN),
-        YELLOW(ChatColor.YELLOW),
-        SPECTATOR(ChatColor.GRAY);
+        RED(NamedTextColor.RED),
+        BLUE(NamedTextColor.BLUE),
+        GREEN(NamedTextColor.GREEN),
+        YELLOW(NamedTextColor.YELLOW),
+        SPECTATOR(NamedTextColor.GRAY);
 
-        private final ChatColor chatColor;
+        private final NamedTextColor chatColor;
 
-        GameTeam(ChatColor chatColor) {
+        GameTeam(NamedTextColor chatColor) {
             this.chatColor = chatColor;
         }
 
-        public ChatColor getChatColor() {
+        public NamedTextColor getChatColor() {
             return chatColor;
         }
     }

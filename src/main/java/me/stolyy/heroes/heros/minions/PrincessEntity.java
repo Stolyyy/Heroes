@@ -1,6 +1,6 @@
 package me.stolyy.heroes.heros.minions;
 
-import me.stolyy.heroes.utility.Equipment;
+import me.stolyy.heroes.utility.effects.Equipment;
 import me.stolyy.heroes.utility.Interactions;
 import org.bukkit.GameMode;
 import org.bukkit.Location;

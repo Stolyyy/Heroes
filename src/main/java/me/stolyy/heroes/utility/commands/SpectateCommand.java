@@ -1,4 +1,4 @@
-package me.stolyy.heroes.utility;
+package me.stolyy.heroes.utility.commands;
 
 import me.stolyy.heroes.game.minigame.Game;
 import me.stolyy.heroes.game.minigame.GameManager;

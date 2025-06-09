@@ -24,11 +24,11 @@
 - [X] [Utility] Wall Detection using Ray Casting
 - [X] [Design] Hitscan/Projectile Pierce options (Potentially options class?)
 - [X] [Bug Fixing] Cooldown display (% done) is not displaying correctly (bc unbreakable?)
-- [ ] [Bug Fixing] Game end logic is not correct (checkGameEnd)
+- [X?] [Bug Fixing] Game end logic is not correct (checkGameEnd)
 - [X] [Ability] Fix gravity with projectiles and the collision with the ground
 - [x] [Ability] Options classes for hitscan + projectile (and more if needed)
 - [X] [Bug Fixing] players who were spectators and are being swapped to players need to be restricted (partyGUI)
-- [ ] [Bug Fixing] Option for hitboxes to penetrate walls or not
+- [?] [Bug Fixing] Option for hitboxes to penetrate walls or not
 
 
 ## 🔵 Medium Priority
@@ -36,10 +36,14 @@
 - [X] [Design] Cleanup interactions class
 - [ ] [Design] Skullfire method extraction (into reloadable)
 - [ ] [Bug Fixing] End runnables when player dies or is not in game
-- [ ] [Design] Listener Cleanup
+- [X?] [Design] Listener Cleanup
 - [ ] [Bug Fixing] Cancel button in map selection
-- [ ] [Bug Fixing] Scoreboard lives always display as 3 for the person it is displaying it to
+- [X?] [Bug Fixing] Scoreboard lives always display as 3 for the person it is displaying it to
 - [ ] [Bug Fixing] Shoop RTL not in walls (maybe subtract from the location vector)
+- [ ] [GUI/Character] Bug charm menu
+- [ ] [Character] Bug charm display in inventory (and descriptions)
+- [ ] [GUI] Team-specific settings (lives, friendly fire, ults, random heroes) 
+- [ ] [Game] Implement all the maps
 
 ## ⚪ Low Priority
 - [X] [Game] reload when u die for characters that need it
@@ -50,8 +54,8 @@
 - [ ] [Bug Fixing] Infinite ultimate is ready spam (spectator press 3 glitch?)
 - [ ] [Outside] Get OG maps (only good ones)
 - [ ] [Character] Spooderman
-- [ ] [Character] Knight or Bulk
-- [ ] [Bug Fixing] Remove swapping heroes mid-game
+- [X] [Character] Knight or Bulk
+- [X] [Bug Fixing] Remove swapping heroes mid-game
 - [ ] [Balance] Fine tune numbers (mostly kb)
 - [ ] [Design] Stronger encapsulation (try to keep things within packages)
 - [ ] [GUI] Game settings GUI
@@ -59,6 +63,7 @@
 - [ ] [GUI] Announcer GUI
 - [ ] [NPC] npcs to join game (announcer)
 - [ ] [Design] JSON Files for balancing
+- [ ] [Design] JSON Files for map locations
 
 
 ## 🔴 Testing Required

@@ -1,6 +1,6 @@
 package me.stolyy.heroes.game.menus;
 
-public class PartySettingsGUI extends GUI {
+public class GameSettingsGUI extends GUI {
     //GUI for the following settings:
     //pres hp (+20 hp per player)
     //Random heroes

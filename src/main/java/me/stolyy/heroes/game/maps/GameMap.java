@@ -1,8 +1,12 @@
 package me.stolyy.heroes.game.maps;
 
+import me.stolyy.heroes.game.minigame.Game;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
+
+import java.util.Set;
 
 public class GameMap {
     final String name;
@@ -19,6 +23,34 @@ public class GameMap {
         this.boundaries = boundaries;
         this.spectatorLocation = spectatorLocation;
         this.world = world;
+    }
+
+    public Location getFurthestSpawn(Player player, Set<Player> enemies){
+        Player nearestPlayer = null;
+        double nearestDistance = Double.MAX_VALUE;
+        for (Player enemy : enemies) {
+            if (enemy.getWorld() == player.getWorld()) {
+                double distance = enemy.getLocation().distance(player.getLocation());
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestPlayer = enemy;
+                }
+            }
+        }
+        //respawn player at furthest spawn point from enemy location (or player location if no enemy)
+        double furthestDistance = 0;
+        Location referencePoint = player.getLocation();
+        Location furthestSpawn = getSpawnLocations()[0];
+        if (nearestPlayer != null) referencePoint = nearestPlayer.getLocation();
+
+        for (Location spawn : getSpawnLocations()) {
+            double distance = referencePoint.distance(spawn);
+            if (distance > furthestDistance){
+                furthestDistance = distance;
+                furthestSpawn = spawn;
+            }
+        }
+        return furthestSpawn;
     }
 
     public String getName() {return name;}

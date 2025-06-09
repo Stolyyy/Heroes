@@ -78,6 +78,13 @@ public abstract class HeroCooldown extends Hero {
         ultimate.setTimeUntilUse(ultimate.timeUntilUse() - reduce);
     }
 
+    public void onGameStart(){
+        resetUltTimer();
+    }
+    public void onDeath(){}
+    public void onRespawn(){}
+    public void onElimination(){}
+
     public void resetUltTimer(){
         cooldown(ultimate);
     }

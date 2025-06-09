@@ -13,6 +13,7 @@ import org.bukkit.util.Vector;
 
 import java.util.Map;
 
+//Map: player, player who hit them last (for stats)
 public class Interactions {
     //Knockback direction is calculated based on one of the following:
     //1. Attacker + Victim locations
@@ -148,12 +149,11 @@ public class Interactions {
         if(attackerGame == null || victimGame == null) return false;
         if(!attackerGame.equals(victimGame)) return false;
 
-        Map<Player, GameEnums.GameTeam> teams = attackerGame.getPlayerTeams();
-        if(teams.get(attacker) == teams.get(victim)) return false;
+        if(!victimGame.alivePlayers().contains(victim)) return false;
 
         if(GameListener.isRespawning(victim)) return false;
 
-        if(!victimGame.getAlivePlayerList().contains(victim)) return false;
+        if(attackerGame.sameTeam(attacker, victim)) return attackerGame.friendlyFire(attacker);
 
         return true;
     }

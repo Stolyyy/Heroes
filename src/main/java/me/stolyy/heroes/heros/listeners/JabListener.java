@@ -11,7 +11,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 public class JabListener implements Listener {
-    //Initiate Jab and Double Jump related variables on join
+    //Initiate Jab and Double Jump related variables on joinGame
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
         Player player = e.getPlayer();

@@ -8,9 +8,9 @@ import org.jetbrains.annotations.NotNull;
 public class JoinCommand extends Command {
     //make sure party sizes are good before joining
     public JoinCommand() {
-        super("join");
+        super("joinGame");
         this.setDescription("Join a game");
-        this.setUsage("/join <1v1|2v2|party>");
+        this.setUsage("/joinGame <1v1|2v2|party>");
     }
 
     @Override
@@ -33,7 +33,7 @@ public class JoinCommand extends Command {
             return true;
         }
 
-        GameManager.join(player, gameMode);
+        GameManager.joinGame(player, gameMode);
 
         return true;
     }

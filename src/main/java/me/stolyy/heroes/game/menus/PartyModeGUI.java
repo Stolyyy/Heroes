@@ -1,14 +1,13 @@
 package me.stolyy.heroes.game.menus;
 
 import me.stolyy.heroes.game.minigame.Game;
-import me.stolyy.heroes.game.minigame.GameEnums.GameTeam;
+import me.stolyy.heroes.game.minigame.GameEnums.TeamColor;
 import me.stolyy.heroes.party.Party;
 import me.stolyy.heroes.party.PartyManager;
 import me.stolyy.heroes.heros.HeroManager;
 import me.stolyy.heroes.Heroes;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -17,7 +16,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.*;
 
-public class PartyGUI extends GUI{
+public class PartyModeGUI extends GUI{
     //GUI for party mode
     //Move players between teams, with them initially being on spectator
     //Also have options to cancel, start, change maps (new gui), and change game settings (new gui)
@@ -30,7 +29,7 @@ public class PartyGUI extends GUI{
     //Maps: 22, Settings: 31, Start: 40, Cancel: 49
 
 
-    public PartyGUI(Game game, Player player){
+    public PartyModeGUI(Game game, Player player){
         this.game = game;
         this.player = player;
         this.inventory = Bukkit.createInventory(player, 54, "Party Game Setup");
@@ -48,9 +47,9 @@ public class PartyGUI extends GUI{
         List<Player> members = new ArrayList<>(party.getMembers());
         members.remove(player);
         inventoryItems.put(27, createPlayerHead(player));
-        game.setPlayerTeam(player, GameTeam.RED);
+        game.setPlayerTeam(player, TeamColor.RED);
         inventoryItems.put(29, createPlayerHead(members.getFirst()));
-        game.setPlayerTeam(members.getFirst(), GameTeam.BLUE);
+        game.setPlayerTeam(members.getFirst(), TeamColor.BLUE);
         for (int i = 1; i < members.size() && i < 18; i++) {
             inventoryItems.put(i-1, createPlayerHead(members.get(i)));
             game.addSpectator(members.get(i));
@@ -77,7 +76,7 @@ public class PartyGUI extends GUI{
             case 22 -> {
                 //map
                 GUIListener.playerGUIMap.put(player, null);
-                new PartyMapGUI(game, player, this);
+                new GameMapGUI(game, player, this);
             } case 31 -> {
                 //settings
                 //GUIListener.playerGUIMap.put(player, this);
@@ -128,19 +127,19 @@ public class PartyGUI extends GUI{
         Player targetPlayer = getPlayer(targetItem);
 
         if (sourcePlayer != null && targetPlayer != null) {
-            GameTeam gameTeam1 = game.getPlayerTeams().get(sourcePlayer);
-            GameTeam gameTeam2 = game.getPlayerTeams().get(targetPlayer);
+            TeamColor gameTeam1 = game.getPlayerTeams().get(sourcePlayer);
+            TeamColor gameTeam2 = game.getPlayerTeams().get(targetPlayer);
             game.setPlayerTeam(sourcePlayer, gameTeam2);
             game.setPlayerTeam(targetPlayer, gameTeam1);
         } else {
             if(target < 18){
-                game.setPlayerTeam(sourcePlayer, GameTeam.SPECTATOR);
+                game.setPlayerTeam(sourcePlayer, TeamColor.SPECTATOR);
             } else {
                 switch (target % 9){
-                    case 0 -> game.setPlayerTeam(sourcePlayer, GameTeam.RED);
-                    case 2 -> game.setPlayerTeam(sourcePlayer, GameTeam.BLUE);
-                    case 6 -> game.setPlayerTeam(sourcePlayer, GameTeam.GREEN);
-                    case 8 -> game.setPlayerTeam(sourcePlayer, GameTeam.YELLOW);
+                    case 0 -> game.setPlayerTeam(sourcePlayer, TeamColor.RED);
+                    case 2 -> game.setPlayerTeam(sourcePlayer, TeamColor.BLUE);
+                    case 6 -> game.setPlayerTeam(sourcePlayer, TeamColor.GREEN);
+                    case 8 -> game.setPlayerTeam(sourcePlayer, TeamColor.YELLOW);
                 }
             }
         }

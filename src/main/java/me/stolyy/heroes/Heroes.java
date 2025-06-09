@@ -5,7 +5,7 @@ import me.stolyy.heroes.game.menus.GUIListener;
 import me.stolyy.heroes.game.minigame.*;
 import me.stolyy.heroes.heros.listeners.AbilityListener;
 import me.stolyy.heroes.heros.HeroManager;
-import me.stolyy.heroes.heros.SetHeroCommand;
+import me.stolyy.heroes.utility.commands.SetHeroCommand;
 import me.stolyy.heroes.heros.listeners.DoubleJumpListener;
 import me.stolyy.heroes.heros.listeners.JabListener;
 import me.stolyy.heroes.party.PartyChatCommand;
@@ -98,7 +98,7 @@ public final class Heroes extends JavaPlugin implements Listener {
         registerCommand("p", new PartyCommand());
         registerCommand("partychat", new PartyChatCommand());
         registerCommand("pc", new PartyChatCommand());
-        registerCommand("join", new JoinCommand());
+        registerCommand("joinGame", new JoinCommand());
         registerCommand("spectate", new SpectateCommand());
         registerCommand("leave", new LobbyCommand());
         registerCommand("lobby", new LobbyCommand());

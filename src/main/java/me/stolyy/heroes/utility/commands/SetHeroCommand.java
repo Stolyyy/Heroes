@@ -1,12 +1,15 @@
-package me.stolyy.heroes.heros;
+package me.stolyy.heroes.utility.commands;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.game.minigame.GameManager;
 import me.stolyy.heroes.heros.Hero;
 import me.stolyy.heroes.heros.HeroManager;
 import me.stolyy.heroes.heros.characters.Pug;
 import me.stolyy.heroes.heros.characters.Shoop;
 import me.stolyy.heroes.heros.characters.Skullfire;
 import me.stolyy.heroes.heros.characters.VoidCrawler;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
@@ -33,6 +36,10 @@ public class SetHeroCommand extends Command {
             if (args.length > 0) {
                 String characterName = args[0];
                 Hero hero = null;
+
+                if(GameManager.isPlayerInGame(player)){
+                    player.sendMessage(Component.text(NamedTextColor.RED + "You cannot change characters while in a game!"));
+                }
 
                 // Initialize character based on arguments
                 if (characterName.equalsIgnoreCase("VoidCrawler") || characterName.equalsIgnoreCase("Void") || characterName.equalsIgnoreCase("Void_Crawler")) {

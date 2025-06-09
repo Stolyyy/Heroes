@@ -14,15 +14,15 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
 
-public class PartyMapGUI extends GUI {
+public class GameMapGUI extends GUI {
     //GUI for changing the map options in Party Mode
     //Changing map will create a new game and reopen gui
     //will also make the old game's gamestate 'ended'
     private final List<GameMap> maps;
     private Game game;
-    private final PartyGUI partyGUI;
+    private final PartyModeGUI partyGUI;
 
-    public PartyMapGUI(Game game, Player player, PartyGUI partyGUI){
+    public GameMapGUI(Game game, Player player, PartyModeGUI partyGUI){
         this.game = game;
         this.player = player;
         this.partyGUI = partyGUI;
@@ -52,14 +52,14 @@ public class PartyMapGUI extends GUI {
             GameMap map = maps.get(slot);
             Game newGame = new Game(map, GameEnums.GameMode.PARTY);
 
-            Map<Player, GameEnums.GameTeam> teams = new HashMap<>(game.getPlayerTeams());
+            Map<Player, GameEnums.TeamColor> teams = new HashMap<>(game.getPlayerTeams());
             newGame.setAlivePlayerList(new HashSet<>(game.getAlivePlayerList()));
             game.gameEnd();
 
             for(Player p : PartyManager.getPlayersInParty(player)){
                 game.removePlayer(p);
                 newGame.addPlayer(p);
-                newGame.setPlayerTeam(p, teams.getOrDefault(p, GameEnums.GameTeam.SPECTATOR));
+                newGame.setPlayerTeam(p, teams.getOrDefault(p, GameEnums.TeamColor.SPECTATOR));
             }
 
             partyGUI.setGame(newGame);

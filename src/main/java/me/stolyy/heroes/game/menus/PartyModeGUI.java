@@ -29,7 +29,6 @@ public class PartyModeGUI extends GUI{
         this.game = game;
         this.player = player;
         this.inventory = Bukkit.createInventory(player, 54, "Party Game Setup");
-        inventoryItems.put(22,createItem(Material.MAP, "Change Map"));
         inventoryItems.put(31,createItem(Material.BONE_MEAL, "Game Settings"));
         inventoryItems.put(40,createItem(Material.DIAMOND, "Start Game!"));
         inventoryItems.put(49,createItem(Material.BARRIER, "Cancel"));
@@ -80,14 +79,8 @@ public class PartyModeGUI extends GUI{
 
     public void handleClick(int slot){
         switch (slot){
-            case 22 -> { // map settings
-                GUIListener.playerGUIMap.put(player, null);
-                new GameMapGUI(game, player, this);
-            } case 31 -> { // game settings
-                //GUIListener.playerGUIMap.put(player, this);
-                //PartySettings settingsGUI = new PartySettings(game, player, this);
-                player.sendMessage("Settings coming soon!");
-            } case 40 -> { // start
+            case 31 ->  new GameSettingsGUI(game, player, this);
+            case 40 -> { // start
                 if(game.canCountdown()){
                     game.countdown();
                     GUIListener.playerGUIMap.put(player, null);
@@ -196,5 +189,4 @@ public class PartyModeGUI extends GUI{
     public void setGame(Game game){
         this.game = game;
     }
-
 }

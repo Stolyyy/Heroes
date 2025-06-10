@@ -53,6 +53,10 @@ public class HeroManager {
         }
     }
 
+    public static void setCharms(Player player, Set<Bug.Charms> charmSet){
+        charms.put(player, charmSet);
+    }
+
     public static Set<Bug.Charms> getCharms(Player player){
         if(charms.get(player) == null) return new HashSet<>();
         return charms.get(player);

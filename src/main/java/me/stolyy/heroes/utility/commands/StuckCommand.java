@@ -34,18 +34,7 @@ public class StuckCommand extends Command {
             return true;
         }
         if(isInBlock(player)){
-            GameMap map = game.getMap();
-            Location referencePoint = player.getLocation();
-            Location closestSpawn = map.getSpawnLocations()[0];
-            double closestDistance = referencePoint.distance(closestSpawn);
-            for (Location spawn : map.getSpawnLocations()) {
-                double distance = referencePoint.distance(spawn);
-                if (distance < closestDistance){
-                    closestDistance = distance;
-                    closestSpawn = spawn;
-                }
-            }
-            player.teleport(closestSpawn);
+            player.teleport(game.furthestSpawn(player));
             return true;
         }
         player.sendMessage("You can only use /stuck when in a block!");

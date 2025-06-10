@@ -1,8 +1,10 @@
 package me.stolyy.heroes.game.menus;
 
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -25,6 +27,21 @@ public abstract class GUI {
         meta.setDisplayName(name);
         item.setItemMeta(meta);
         return item;
+    }
+
+    protected void enchantItem(int slot){
+        ItemStack item = inventory.getItem(slot);
+        ItemMeta meta = item.getItemMeta();
+        meta.addEnchant(Enchantment.UNBREAKING, 1, true);
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        item.setItemMeta(meta);
+    }
+
+    protected void removeEnchants(int slot){
+        ItemStack item = inventory.getItem(slot);
+        ItemMeta meta = item.getItemMeta();
+        meta.removeEnchantments();
+        item.setItemMeta(meta);
     }
 
     public abstract void openGUI();

@@ -16,9 +16,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.*;
 
 public class GameMapGUI extends GUI {
-    //GUI for changing the map options in Party Mode
-    //Changing map will create a new game and reopen gui
-    //will also make the old game's gamestate 'ended'
     private final List<GameMap> maps;
     private Game game;
     private final PartyModeGUI partyGUI;

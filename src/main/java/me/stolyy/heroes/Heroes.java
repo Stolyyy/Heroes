@@ -58,8 +58,6 @@ public final class Heroes extends JavaPlugin implements Listener {
         registerListeners();
         registerCommands();
 
-        startPeriodicTasks();
-
         getLogger().info("Heroes plugin has been enabled!");
     }
 
@@ -69,7 +67,7 @@ public final class Heroes extends JavaPlugin implements Listener {
 
         // End all active games
         for (Game game : GameManager.getActiveGames()) {
-            game.gameEnd();
+            game.clean();
         }
 
         // Clear data structures

@@ -114,7 +114,7 @@ public class AbilityListener implements Listener {
             //player.sendMessage(ChatColor.RED + "DEBUG: You are not in a game!");
             return false;
         }
-        if (game.getGameState() != GameEnums.GameState.IN_PROGRESS) {
+        if (game.gameState() != GameEnums.GameState.IN_PROGRESS) {
             //player.sendMessage(ChatColor.RED + "DEBUG: Game is not in progress! Current state: " + game.getGameState());
             return false;
         }
@@ -123,6 +123,6 @@ public class AbilityListener implements Listener {
             return false;
         }
         //player.sendMessage(ChatColor.RED + "DEBUG: You are not in the alive player list!");
-        return game.getAlivePlayerList().contains(player);
+        return game.alivePlayers().contains(player);
     }
 }

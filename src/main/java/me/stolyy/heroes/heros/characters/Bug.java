@@ -155,7 +155,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
 
     private void registerCharms(){
         if(charms.contains(Charms.DASHMASTER)) {
-            ((DashData) primary.abilityData()).setDistance(10).setSpeed(4);
+            primary.setCd(1.5);
         }
         //if(charms.contains(Charms.GRUBSONG)); //get soul when hit
         if(charms.contains(Charms.HEAVY_BLOW)) {
@@ -175,7 +175,10 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
             spirit.setRadius(spirit.radius() * 1.35);
             shriek.setRadius(shriek.radius() * 1.35).setLength(shriek.length() * 1.35);
         }
-        if(charms.contains(Charms.SHARP_SHADOW)) primary.setDmg(primary.dmg() * 1.2);
+        if(charms.contains(Charms.SHARP_SHADOW)) {
+            primary.setDmg(primary.dmg() * 1.2);
+            ((DashData) primary.abilityData()).setDistance(10).setSpeed(4);
+        }
         if(charms.contains(Charms.SOUL_EATER)) soulsPerHit *= 1.5;
         if(charms.contains(Charms.SOUL_TWISTER)) soulsPerCast *= 0.75;
         if(charms.contains(Charms.SPRINTMASTER)) player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(1.6);
@@ -185,9 +188,8 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
     }
 
     private void resetCharms(){
-        if(!charms.contains(Charms.DASHMASTER)) {
-            ((DashData) primary.abilityData()).setDistance(7).setSpeed(3);
-        }
+        if(!charms.contains(Charms.DASHMASTER))
+            primary.setCd(2);
         //if(!charms.contains(Charms.GRUBSONG)); //get soul when hit
         if(!charms.contains(Charms.HEAVY_BLOW)) {
             primary.setKb(primary.kb() / 1.2);
@@ -206,7 +208,10 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
             spirit.setRadius(spirit.radius() / 1.35);
             shriek.setRadius(shriek.radius() / 1.35).setLength(shriek.length() / 1.35);
         }
-        if(!charms.contains(Charms.SHARP_SHADOW)) primary.setDmg(primary.dmg() / 1.2);
+        if(!charms.contains(Charms.SHARP_SHADOW)) {
+            primary.setDmg(primary.dmg() / 1.2);
+            ((DashData) primary.abilityData()).setDistance(7).setSpeed(3);
+        }
         if(!charms.contains(Charms.SOUL_EATER)) soulsPerHit /= 1.5;
         if(!charms.contains(Charms.SOUL_TWISTER)) soulsPerCast /= 0.75;
         if(!charms.contains(Charms.SPRINTMASTER)) player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(1.4);
@@ -217,26 +222,34 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
 
 
     public enum Charms {
-        DASHMASTER(2), //less dash cd
-        GRUBSONG(1), //soul when hit
-        HEAVY_BLOW(1), //more kb on dash/spells
-        KINGSOUL(4), //auto soul regen
-        MARK_OF_PRIDE(3), //more jab range
-        NAIL_MASTER(1),
-        QUICK_SLASH(3), //quicker jabs
-        SHAMAN_STONE(3), //more spell dmg
-        SHARP_SHADOW(2), //more dash dmg
-        SOUL_EATER(3), //most souls per hit
-        SOUL_TWISTER(2), //less cost per spells
-        SPRINTMASTER(1), //faster move speed
-        STEADY_BODY(3), //weight
-        STRENGTH(3), //jab dmg
-        WEAVERSONG(2); //spider minions
+        DASHMASTER(2, "Faster Dash Cooldown", 17010), //less dash cd
+        GRUBSONG(1, "Get soul when hit", 17011), //soul when hit
+        HEAVY_BLOW(1, "Deal more knockback", 17012), //more kb on dash/spells
+        KINGSOUL(4, "Passively gain soul", 17013), //auto soul regen
+        MARK_OF_PRIDE(3, "Longer jabs", 17014), //more jab range
+        NAIL_MASTER(1, "Nothing.", 17015),
+        QUICK_SLASH(3, "Faster Jabs", 17016), //quicker jabs
+        SHAMAN_STONE(3, "Improves spells", 17017), //more spell dmg
+        SHARP_SHADOW(2, "Improves dash", 17018), //more dash dmg
+        SOUL_EATER(3, "More souls per hit", 17019), //most souls per hit
+        SOUL_TWISTER(2, "Less souls per spell cast", 17020), //less cost per spells
+        SPRINTMASTER(1, "Move slightly faster", 17021), //faster move speed
+        STEADY_BODY(3, "Increase weight", 17022), //weight
+        STRENGTH(3, "Stronger jabs", 17023), //jab dmg
+        WEAVERSONG(2, "Spider Minions (coming soon)", 17024); //spider minions
 
         final int cost;
+        final String description;
+        final int texture;
 
-        Charms(int cost) {
+        Charms(int cost, String description, int texture) {
             this.cost = cost;
+            this.description = description;
+            this.texture = texture;
         }
+
+        public int cost(){return this.cost; }
+        public String description(){return this.description();}
+        public int texture(){return this.texture;}
     }
 }

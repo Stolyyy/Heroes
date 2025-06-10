@@ -15,6 +15,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 
+import java.util.List;
+
 public class Equipment {
     //Give player proper equipment (armor, tools) based on hero
     public static void equip(Player p) {
@@ -76,6 +78,23 @@ public class Equipment {
             meta.setCustomModelData(customModelData);
             meta.setUnbreakable(true);
             meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+
+            item.setItemMeta(meta);
+        }
+
+        return item;
+    }
+
+    public static ItemStack customItem(int customModelData, String name, List<String> lore) {
+        ItemStack item = new ItemStack(Material.CARROT_ON_A_STICK);
+        ItemMeta meta = item.getItemMeta();
+
+        if (meta != null) {
+            meta.setDisplayName(name);
+            meta.setCustomModelData(customModelData);
+            meta.setUnbreakable(true);
+            meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+            meta.setLore(lore);
 
             item.setItemMeta(meta);
         }

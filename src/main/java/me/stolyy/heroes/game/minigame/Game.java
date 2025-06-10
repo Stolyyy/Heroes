@@ -256,6 +256,13 @@ public class Game {
         return Collections.unmodifiableMap(teams);
     }
 
+    public void copyTeamSettingsToAllTeams(TeamSettings teamSettings){
+        for(GameTeam team : teams.values()){
+            if(team.color() == TeamColor.SPECTATOR) continue;
+            team.setSettings(teamSettings);
+        }
+    }
+
     //HELPERS
 
 

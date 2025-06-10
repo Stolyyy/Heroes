@@ -11,6 +11,15 @@ public class TeamSettings {
         return lives;
     }
 
+    public TeamSettings copy(TeamSettings settings){
+        setLives(settings.lives());
+        setMaxHealth(settings.maxHealth());
+        setFriendlyFire(settings.friendlyFire());
+        setUltimatesEnabled(settings.ultimatesEnabled());
+        setRandomizeHeroes(settings.randomizeHeroes());
+        return this;
+    }
+
     public TeamSettings setLives(int lives) {
         this.lives = lives;
         return this;

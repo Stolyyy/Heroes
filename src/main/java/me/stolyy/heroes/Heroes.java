@@ -122,26 +122,6 @@ public final class Heroes extends JavaPlugin implements Listener {
 
 
 
-    private void startPeriodicTasks() {
-        // Task to update player health and check positions
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                for (Game game : GameManager.getActiveGames()) {
-                    if (game.getGameState() == GameEnums.GameState.IN_PROGRESS) {
-                        for (Player player : game.getPlayerList()) {
-                            if (player != null) {
-                                game.updateVisuals();
-                            }
-                        }
-                    }
-                }
-            }
-        }.runTaskTimer(this, 20L, 20L); // Run every second
-    }
-
-
-
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {

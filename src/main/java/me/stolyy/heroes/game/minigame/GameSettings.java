@@ -1,6 +1,7 @@
 package me.stolyy.heroes.game.minigame;
 
 import me.stolyy.heroes.game.maps.GameMap;
+import me.stolyy.heroes.game.maps.GameMapManager;
 
 //Overall: crystals, map,
 public class GameSettings {
@@ -9,7 +10,13 @@ public class GameSettings {
     private int timer = 420; //seconds
 
     public GameSettings(GameMap map) {
-        this.map = map;
+        this.map = GameMapManager.createWorld(map);
+    }
+
+    public GameSettings copy(GameSettings settings){
+        setSmashCrystals(settings.smashCrystals());
+        setTimer(settings.timer());
+        return this;
     }
 
     public GameMap map() {

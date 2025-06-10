@@ -5,6 +5,7 @@ import me.stolyy.heroes.game.minigame.Game;
 import me.stolyy.heroes.game.minigame.GameEnums;
 import me.stolyy.heroes.game.maps.GameMap;
 import me.stolyy.heroes.game.maps.GameMapManager;
+import me.stolyy.heroes.game.minigame.GameTeam;
 import me.stolyy.heroes.party.PartyManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -26,7 +27,7 @@ public class GameMapGUI extends GUI {
         this.game = game;
         this.player = player;
         this.partyGUI = partyGUI;
-        this.inventory = Bukkit.createInventory(player, 27, "Map Selection");
+        this.inventory = Bukkit.createInventory(player, 54, "Map Selection");
         this.maps = new ArrayList<>(GameMapManager.templateMaps);
         initializeMaps();
         for(int slot = 0; slot < 27; slot++) {
@@ -52,18 +53,22 @@ public class GameMapGUI extends GUI {
             GameMap map = maps.get(slot);
             Game newGame = new Game(map, GameEnums.GameMode.PARTY);
 
-            Map<Player, GameEnums.TeamColor> teams = new HashMap<>(game.getPlayerTeams());
-            newGame.setAlivePlayerList(new HashSet<>(game.getAlivePlayerList()));
-            game.gameEnd();
+            newGame.settings().copy(game.settings());
 
-            for(Player p : PartyManager.getPlayersInParty(player)){
-                game.removePlayer(p);
-                newGame.addPlayer(p);
-                newGame.setPlayerTeam(p, teams.getOrDefault(p, GameEnums.TeamColor.SPECTATOR));
+            for (GameEnums.TeamColor color : GameEnums.TeamColor.values()) {
+                if(!game.teams().containsKey(color)) continue;
+                GameTeam oldTeam = game.teams().get(color);
+                GameTeam newTeam = game.teams().get(color);
+                newTeam.settings().copy(oldTeam.settings());
+                for(Player p : oldTeam.players()){
+                    if(color == GameEnums.TeamColor.SPECTATOR) newGame.addSpectator(p);
+                    else newGame.addPlayer(p, color);
+                }
             }
 
-            partyGUI.setGame(newGame);
+            game.endGame();
             this.game = newGame;
+            partyGUI.setGame(newGame);
             partyGUI.openGUI();
         }
     }

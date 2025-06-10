@@ -2,6 +2,8 @@ package me.stolyy.heroes.game.menus;
 
 import me.stolyy.heroes.game.minigame.Game;
 import me.stolyy.heroes.game.minigame.GameEnums.TeamColor;
+import me.stolyy.heroes.game.minigame.GameTeam;
+import me.stolyy.heroes.game.minigame.TeamSettings;
 import me.stolyy.heroes.party.Party;
 import me.stolyy.heroes.party.PartyManager;
 import me.stolyy.heroes.heros.HeroManager;
@@ -16,17 +18,11 @@ import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.*;
 
+//cancel, start, change maps (new gui), change game settings (new gui)
 public class PartyModeGUI extends GUI{
-    //GUI for party mode
-    //Move players between teams, with them initially being on spectator
-    //Also have options to cancel, start, change maps (new gui), and change game settings (new gui)
-    private static final Set<Integer> TEAM_SPOTS = Set.of(27, 29, 33, 35, 36, 38, 42, 44, 45, 47, 51, 53);
-    private static final Set<Integer> SPECTATOR_SPOTS = Set.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17);
-    //Slot, Item
+    private final Map<TeamColor, List<Integer>> teamSpots = new HashMap<>();
     private Game game;
     private ItemStack lastHead = null;
-    //Team slots: 18, 20, 24, 26
-    //Maps: 22, Settings: 31, Start: 40, Cancel: 49
 
 
     public PartyModeGUI(Game game, Player player){
@@ -41,30 +37,41 @@ public class PartyModeGUI extends GUI{
         inventoryItems.put(20,createItem(Material.BLUE_CONCRETE, "Blue Team:"));
         inventoryItems.put(24,createItem(Material.GREEN_CONCRETE, "Green Team:"));
         inventoryItems.put(26,createItem(Material.YELLOW_CONCRETE, "Yellow Team:"));
-        for(int i : TEAM_SPOTS) inventoryItems.put(i, createItem(PLAYER_FILLER_MATERIAL, " "));
-        for(int i : SPECTATOR_SPOTS) inventoryItems.put(i, createItem(PLAYER_FILLER_MATERIAL, " "));
-        Party party = PartyManager.getPlayerParty(player);
-        List<Player> members = new ArrayList<>(party.getMembers());
-        members.remove(player);
-        inventoryItems.put(27, createPlayerHead(player));
-        game.setPlayerTeam(player, TeamColor.RED);
-        inventoryItems.put(29, createPlayerHead(members.getFirst()));
-        game.setPlayerTeam(members.getFirst(), TeamColor.BLUE);
-        for (int i = 1; i < members.size() && i < 18; i++) {
-            inventoryItems.put(i-1, createPlayerHead(members.get(i)));
-            game.addSpectator(members.get(i));
-        }
+
+        teamSpots.put(TeamColor.RED, List.of(35, 44, 53));
+        teamSpots.put(TeamColor.BLUE, List.of(29, 38, 47));
+        teamSpots.put(TeamColor.GREEN, List.of(33, 36, 51));
+        teamSpots.put(TeamColor.YELLOW, List.of(35, 44, 53));
+        teamSpots.put(TeamColor.SPECTATOR, List.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17));
+
+        update();
 
         for(int slot = 0; slot < 54; slot++) {
             if(!inventoryItems.containsKey(slot)) inventoryItems.put(slot, createItem(FILLER_MATERIAL, " "));
         }
+
         openGUI();
     }
 
-    public void openGUI(){
+    private void update(){
+        for(List<Integer> list : teamSpots.values())
+            for(int i : list) inventoryItems.put(i, createItem(PLAYER_FILLER_MATERIAL, " "));
+
+        for(GameTeam team : game.teams().values()){
+            int i = 0;
+            for(Player p : team.players()){
+                inventoryItems.put(teamSpots.get(team.color()).get(i), createPlayerHead(p));
+                i++;
+            }
+        }
+
         for (int i = 0; i < 54; i++) {
             inventory.setItem(i, inventoryItems.get(i));
         }
+    }
+
+    public void openGUI(){
+        update();
         GUIListener.playerGUIMap.put(player, this);
         GUIListener.isReopening.put(player, true);
         player.openInventory(inventory);
@@ -73,17 +80,14 @@ public class PartyModeGUI extends GUI{
 
     public void handleClick(int slot){
         switch (slot){
-            case 22 -> {
-                //map
+            case 22 -> { // map settings
                 GUIListener.playerGUIMap.put(player, null);
                 new GameMapGUI(game, player, this);
-            } case 31 -> {
-                //settings
+            } case 31 -> { // game settings
                 //GUIListener.playerGUIMap.put(player, this);
                 //PartySettings settingsGUI = new PartySettings(game, player, this);
                 player.sendMessage("Settings coming soon!");
-            } case 40 -> {
-                //start
+            } case 40 -> { // start
                 if(game.canCountdown()){
                     game.countdown();
                     GUIListener.playerGUIMap.put(player, null);
@@ -91,59 +95,69 @@ public class PartyModeGUI extends GUI{
                 } else {
                     player.sendMessage(NamedTextColor.RED + "Cannot Start! Check Team sizes.");
                 }
-            } case 49 -> {
-                //cancel
-                game.gameEnd();
+            } case 49 -> { // cancel
+                game.clean();
                 GUIListener.playerGUIMap.put(player, null);
                 player.closeInventory();
-            } default -> {
-                //swap spots
+            } case 18, 20, 24, 26 -> { // team settings
+                TeamColor color = teamFromSlot(slot + 9);
+                GUIListener.playerGUIMap.put(player, null);
+                new TeamSettingsGUI(game.teams().get(color), player, this);
+            } default -> { // select or swap
                 ItemStack item = inventory.getItem(slot);
+                //select
                 if(lastHead == null){
                     if(item != null && item.getType() == Material.PLAYER_HEAD){
                         lastHead = item.clone();
                         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
                     }
-                } else if(findSlot(lastHead) == slot){
+                }
+                //de-select
+                else if(findSlot(lastHead) == slot){
                     lastHead = null;
                     player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 1.0f);
-                } else if(SPECTATOR_SPOTS.contains(slot) || TEAM_SPOTS.contains(slot)){
+                }
+                //swap
+                else if(isTeamSpot(slot)){
                     swapSpots(findSlot(lastHead), slot);
                     lastHead = null;
                     player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
                 }
-                for (int i = 0; i < 54; i++) inventory.setItem(i, inventoryItems.get(i));
+                update();
             }
         }
     }
 
+    private boolean isTeamSpot(int slot){
+        for(List<Integer> list : teamSpots.values())
+            for(int i : list) if(i == slot) return true;
+        return false;
+    }
+
+
+
     private void swapSpots(int source, int target){
         ItemStack sourceItem = inventory.getItem(source);
         ItemStack targetItem = inventory.getItem(target);
-        inventoryItems.put(source,targetItem);
-        inventoryItems.put(target,sourceItem);
 
         Player sourcePlayer = getPlayer(sourceItem);
         Player targetPlayer = getPlayer(targetItem);
 
         if (sourcePlayer != null && targetPlayer != null) {
-            TeamColor gameTeam1 = game.getPlayerTeams().get(sourcePlayer);
-            TeamColor gameTeam2 = game.getPlayerTeams().get(targetPlayer);
-            game.setPlayerTeam(sourcePlayer, gameTeam2);
-            game.setPlayerTeam(targetPlayer, gameTeam1);
+            TeamColor sourceTeam = game.playerTeam(sourcePlayer);
+            TeamColor targetTeam = game.playerTeam(targetPlayer);
+            game.changeTeam(sourcePlayer, targetTeam);
+            game.changeTeam(targetPlayer, sourceTeam);
         } else {
-            if(target < 18){
-                game.setPlayerTeam(sourcePlayer, TeamColor.SPECTATOR);
-            } else {
-                switch (target % 9){
-                    case 0 -> game.setPlayerTeam(sourcePlayer, TeamColor.RED);
-                    case 2 -> game.setPlayerTeam(sourcePlayer, TeamColor.BLUE);
-                    case 6 -> game.setPlayerTeam(sourcePlayer, TeamColor.GREEN);
-                    case 8 -> game.setPlayerTeam(sourcePlayer, TeamColor.YELLOW);
-                }
-            }
+            game.changeTeam(sourcePlayer, teamFromSlot(target));
         }
-        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), this::openGUI, 1L);
+        update();
+    }
+
+    private TeamColor teamFromSlot(int slot){
+        for(var entry : teamSpots.entrySet())
+            for(int i : entry.getValue()) if(i == slot) return entry.getKey();
+        return null;
     }
 
     private Player getPlayer(ItemStack head) {

@@ -58,7 +58,7 @@ public class Game {
                 visuals.startTimer();
             }
             case ENDED -> {
-                clean();
+                Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), this::clean, 20* RESPAWN_TIME);
             }
         }
 
@@ -113,17 +113,17 @@ public class Game {
     }
 
     public void clean() {
-        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
-            for(Player p : allPlayers()){
+        for(Player p : allPlayers()){
+            if(GameManager.getPlayerGame(p) == this){
                 Heroes.getInstance().teleportToLobby(p);
-                if(GameManager.getPlayerGame(p) == this) GameManager.removePlayerGame(p);
+                GameManager.removePlayerGame(p);
             }
-        }, 20 * RESPAWN_TIME);
+        }
         Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
             teams.values().forEach(GameTeam::clearPlayers);
             visuals.reset();
             GameMapManager.deleteWorld(settings.map());
-        }, 20 * (RESPAWN_TIME + 3));
+        }, 20 * 3);
     }
 
 
@@ -157,21 +157,15 @@ public class Game {
     public void changeTeam(Player player, TeamColor teamColor) {
         GameTeam oldTeam = teams.get(playerTeam(player));
         oldTeam.remove(player);
+
         if(teamColor == TeamColor.SPECTATOR) addSpectator(player);
-        else {
-            player.setGameMode(org.bukkit.GameMode.ADVENTURE);
-            teams.get(teamColor).add(player);
-            GameEffects.restrictPlayer(player);
-        }
-        visuals.update();
+        else addPlayer(player, teamColor);
     }
 
     public void addSpectator(Player player) {
         addPlayer(player, TeamColor.SPECTATOR);
-        visuals.update();
         player.setGameMode(org.bukkit.GameMode.SPECTATOR);
         GameEffects.unRestrictPlayer(player);
-        teleport(player);
     }
 
     public void playerDeath(Player player) {
@@ -258,7 +252,11 @@ public class Game {
         return null;
     }
 
-    //PRIVATE HELPERS
+    public Map<TeamColor, GameTeam> teams(){
+        return Collections.unmodifiableMap(teams);
+    }
+
+    //HELPERS
 
 
     private void teleport(Player player){
@@ -290,11 +288,9 @@ public class Game {
 
     private void add2v2(Player player) {
         Party party = PartyManager.getPlayerParty(player);
-        if(alivePlayers().isEmpty()){
-            for(Player p : party.getMembers()) addPlayer(p, TeamColor.RED);
-        } else {
-            for(Player p : party.getMembers()) addPlayer(p, TeamColor.BLUE);
-        }
+        TeamColor team = alivePlayers().isEmpty() ? TeamColor.RED : TeamColor.BLUE;
+        for(Player p : party.getMembers())
+            addPlayer(p, team);
     }
 
     private void addParty(Player player) {
@@ -309,7 +305,8 @@ public class Game {
         }
     }
 
-    private void addPlayer(Player player, TeamColor teamColor) {
+    public void addPlayer(Player player, TeamColor teamColor) {
+        GameManager.setPlayerGame(player, this);
         teams.get(teamColor).add(player);
         visuals.update();
         GameEffects.restrictPlayer(player);

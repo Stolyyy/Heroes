@@ -4,10 +4,7 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import me.stolyy.heroes.heros.Hero;
 import me.stolyy.heroes.heros.HeroManager;
-import me.stolyy.heroes.heros.characters.Pug;
-import me.stolyy.heroes.heros.characters.Shoop;
-import me.stolyy.heroes.heros.characters.Skullfire;
-import me.stolyy.heroes.heros.characters.VoidCrawler;
+import me.stolyy.heroes.heros.characters.*;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -54,6 +51,9 @@ public class Equipment {
             legs = customArmor("legs", 30, 30, 30, "Skullfire Legs");
             boots = customArmor("boots", 30, 30, 30, "Skullfire Boots");
             fist = customItem(8002, "Gun");
+        } else if (h instanceof Bug){
+            head = customItem(17000, "shell");
+            //charms
         }
 
 

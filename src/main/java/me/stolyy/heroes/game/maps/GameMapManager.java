@@ -15,7 +15,6 @@ public class GameMapManager {
     static Set<GameMap> maps = new HashSet<>();
     public static Set<GameMap> templateMaps = new HashSet<>();
     private static final File serverWorldFolder = new File(Bukkit.getWorldContainer().getAbsolutePath());
-    private static final File mapsFolder = new File(serverWorldFolder, "maps");
     private static final File templateFolder = new File(serverWorldFolder, "templates");
     private static final Random random = new Random();
 

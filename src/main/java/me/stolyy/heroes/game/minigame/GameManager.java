@@ -150,4 +150,11 @@ public class GameManager {
     public static void removePlayerGame(Player player){
         playerGames.remove(player);
     }
+
+    public static void setPlayerGame(Player player, Game game){
+        if (getPlayerGame(player) != null) {
+            leaveGame(player);
+        }
+        playerGames.put(player, game);
+    }
 }

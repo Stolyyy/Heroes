@@ -9,39 +9,19 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="606daf4b-1469-4eeb-8180-44b5b6838e57" name="Changes" comment="Overhauled Ability logic, including interfaces and data storage classes&#10;touched up on cooldown logic&#10;Refactored packages to be more organized&#10;Added utility classes (sounds, armorstands, particles, hitboxes)&#10;Coded Bug class logic">
-      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameEffects.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameSettings.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameTeam.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameVisuals.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/PlayerGameStats.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/TeamSettings.java" afterDir="false" />
+    <list default="true" id="606daf4b-1469-4eeb-8180-44b5b6838e57" name="Changes" comment="Overhauled minigame package&#10;Moved logic to new classes&#10;Added settings">
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/TeamSettingsGUI.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Heroes.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Heroes.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/TODO.md" beforeDir="false" afterPath="$PROJECT_DIR$/TODO.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/maps/GameMap.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/maps/GameMap.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/AnnouncerGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/AnnouncerGUI.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/PartyGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/PartyModeGUI.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/PartyMapGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/GameMapGUI.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/PartySettingsGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/GameSettingsGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/maps/GameMapManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/maps/GameMapManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/GameMapGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/GameMapGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/GameSettingsGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/GameSettingsGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/PartyModeGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/PartyModeGUI.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/Game.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/Game.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameEnums.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameEnums.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameListener.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameOptions.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/JoinCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/JoinCommand.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/HeroCooldown.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/HeroCooldown.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/SetHeroCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/commands/SetHeroCommand.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/listeners/DoubleJumpListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/listeners/DoubleJumpListener.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/listeners/JabListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/listeners/JabListener.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/party/Party.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/party/Party.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/party/PartyManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/party/PartyManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/Interactions.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/Interactions.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/me/stolyy/heroes/Utility/Equipment.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/me/stolyy/heroes/Utility/Interactions.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/stolyy/heroes/Utility/Interactions.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/me/stolyy/heroes/Utility/ParticleRing.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/me/stolyy/heroes/Utility/Sound.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameSettings.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameSettings.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/TeamSettings.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/TeamSettings.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/effects/Equipment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/effects/Equipment.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -259,7 +239,15 @@
       <option name="project" value="LOCAL" />
       <updated>1749265230372</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="Overhauled minigame package&#10;Moved logic to new classes&#10;Added settings">
+      <option name="closed" value="true" />
+      <created>1749510532969</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1749510532969</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -291,6 +279,7 @@
     <MESSAGE value="bug fixes: &#10;-listeners for dropping/clicking in game&#10;-armorstand directions&#10;-cooldown display fixes&#10;-hopefully map gui fix&#10;-maps to keep track of games/parties" />
     <MESSAGE value="bug fixes" />
     <MESSAGE value="Overhauled Ability logic, including interfaces and data storage classes&#10;touched up on cooldown logic&#10;Refactored packages to be more organized&#10;Added utility classes (sounds, armorstands, particles, hitboxes)&#10;Coded Bug class logic" />
-    <option name="LAST_COMMIT_MESSAGE" value="Overhauled Ability logic, including interfaces and data storage classes&#10;touched up on cooldown logic&#10;Refactored packages to be more organized&#10;Added utility classes (sounds, armorstands, particles, hitboxes)&#10;Coded Bug class logic" />
+    <MESSAGE value="Overhauled minigame package&#10;Moved logic to new classes&#10;Added settings" />
+    <option name="LAST_COMMIT_MESSAGE" value="Overhauled minigame package&#10;Moved logic to new classes&#10;Added settings" />
   </component>
 </project>

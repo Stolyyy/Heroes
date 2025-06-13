@@ -277,8 +277,8 @@ public class Game {
         else if(teamColor == TeamColor.GREEN) index = 2;
         else if(teamColor == TeamColor.YELLOW) index = 3;
 
-        if(teamColor == TeamColor.SPECTATOR) teleportLocation = map.getSpectatorLocation();
-        else teleportLocation = map.getSpawnLocations()[index].clone();
+        if(teamColor == TeamColor.SPECTATOR) teleportLocation = map.spectatorLocation();
+        else teleportLocation = map.spawnLocations()[index].clone();
 
         int teamSize = alivePlayersPerTeam().getOrDefault(teamColor, 0);
         if(teamSize == 1) player.teleport(teleportLocation);

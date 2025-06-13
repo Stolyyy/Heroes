@@ -2,14 +2,17 @@ package me.stolyy.heroes.game.minigame;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.utility.effects.Sounds;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scoreboard.*;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
@@ -56,6 +59,12 @@ public class GameVisuals {
     public void showCountdown() {
         if (countdownTask != null) countdownTask.cancel();
         final int start = 10;
+        final Title.Times times = Title.Times.times(
+                Duration.ofMillis(250),  // Fade in: 5 ticks
+                Duration.ofMillis(1000), // Stay: 20 ticks
+                Duration.ofMillis(250)   // Fade out: 5 ticks
+        );
+
         countdownTask = new BukkitRunnable() {
             int time = start;
             @Override
@@ -64,13 +73,21 @@ public class GameVisuals {
                     for(Player p : game.allPlayers()) Sounds.playSoundToPlayer(p, "announcer.startgame", 1, 1);
                 }
                 if (time > 0) {
+                    Component mainTitle = Component.text(String.valueOf(time), NamedTextColor.YELLOW);
+                    Component subtitle = Component.empty();
+                    Title title = Title.title(mainTitle, subtitle, times);
+
                     for (Player p : game.allPlayers()) {
-                        p.sendTitle(NamedTextColor.YELLOW + String.valueOf(time), "", 5, 20, 5);
+                        p.showTitle(title);
                     }
                     time--;
                 } else {
+                    Component mainTitle = Component.text("GO!", NamedTextColor.GREEN);
+                    Component subtitle = Component.text("Match Started");
+                    Title title = Title.title(mainTitle, subtitle, times);
+
                     for (Player p : game.allPlayers()) {
-                        p.sendTitle(NamedTextColor.GREEN + "GO!", "Match Started", 5, 40, 5);
+                        p.showTitle(title);
                     }
                     cancel();
                 }
@@ -99,26 +116,43 @@ public class GameVisuals {
 
     public void draw() {
         reset();
-        sidebar.getScore(NamedTextColor.GRAY + "DRAW").setScore(1);
+        Component drawComponent = Component.text("DRAW", NamedTextColor.GRAY);
+        String scoreText = LegacyComponentSerializer.legacySection().serialize(drawComponent);
+        sidebar.getScore(scoreText).setScore(1);
         applyScoreboardToAll();
     }
 
     public void win(GameTeam team) {
         reset();
-        sidebar.getScore(team.color().chatColor() + team.color().name() + " WINS!").setScore(1);
+        Component winComponent = Component.text(team.color().name() + " TEAM WINS!", team.color().chatColor());
+        String scoreText = LegacyComponentSerializer.legacySection().serialize(winComponent);
+        sidebar.getScore(scoreText).setScore(1);
         applyScoreboardToAll();
     }
 
     public void respawning(Player player) {
+        final Title.Times times = Title.Times.times(
+                Duration.ofMillis(250),  // Fade in: 5 ticks
+                Duration.ofMillis(1000), // Stay: 20 ticks
+                Duration.ofMillis(250)   // Fade out: 5 ticks
+        );
         new BukkitRunnable() {
             int timer = Game.RESPAWN_TIME;
             @Override
             public void run() {
                 if (timer > 0) {
-                    player.sendTitle(NamedTextColor.RED + "Respawning in " + timer, "", 5, 20, 5);
+                    Component mainTitle = Component.text("Respawning in ", NamedTextColor.RED)
+                            .append(Component.text(timer, NamedTextColor.WHITE));
+                    Component subtitle = Component.empty();
+                    Title title = Title.title(mainTitle, subtitle, times);
+                    player.showTitle(title);
                     timer--;
                 } else {
-                    player.sendTitle(NamedTextColor.GREEN + "Welcome Back!","Go!", 5, 20, 5);
+                    Component mainTitle = Component.text("Welcome Back!", NamedTextColor.YELLOW)
+                            .append(Component.text(timer, NamedTextColor.GOLD));
+                    Component subtitle = Component.text("Go!", NamedTextColor.GREEN);
+                    Title title = Title.title(mainTitle, subtitle, times);
+                    player.showTitle(title);
                     cancel();
                 }
             }
@@ -127,28 +161,54 @@ public class GameVisuals {
 
     public void update() {
         for (String entry : scoreboard.getEntries()) {
-            sidebar.getScore(entry).resetScore();
+            scoreboard.resetScores(entry);
         }
-        int line = 0;
+
         String timeStr = formatTime(timeLeft);
-        sidebar.getScore(NamedTextColor.YELLOW + "Time: " + timeStr).setScore(game.settings().timer());
+        Component timeComponent = Component.text("Time: " + timeStr, NamedTextColor.YELLOW);
+        String timeScoreText = LegacyComponentSerializer.legacySection().serialize(timeComponent);
+        sidebar.getScore(timeScoreText).setScore(game.settings().timer());
+
+        int line = game.allPlayers().size() + 1;
+
         for (GameEnums.TeamColor color : GameEnums.TeamColor.values()) {
             if (color == GameEnums.TeamColor.SPECTATOR) continue;
-            List<Player> list = game.allPlayers().stream()
+
+            // Go by life count
+            List<Player> teamPlayers = game.allPlayers().stream()
                     .filter(p -> game.playerTeam(p) == color)
                     .sorted(Comparator.comparingInt(p -> game.lives((Player) p)).reversed())
                     .toList();
-            for (Player p : list) {
-                String label = p.getName() + " [" + game.lives(p) + "]";
-                sidebar.getScore(color.chatColor() + " " + label).setScore(--line);
+
+            if (!teamPlayers.isEmpty()) {
+                sidebar.getScore("§" + color.ordinal()).setScore(--line);
+                for (Player p : teamPlayers) {
+                    String livesStr = " [" + game.lives(p) + "♥]";
+                    Component playerComponent = Component.text(p.getName())
+                            .color(color.chatColor())
+                            .append(Component.text(livesStr, NamedTextColor.WHITE));
+                    String playerScoreText = LegacyComponentSerializer.legacySection().serialize(playerComponent);
+                    sidebar.getScore(playerScoreText).setScore(--line);
+                }
             }
         }
-        // Spectators at bottom
-        for (Player p : game.allPlayers()) {
-            if (game.playerTeam(p) == GameEnums.TeamColor.SPECTATOR) {
-                sidebar.getScore(NamedTextColor.GRAY + p.getName()).setScore(--line);
+
+        List<Player> spectators = game.allPlayers().stream()
+                .filter(p -> game.playerTeam(p) == GameEnums.TeamColor.SPECTATOR)
+                .toList();
+
+        if (!spectators.isEmpty()) {
+            sidebar.getScore("§f").setScore(--line); // Spacer
+            Component spectatorsHeader = Component.text("Spectators", NamedTextColor.GRAY);
+            sidebar.getScore(LegacyComponentSerializer.legacySection().serialize(spectatorsHeader)).setScore(--line);
+
+            for (Player p : spectators) {
+                Component spectatorComponent = Component.text("- " + p.getName(), NamedTextColor.DARK_GRAY);
+                String spectatorScoreText = LegacyComponentSerializer.legacySection().serialize(spectatorComponent);
+                sidebar.getScore(spectatorScoreText).setScore(--line);
             }
         }
+
         applyScoreboardToAll();
     }
 

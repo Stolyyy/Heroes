@@ -80,17 +80,14 @@ public class MapAdminCommand extends Command {
 
             case "set":
                 if (args.length < 3) {
-                    player.sendMessage("Usage: /mapadmin set <mapName> <property> [index]");
+                    player.sendMessage("Usage: /mapadmin set <mapName> <property> [args...]");
                     return true;
                 }
-                int setIndex = (args.length > 3) ? Integer.parseInt(args[3]) : -1;
-                boolean success = GameMapManager.updateMapConfig(player, args[1], args[2], player.getLocation(), setIndex);
+                boolean success = GameMapManager.updateMapConfig(player, args[1], args);
                 if (success) {
-                    if (!args[2].equalsIgnoreCase("boundary1")) { // Don't spam on first boundary set
-                        player.sendMessage("Property '" + args[2] + "' updated for map '" + args[1] + "'.");
+                    if (!args[2].equalsIgnoreCase("boundary1")) {
+                        player.sendMessage("Configuration for '" + args[1] + "' updated successfully.");
                     }
-                } else {
-                    player.sendMessage("Failed to update property. Check arguments.");
                 }
                 break;
 

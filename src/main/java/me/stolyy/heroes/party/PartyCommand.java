@@ -21,7 +21,7 @@ public class PartyCommand extends Command {
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(Component.text("This command can only be used by players.").color(NamedTextColor.RED));
+            sender.sendMessage(Component.text("This command can only be used by players.", NamedTextColor.RED));
             return true;
         }
 
@@ -58,13 +58,13 @@ public class PartyCommand extends Command {
 
     private void invite(Player inviter, String[] args) {
         if (args.length < 2) {
-            inviter.sendMessage(Component.text("Usage: /party invite <player>").color(NamedTextColor.RED));
+            inviter.sendMessage(Component.text("Usage: /party invite <player>", NamedTextColor.RED));
             return;
         }
 
         Player invited = Bukkit.getPlayer(args[1]);
         if (invited == null) {
-            inviter.sendMessage(Component.text("Player not found.").color(NamedTextColor.RED));
+            inviter.sendMessage(Component.text("Player not found.", NamedTextColor.RED));
             return;
         }
 
@@ -74,15 +74,15 @@ public class PartyCommand extends Command {
     private void list(Player player) {
         Set<Player> members = PartyManager.getPlayersInParty(player);
         if (members == null || members.isEmpty()) {
-            player.sendMessage(Component.text("You are not in a party.").color(NamedTextColor.RED));
+            player.sendMessage(Component.text("You are not in a party.", NamedTextColor.RED));
             return;
         }
         int memberCount = members.size();
-        Component message = Component.text("Party members (" + memberCount + "):").color(NamedTextColor.YELLOW);
+        Component message = Component.text("Party members (" + memberCount + "):", NamedTextColor.YELLOW);
         for (Player p : members) {
             if (p != null) {
                 message = message.append(Component.newline())
-                        .append(Component.text("- " + p.getName()).color(NamedTextColor.WHITE));
+                        .append(Component.text("- " + p.getName(), NamedTextColor.WHITE));
             }
         }
         player.sendMessage(message);
@@ -90,13 +90,13 @@ public class PartyCommand extends Command {
 
     private void transfer(Player currentLeader, String[] args) {
         if (args.length < 2) {
-            currentLeader.sendMessage(Component.text("Usage: /party transfer <player>").color(NamedTextColor.RED));
+            currentLeader.sendMessage(Component.text("Usage: /party transfer <player>", NamedTextColor.RED));
             return;
         }
 
         Player newLeader = Bukkit.getPlayer(args[1]);
         if (newLeader == null) {
-            currentLeader.sendMessage(Component.text("Player not found.").color(NamedTextColor.RED));
+            currentLeader.sendMessage(Component.text("Player not found.", NamedTextColor.RED));
             return;
         }
 
@@ -104,7 +104,7 @@ public class PartyCommand extends Command {
     }
 
     private void usage(Player player) {
-        player.sendMessage(Component.text("Usage: /party <invite|accept|list|leave|disband|transfer> [player]").color(NamedTextColor.RED));
+        player.sendMessage(Component.text("Usage: /party <invite|accept|list|leave|disband|transfer> [player]", NamedTextColor.RED));
     }
 
     @Override

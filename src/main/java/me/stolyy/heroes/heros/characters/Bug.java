@@ -11,6 +11,7 @@ import me.stolyy.heroes.heros.abilities.data.*;
 import me.stolyy.heroes.heros.minions.SpooderEntity;
 import me.stolyy.heroes.utility.Interactions;
 import me.stolyy.heroes.utility.effects.Sounds;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -67,7 +68,9 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
         double pitch = player.getLocation().getPitch();
         if(!secondary.ready()) return;
         if(energy() < soulsPerCast) {
-            player.sendMessage(NamedTextColor.RED + "Not enough souls! " + (int) (soulsPerCast - energy()) + " more needed.");
+            player.sendMessage(Component.text("Not enough souls! ", NamedTextColor.RED)
+                    .append(Component.text((int) (soulsPerCast - energy()) ,NamedTextColor.WHITE))
+                    .append(Component.text(" more needed." , NamedTextColor.RED)));
             return;
         }
 
@@ -107,7 +110,10 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
     @Override
     public void useUltimateAbility() {
         if(!ultimate.ready() || ultimate.inUse()) {
-            player.sendMessage(NamedTextColor.RED + "Ultimate ability is on cooldown! " + (int) ultimate.timeUntilUse() + " seconds remaining.");
+            player.sendMessage(
+                    Component.text("Ultimate ability is on cooldown! ", NamedTextColor.YELLOW)
+                            .append(Component.text((int) ultimate.timeUntilUse(), NamedTextColor.WHITE))
+                            .append(Component.text(" seconds remaining.", NamedTextColor.YELLOW)));
             return;
         }
 

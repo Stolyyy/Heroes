@@ -13,10 +13,12 @@ import me.stolyy.heroes.heros.minions.PrincessEntity;
 import me.stolyy.heroes.heros.abilities.interfaces.Dash;
 import me.stolyy.heroes.utility.effects.Particles;
 import me.stolyy.heroes.utility.physics.Hitbox;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import java.util.*;
@@ -86,7 +88,10 @@ public class Pug extends HeroEnergy implements PassiveSneak, Dash {
     @Override
     public void useUltimateAbility() {
         if(ultimate.inUse() || !ultimate.ready()) {
-            player.sendMessage(NamedTextColor.RED + "Ultimate ability is on cooldown! " + (int) ultimate.timeUntilUse() + " seconds remaining.");
+            player.sendMessage(
+                    Component.text("Ultimate ability is on cooldown! ", NamedTextColor.YELLOW)
+                            .append(Component.text((int) ultimate.timeUntilUse(), NamedTextColor.WHITE))
+                            .append(Component.text(" seconds remaining.", NamedTextColor.YELLOW)));
             return;
         }
         ultimate.setInUse(true);
@@ -121,7 +126,8 @@ public class Pug extends HeroEnergy implements PassiveSneak, Dash {
             pounceCharge = 0;
             player.playSound(player.getLocation(), Sound.ENTITY_WOLF_GROWL, 2.0f, 1.0f);
             setCanIncreaseEnergy(false);
-            new PounceChargeTask().runTaskTimer(Heroes.getInstance(), 0L, 1L);
+            BukkitTask pounce = new PounceChargeTask().runTaskTimer(Heroes.getInstance(), 0L, 1L);
+            activeTasks.add(pounce);
         }
     }
 

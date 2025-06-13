@@ -14,7 +14,7 @@ public class GameSettings {
 
     public GameSettings(GameMap map) {
         this.map = GameMapManager.createWorld(map);
-        boundaries = map.getBoundaries().clone();
+        boundaries = map.boundaries().clone();
     }
 
     public GameSettings copy(GameSettings settings){
@@ -52,9 +52,9 @@ public class GameSettings {
     public GameSettings toggleKillWalls() {
         killWalls = !killWalls;
         if(killWalls){
-            boundaries = map.getBoundaries().clone().expand(-3);
+            boundaries = map.boundaries().clone().expand(-3);
         } else {
-            boundaries = map.getBoundaries().clone();
+            boundaries = map.boundaries().clone();
         }
         return this;
     }

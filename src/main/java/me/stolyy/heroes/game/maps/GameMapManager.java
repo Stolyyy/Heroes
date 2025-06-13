@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class GameMapManager {
     private static final Heroes plugin = Heroes.getInstance();
@@ -37,7 +38,7 @@ public class GameMapManager {
         return pool.stream().skip(index).findFirst().orElse(null);
     }
 
-    public static GameMap getRandomMapUnion(Set<GameEnums.GameMode> modes){
+    public static GameMap getRandomMapInAny(Set<GameEnums.GameMode> modes){
         Set<GameMap> pool = new LinkedHashSet<>();
         for (GameEnums.GameMode mode : modes) {
             Set<GameMap> modePool = mapPools.get(mode);
@@ -51,7 +52,7 @@ public class GameMapManager {
         return pool.stream().skip(index).findFirst().orElse(null);
     }
 
-    public static GameMap getRandomMapIntersect(Set<GameEnums.GameMode> modes){
+    public static GameMap getRandomMapInAll(Set<GameEnums.GameMode> modes){
         Set<GameMap> pool = new LinkedHashSet<>(templateMaps);
         for (GameEnums.GameMode mode : modes) {
             Set<GameMap> modePool = mapPools.get(mode);
@@ -66,12 +67,12 @@ public class GameMapManager {
     }
 
     public static World loadTemplateForEditing(String mapName) {
-        GameMap template = templateMaps.stream().filter(m -> m.getName().equalsIgnoreCase(mapName)).findFirst().orElse(null);
+        GameMap template = templateMaps.stream().filter(m -> m.name().equalsIgnoreCase(mapName)).findFirst().orElse(null);
         if (template == null) return null;
 
-        World world = Bukkit.getWorld(template.getWorldFolderName());
+        World world = Bukkit.getWorld(template.worldFolderName());
         if (world == null) {
-            world = new WorldCreator("templates/" + template.getWorldFolderName()).createWorld();
+            world = new WorldCreator("templates/" + template.worldFolderName()).createWorld();
         }
         if(world != null) {
             world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
@@ -98,62 +99,112 @@ public class GameMapManager {
         }
     }
 
-    public static boolean updateMapConfig(Player player, String mapName, String property, Location location, int index) {
+    public static boolean updateMapConfig(Player player, String mapName, String[] commandArgs) {
         File mapFile = new File(mapConfigFolder, mapName + ".json");
-        if (!mapFile.exists()) return false;
+        if (!mapFile.exists()) {
+            player.sendMessage("Error: Map config file not found for '" + mapName + "'.");
+            return false;
+        }
 
         try {
-            // Read existing data into a generic Map
             Type type = new TypeToken<Map<String, Object>>() {}.getType();
             Map<String, Object> data;
             try (Reader reader = new FileReader(mapFile)) {
                 data = gson.fromJson(reader, type);
             }
 
-            Map<String, Double> newLocMap = Map.of(
-                    "x", location.getX(),
-                    "y", location.getY(),
-                    "z", location.getZ()
-            );
+            String property = commandArgs[2].toLowerCase();
 
-            switch (property.toLowerCase()) {
+            switch (property) {
                 case "spectatorlocation":
-                    data.put("spectatorLocation", newLocMap);
-                    break;
                 case "spawnlocation":
-                    List<Map<String, Double>> spawns = (List<Map<String, Double>>) data.get("spawnLocations");
-                    if (index >= 0 && index < spawns.size()) {
-                        spawns.set(index, newLocMap);
-                    } else {
-                        return false; // Invalid index
+                case "crystallocation": {
+                    // handles all location-based settings
+                    Map<String, Double> newLocMap = Map.of("x", player.getLocation().getX(), "y", player.getLocation().getY(), "z", player.getLocation().getZ());
+                    int index = (commandArgs.length > 3) ? Integer.parseInt(commandArgs[3]) : -1;
+
+                    if (property.equals("spectatorlocation")) {
+                        data.put("spectatorLocation", newLocMap);
+                    } else { // Handles spawn and crystal locations
+                        List<Map<String, Double>> locs = (List<Map<String, Double>>) data.get(property + "s"); // "spawnlocations" or "crystallocations"
+                        if (index >= 0 && index < locs.size()) {
+                            locs.set(index, newLocMap);
+                        } else {
+                            player.sendMessage("Error: Invalid index '" + index + "'.");
+                            return false;
+                        }
                     }
                     break;
-                case "crystallocation":
-                    List<Map<String, Double>> crystals = (List<Map<String, Double>>) data.get("crystalLocations");
-                    if (index >= 0 && index < crystals.size()) {
-                        crystals.set(index, newLocMap);
-                    } else {
-                        return false; // Invalid index
-                    }
-                    break;
+                }
                 case "boundary1":
-                    boundarySelections.put(player.getUniqueId(), location);
-                    player.sendMessage("Set boundary corner 1. Use '/mapadmin set " + mapName + " boundary2' to finish.");
+                    boundarySelections.put(player.getUniqueId(), player.getLocation());
+                    player.sendMessage("Set boundary corner 1 for '" + mapName + "'. Use '/mapadmin set " + mapName + " boundary2' to finish.");
                     return true;
-                case "boundary2":
+                case "boundary2": {
                     Location corner1 = boundarySelections.remove(player.getUniqueId());
-                    if(corner1 == null) {
-                        player.sendMessage("You must set boundary corner 1 first.");
+                    if (corner1 == null) {
+                        player.sendMessage("Error: You must set boundary corner 1 first.");
                         return false;
                     }
-                    BoundingBox newBounds = BoundingBox.of(corner1, location);
+                    BoundingBox newBounds = BoundingBox.of(corner1, player.getLocation());
                     Map<String, Object> boundsMap = new HashMap<>();
                     boundsMap.put("min", Map.of("x", newBounds.getMinX(), "y", newBounds.getMinY(), "z", newBounds.getMinZ()));
                     boundsMap.put("max", Map.of("x", newBounds.getMaxX(), "y", newBounds.getMaxY(), "z", newBounds.getMaxZ()));
                     data.put("boundaries", boundsMap);
                     break;
+                }
+
+                case "displayitem": {
+                    if (commandArgs.length < 4) {
+                        player.sendMessage("Usage: /mapadmin set <mapName> displayitem <MATERIAL_NAME>");
+                        return false;
+                    }
+                    String materialName = commandArgs[3].toUpperCase();
+                    try {
+                        Material.valueOf(materialName);
+                        data.put("displayItem", materialName);
+                    } catch (IllegalArgumentException e) {
+                        player.sendMessage("Error: Invalid material name '" + materialName + "'.");
+                        return false;
+                    }
+                    break;
+                }
+                case "gamemode": {
+                    if (commandArgs.length < 5) {
+                        player.sendMessage("Usage: /mapadmin set <mapName> gamemode <add|remove> <mode>");
+                        return false;
+                    }
+                    String action = commandArgs[3].toLowerCase();
+                    String modeName = commandArgs[4].toUpperCase();
+                    List<String> supportedModes = (List<String>) data.get("supportedGameModes");
+
+                    try {
+                        GameEnums.GameMode.valueOf(modeName);
+                        if (action.equals("add")) {
+                            if (!supportedModes.contains(modeName)) {
+                                supportedModes.add(modeName);
+                            } else {
+                                player.sendMessage("Info: Map already supports gamemode '" + modeName + "'.");
+                                return true;
+                            }
+                        } else if (action.equals("remove")) {
+                            if (!supportedModes.remove(modeName)) {
+                                player.sendMessage("Info: Map does not support gamemode '" + modeName + "'.");
+                                return true;
+                            }
+                        } else {
+                            player.sendMessage("Error: Unknown action '" + action + "'. Use 'add' or 'remove'.");
+                            return false;
+                        }
+                    } catch (IllegalArgumentException e) {
+                        player.sendMessage("Error: Invalid gamemode '" + modeName + "'.");
+                        return false;
+                    }
+                    break;
+                }
                 default:
-                    return false; // Unknown property
+                    player.sendMessage("Error: Unknown property '" + property + "'.");
+                    return false;
             }
 
             try (Writer writer = new FileWriter(mapFile)) {
@@ -163,7 +214,8 @@ public class GameMapManager {
             loadMapsFromConfig();
             return true;
 
-        } catch (IOException e) {
+        } catch (IOException | ClassCastException e) {
+            player.sendMessage("An error occurred while updating the map config.");
             e.printStackTrace();
             return false;
         }
@@ -171,7 +223,7 @@ public class GameMapManager {
 
     public static String getMapProperty(String mapName, String property, int index) {
         GameMap template = templateMaps.stream()
-                .filter(m -> m.getName().equalsIgnoreCase(mapName))
+                .filter(m -> m.name().equalsIgnoreCase(mapName))
                 .findFirst()
                 .orElse(null);
 
@@ -181,22 +233,35 @@ public class GameMapManager {
 
         switch (property.toLowerCase()) {
             case "spectatorlocation":
-                return formatLocation(template.getSpectatorLocation());
+                return formatLocation(template.spectatorLocation());
             case "spawnlocation":
-                if (index >= 0 && index < template.getSpawnLocations().length) {
-                    return formatLocation(template.getSpawnLocations()[index]);
+                if (index >= 0 && index < template.spawnLocations().length) {
+                    return formatLocation(template.spawnLocations()[index]);
                 } else {
                     return "Error: Invalid spawn index.";
                 }
             case "crystallocation":
-                if (index >= 0 && index < template.getCrystalLocations().length) {
-                    return formatLocation(template.getCrystalLocations()[index]);
+                if (index >= 0 && index < template.crystalLocations().length) {
+                    return formatLocation(template.crystalLocations()[index]);
                 } else {
                     return "Error: Invalid crystal index.";
                 }
             case "boundaries":
-                return "Min: " + formatLocation(template.getBoundaries().getMin().toLocation(null)) +
-                        ", Max: " + formatLocation(template.getBoundaries().getMax().toLocation(null));
+                if (template.boundaries() == null) return "N/A";
+                return "Min: " + formatLocation(template.boundaries().getMin().toLocation(null)) +
+                        ", Max: " + formatLocation(template.boundaries().getMax().toLocation(null));
+
+            case "displayitem":
+                if (template.displayItem() == null) return "N/A";
+                return template.displayItem().getType().name();
+
+            case "gamemode":
+            case "gamemodes":
+                if (template.supportedModes() == null || template.supportedModes().isEmpty()) return "None";
+                return template.supportedModes().stream()
+                        .map(Enum::name)
+                        .collect(Collectors.joining(", "));
+
             default:
                 return "Error: Unknown property.";
         }
@@ -224,7 +289,7 @@ public class GameMapManager {
                 GameMap map = parseMapFromJson(file);
                 if (map != null) {
                     templateMaps.add(map);
-                    plugin.getLogger().info("Loaded map template: " + map.getName());
+                    plugin.getLogger().info("Loaded map template: " + map.name());
                 }
             } catch (Exception e) {
                 plugin.getLogger().severe("Could not parse map configuration: " + file.getName());
@@ -233,7 +298,7 @@ public class GameMapManager {
         }
 
         for (GameMap map : templateMaps) {
-            for (GameEnums.GameMode mode : map.getSupportedModes()) {
+            for (GameEnums.GameMode mode : map.supportedModes()) {
                 mapPools.get(mode).add(map);
             }
         }
@@ -242,14 +307,14 @@ public class GameMapManager {
     public static List<String> getTemplateMapNames() {
         List<String> names = new ArrayList<>();
         for (GameMap map : templateMaps) {
-            names.add(map.getName());
+            names.add(map.name());
         }
         return names;
     }
 
     public static GameMap createWorld(GameMap template){
-        String worldName = template.getWorldFolderName() + "_" + UUID.randomUUID().toString().substring(0, 8);
-        File templateWorldFolder = new File(templatesFolder, template.getWorldFolderName());
+        String worldName = template.worldFolderName() + "_" + UUID.randomUUID().toString().substring(0, 8);
+        File templateWorldFolder = new File(templatesFolder, template.worldFolderName());
         File newWorldFolder = new File(activeWorldsFolder, worldName);
 
         if (!templateWorldFolder.exists()) {
@@ -260,7 +325,7 @@ public class GameMapManager {
         try {
             copyDirectory(templateWorldFolder, newWorldFolder);
         } catch (IOException e) {
-            plugin.getLogger().severe("Failed to copy template world '" + template.getWorldFolderName() + "'.");
+            plugin.getLogger().severe("Failed to copy template world '" + template.worldFolderName() + "'.");
             e.printStackTrace();
             return null;
         }
@@ -282,7 +347,7 @@ public class GameMapManager {
     }
 
     public static void deleteWorld(GameMap map){
-        World world = map.getWorld();
+        World world = map.world();
         if (world == null) return;
 
         File worldFolder = world.getWorldFolder();

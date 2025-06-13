@@ -34,26 +34,26 @@ public class Party {
 
     public void addPlayer(Player player) {
         PartyManager.setPlayerParty(player, this);
-        player.sendMessage(Component.text("You joined " + getLeader().getName() + "'s party").color(NamedTextColor.YELLOW));
-        for(Player member : members) member.sendMessage(Component.text(player.getName() + " has joined the party!").color(NamedTextColor.YELLOW));
+        player.sendMessage(Component.text("You joined " + getLeader().getName() + "'s party", NamedTextColor.YELLOW));
+        for(Player member : members) member.sendMessage(Component.text(player.getName() + " has joined the party!", NamedTextColor.YELLOW));
         members.add(player);
     }
 
     public void removePlayer(Player player) {
         if(!members.contains(player)){
-            player.sendMessage(Component.text("You are not in the party!").color(NamedTextColor.RED));
+            player.sendMessage(Component.text("You are not in the party!", NamedTextColor.RED));
             return;
         }
         PartyManager.setPlayerParty(player, null);
         members.remove(player);
         for(Player member : members) {
-            member.sendMessage(Component.text(player.getName() + " has left the party!").color(NamedTextColor.YELLOW));
+            member.sendMessage(Component.text(player.getName() + " has left the party!", NamedTextColor.YELLOW));
         }
         if(player.equals(leader)) {
             if(!members.isEmpty()){
                 leader = members.iterator().next();
                 for(Player member : members) {
-                    member.sendMessage(Component.text(leader.getName() + " is the new Party Leader!").color(NamedTextColor.YELLOW));
+                    member.sendMessage(Component.text(leader.getName() + " is the new Party Leader!", NamedTextColor.YELLOW));
                 }
             } else {
                 leader = null;

@@ -15,6 +15,7 @@ import me.stolyy.heroes.utility.effects.Sounds;
 import me.stolyy.heroes.utility.physics.WallDetection;
 import me.stolyy.heroes.heros.abilities.interfaces.Hitscan;
 import me.stolyy.heroes.heros.abilities.interfaces.Projectile;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.entity.ArmorStand;
@@ -24,6 +25,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDismountEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import java.util.HashSet;
@@ -137,14 +139,17 @@ public class Shoop extends HeroEnergy implements PassiveSneak, Projectile, Hitsc
     @Override
     public void useUltimateAbility() {
         if(!ultimate.ready() || ultimate.inUse()) {
-            player.sendMessage(NamedTextColor.RED + "Ultimate ability is on cooldown! " + (int) ultimate.timeUntilUse() + " seconds remaining.");
+            player.sendMessage(
+                    Component.text("Ultimate ability is on cooldown! ", NamedTextColor.YELLOW)
+                            .append(Component.text((int) ultimate.timeUntilUse(), NamedTextColor.WHITE))
+                            .append(Component.text(" seconds remaining.", NamedTextColor.YELLOW)));
             return;
         }
         ultTimer();
         ultimate.setInUse(true);
         player.playSound(player.getLocation(), "shoopdawhoop.crystal", SoundCategory.MASTER, 5.0f, 1.0f);
         Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> player.playSound(player.getLocation(), Sound.ENTITY_WITHER_DEATH, 1.0f, 0.0f), (20L));
-        new BukkitRunnable(){
+        BukkitTask ult = new BukkitRunnable(){
             private int timer = 0;
 
             @Override
@@ -157,6 +162,7 @@ public class Shoop extends HeroEnergy implements PassiveSneak, Projectile, Hitsc
                 hitscan(player,AbilityType.ULTIMATE, (HitscanData) ultimate.abilityData());
             }
         }.runTaskTimer(Heroes.getInstance(), 20L, 4L);
+        activeTasks.add(ult);
         Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> cooldown(ultimate), (long) (ultimate.duration() * 20));
     }
 

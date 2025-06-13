@@ -21,12 +21,12 @@ public class PartyChatCommand extends Command {
     @Override
     public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(Component.text("This command can only be used by players.").color(NamedTextColor.RED));
+            sender.sendMessage(Component.text("This command can only be used by players.", NamedTextColor.RED));
             return true;
         }
 
         if (args.length == 0) {
-            player.sendMessage(Component.text("Usage: /partychat <message>").color(NamedTextColor.RED));
+            player.sendMessage(Component.text("Usage: /partychat <message>", NamedTextColor.RED));
             return true;
         }
 

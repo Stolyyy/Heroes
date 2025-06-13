@@ -101,18 +101,18 @@ public class PartyManager {
 
         switch(reason){
             case EXPIRED -> {
-                inviter.sendMessage(Component.text("Your invite to " + invited.getName() + " has expired.").color(NamedTextColor.RED));
-                invited.sendMessage(Component.text("The party invite from " + inviter.getName() + " has expired.").color(NamedTextColor.RED));
+                inviter.sendMessage(Component.text("Your invite to " + invited.getName() + " has expired.", NamedTextColor.RED));
+                invited.sendMessage(Component.text("The party invite from " + inviter.getName() + " has expired.", NamedTextColor.RED));
             }
             case NOT_LEADER -> {
-                inviter.sendMessage(Component.text("Your invite to " + invited.getName() + " has expired because you are no longer leader.").color(NamedTextColor.RED));
-                invited.sendMessage(Component.text("The party invite from " + inviter.getName() + " has expired.").color(NamedTextColor.RED));
+                inviter.sendMessage(Component.text("Your invite to " + invited.getName() + " has expired because you are no longer leader.", NamedTextColor.RED));
+                invited.sendMessage(Component.text("The party invite from " + inviter.getName() + " has expired.", NamedTextColor.RED));
             }
-            case INVITER_DISCONNECT -> invited.sendMessage(Component.text("The party invite from " + inviter.getName() + " has expired because the player has disconnected.").color(NamedTextColor.RED));
-            case INVITED_DISCONNECT -> inviter.sendMessage(Component.text("Your invite to " + invited.getName() + " has expired because the player has disconnected.").color(NamedTextColor.RED));
+            case INVITER_DISCONNECT -> invited.sendMessage(Component.text("The party invite from " + inviter.getName() + " has expired because the player has disconnected.", NamedTextColor.RED));
+            case INVITED_DISCONNECT -> inviter.sendMessage(Component.text("Your invite to " + invited.getName() + " has expired because the player has disconnected.", NamedTextColor.RED));
             case NO_LONGER_EXISTS -> {
-                inviter.sendMessage(Component.text("The invite no longer exists.").color(NamedTextColor.RED));
-                invited.sendMessage(Component.text("The invite from " + inviter.getName() + " no longer exists.").color(NamedTextColor.RED));
+                inviter.sendMessage(Component.text("The invite no longer exists.", NamedTextColor.RED));
+                invited.sendMessage(Component.text("The invite from " + inviter.getName() + " no longer exists.", NamedTextColor.RED));
             }
         }
         if (invitesPerPlayer.get(invited) != null && invitesPerPlayer.get(invited).isEmpty()) {
@@ -125,24 +125,24 @@ public class PartyManager {
 
 
         if(invitesPerPlayer.get(invited) != null && !invitesPerPlayer.get(invited).contains(inviter)){
-            invited.sendMessage(Component.text("You do not have any invites from " + inviter.getName() + "!").color(NamedTextColor.RED));
+            invited.sendMessage(Component.text("You do not have any invites from " + inviter.getName() + "!", NamedTextColor.RED));
             return;
         }
 
         Party inviterParty = getPlayerParty(inviter);
         if(inviterParty == null){
-            invited.sendMessage(Component.text(inviter.getName() + " is not in a party!").color(NamedTextColor.RED));
+            invited.sendMessage(Component.text(inviter.getName() + " is not in a party!", NamedTextColor.RED));
             return;
         }
 
         Party invitedParty = getPlayerParty(invited);
         if(invitedParty != null){
             if(invitedParty.getMembers().contains(inviter)) {
-                invited.sendMessage(Component.text("You are already in " + invitedParty.getLeader().getName() + "'s party!").color(NamedTextColor.YELLOW));
+                invited.sendMessage(Component.text("You are already in " + invitedParty.getLeader().getName() + "'s party!", NamedTextColor.YELLOW));
                 return;
             }
             invitedParty.removePlayer(invited);
-            invited.sendMessage(Component.text("You left " + invitedParty.getLeader().getName() + "'s party").color(NamedTextColor.YELLOW));
+            invited.sendMessage(Component.text("You left " + invitedParty.getLeader().getName() + "'s party", NamedTextColor.YELLOW));
             if(invitedParty.getMembers().isEmpty()) parties.remove(invitedParty);
         }
 
@@ -154,15 +154,15 @@ public class PartyManager {
     public static void disbandParty(Player player){
         Party playerParty = getPlayerParty(player);
         if(playerParty == null){
-            player.sendMessage(Component.text("You are not in a party.").color(NamedTextColor.RED));
+            player.sendMessage(Component.text("You are not in a party.", NamedTextColor.RED));
             return;
         }
         if(!isPartyLeader(player)){
-            player.sendMessage(Component.text("Only the party leader can disband the party.").color(NamedTextColor.RED));
+            player.sendMessage(Component.text("Only the party leader can disband the party.", NamedTextColor.RED));
             return;
         }
         parties.remove(playerParty);
-        for(Player member : playerParty.getMembers()) member.sendMessage(Component.text("PartyModeGUI has been disbanded!").color(NamedTextColor.RED));
+        for(Player member : playerParty.getMembers()) member.sendMessage(Component.text("PartyModeGUI has been disbanded!", NamedTextColor.RED));
         playerParty.setMembers(null);
         playerParty.setLeader(null);
     }
@@ -170,21 +170,21 @@ public class PartyManager {
     public static void transferLeader(Player leader, Player newLeader){
         Party playerParty = getPlayerParty(leader);
         if(playerParty == null){
-            leader.sendMessage(Component.text("You are not in a party.").color(NamedTextColor.RED));
+            leader.sendMessage(Component.text("You are not in a party.", NamedTextColor.RED));
             return;
         }
         if(playerParty.getLeader() != leader){
-            leader.sendMessage(Component.text("You are not the leader!").color(NamedTextColor.RED));
+            leader.sendMessage(Component.text("You are not the leader!", NamedTextColor.RED));
             return;
         }
         playerParty.setLeader(newLeader);
-        for(Player member : playerParty.getMembers()) member.sendMessage(Component.text(leader.getName() + " is the new PartyC Leader!").color(NamedTextColor.YELLOW));
+        for(Player member : playerParty.getMembers()) member.sendMessage(Component.text(leader.getName() + " is the new PartyC Leader!", NamedTextColor.YELLOW));
     }
 
     public static void sendMessage(Player player, Component message){
         Party playerParty = getPlayerParty(player);
         if(playerParty == null){
-            player.sendMessage(Component.text("You aren't in a party!").color(NamedTextColor.RED));
+            player.sendMessage(Component.text("You aren't in a party!", NamedTextColor.RED));
             return;
         }
         for(Player member : playerParty.getMembers()) member.sendMessage("Party: " + message);
@@ -193,7 +193,7 @@ public class PartyManager {
     public static void leaveParty(Player player){
         Party playerParty = getPlayerParty(player);
         if(playerParty == null){
-            player.sendMessage(Component.text("You aren't in a party!").color(NamedTextColor.RED));
+            player.sendMessage(Component.text("You aren't in a party!", NamedTextColor.RED));
             return;
         }
         playerParty.removePlayer(player);

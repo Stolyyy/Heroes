@@ -5,6 +5,7 @@ import me.stolyy.heroes.game.maps.GameMap;
 import me.stolyy.heroes.game.maps.GameMapManager;
 import me.stolyy.heroes.game.menus.PartyModeGUI;
 import me.stolyy.heroes.party.PartyManager;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -20,7 +21,7 @@ public class GameManager {
 
     public static Game createNewGame(GameEnums.GameMode gameMode){
         if(gameMode == GameEnums.GameMode.PARTY){
-            return new Game(GameMapManager.getRandomMapUnion(Set.of(GameEnums.GameMode.ONE_V_ONE, GameEnums.GameMode.TWO_V_TWO)), gameMode);
+            return new Game(GameMapManager.getRandomMapInAll(Set.of(GameEnums.GameMode.ONE_V_ONE, GameEnums.GameMode.TWO_V_TWO)), gameMode);
         }
         return new Game(GameMapManager.getRandomMap(gameMode), gameMode);
     }
@@ -37,7 +38,7 @@ public class GameManager {
         switch (gameMode) {
             case ONE_V_ONE -> {
                 if (PartyManager.isInParty(player)) {
-                    player.sendMessage(NamedTextColor.RED + "You cannot enter 1v1 in a party. Try Party mode instead.");
+                    player.sendMessage(Component.text("You cannot enter 1v1 in a party. Try Party mode instead.", NamedTextColor.RED));
                     return;
                 }
 
@@ -55,7 +56,7 @@ public class GameManager {
             }
             case TWO_V_TWO -> {
                 if (!PartyManager.isInParty(player) || PartyManager.getPartySize(player) != 2) {
-                    player.sendMessage(NamedTextColor.RED + "You must be in a party of 2 players to joinGame 2v2");
+                    player.sendMessage(Component.text("You must be in a party of 2 players to joinGame 2v2", NamedTextColor.RED));
                     return;
                 }
 
@@ -76,7 +77,7 @@ public class GameManager {
             }
             case PARTY -> {
                 if (!PartyManager.isInParty(player)) {
-                    player.sendMessage(NamedTextColor.RED + "You must be in a party to joinGame party mode!");
+                    player.sendMessage(Component.text("You must be in a party to joinGame party mode!", NamedTextColor.RED));
                     return;
                 }
                 Game game = createNewGame(gameMode);

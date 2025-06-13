@@ -9,6 +9,7 @@ import me.stolyy.heroes.utility.Interactions;
 import me.stolyy.heroes.heros.abilities.interfaces.Dash;
 import me.stolyy.heroes.utility.effects.Sounds;
 import me.stolyy.heroes.utility.physics.Hitbox;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -16,6 +17,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import java.util.Set;
@@ -80,7 +82,10 @@ public class VoidCrawler extends HeroEnergy implements Dash {
     @Override
     public void useUltimateAbility() {
         if(ultimate.inUse() || !ultimate.ready()){
-            player.sendMessage(NamedTextColor.RED + "Ultimate ability is on cooldown! " + (int) ultimate.timeUntilUse() + " seconds remaining.");
+            player.sendMessage(
+                    Component.text("Ultimate ability is on cooldown! ", NamedTextColor.YELLOW)
+                            .append(Component.text((int) ultimate.timeUntilUse(), NamedTextColor.WHITE))
+                            .append(Component.text(" seconds remaining.", NamedTextColor.YELLOW)));
             return;
         }
 
@@ -106,7 +111,7 @@ public class VoidCrawler extends HeroEnergy implements Dash {
         secondary.setCd(3.5);
 
         //end logic
-        new BukkitRunnable() {
+        BukkitTask resetUlt = new BukkitRunnable() {
             @Override
             public void run() {
                 setJabCooldown(500);
@@ -118,6 +123,7 @@ public class VoidCrawler extends HeroEnergy implements Dash {
                 cooldown(ultimate);
             }
         }.runTaskLater(Heroes.getInstance(), (int) ultimate.duration() * 20L);
+        activeTasks.add(resetUlt);
     }
 
     @Override
@@ -128,7 +134,7 @@ public class VoidCrawler extends HeroEnergy implements Dash {
 
     public void updateAttackDamage() {
         Hero h = this;
-        new BukkitRunnable() {
+        BukkitTask attackUpdates = new BukkitRunnable() {
             @Override
             public void run() {
                 if(HeroManager.getHero(player) != h){
@@ -141,6 +147,7 @@ public class VoidCrawler extends HeroEnergy implements Dash {
                 secondary.setDmg(7 + energy() / 50);
             }
         }.runTaskTimer(Heroes.getInstance(), 0L, 1L);
+        activeTasks.add(attackUpdates);
     }
 
     @Override

@@ -6,7 +6,6 @@ import me.stolyy.heroes.game.minigame.GameEnums;
 import me.stolyy.heroes.game.maps.GameMap;
 import me.stolyy.heroes.game.maps.GameMapManager;
 import me.stolyy.heroes.game.minigame.GameTeam;
-import me.stolyy.heroes.party.PartyManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -81,7 +80,7 @@ public class GameMapGUI extends GUI {
         ItemStack item = new ItemStack(Material.MAP);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName(map.getName());
+            meta.setDisplayName(map.name());
             List<String> lore = new ArrayList<>();
             lore.add("§7Click to select this map");
             meta.setLore(lore);

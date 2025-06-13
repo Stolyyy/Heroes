@@ -9,30 +9,11 @@ import org.bukkit.util.BoundingBox;
 
 import java.util.Set;
 
-public class GameMap {
-    private final String name;
-    private final ItemStack displayItem;
-    private final Set<GameEnums.GameMode> supportedModes;
-    private final String worldFolderName;
-    private final BoundingBox boundaries;
-    private final Location spectatorLocation;
-    private final Location[] spawnLocations;
-    private final Location[] crystalLocations;
-    private final World world;
+public record GameMap(String name, ItemStack displayItem, Set<GameEnums.GameMode> supportedModes,
+                      String worldFolderName, BoundingBox boundaries, Location spectatorLocation,
+                      Location[] spawnLocations, Location[] crystalLocations, World world) {
 
-    public GameMap(String name, ItemStack displayItem, Set<GameEnums.GameMode> supportedModes, String worldFolderName, BoundingBox boundaries, Location spectatorLocation, Location[] spawnLocations, Location[] crystalLocations, World world) {
-        this.name = name;
-        this.displayItem = displayItem;
-        this.supportedModes = supportedModes;
-        this.worldFolderName = worldFolderName;
-        this.boundaries = boundaries;
-        this.spectatorLocation = spectatorLocation;
-        this.spawnLocations = spawnLocations;
-        this.crystalLocations = crystalLocations;
-        this.world = world;
-    }
-
-    public GameMap createCopy(World world){
+    public GameMap createCopy(World world) {
         Location updatedSpectatorLocation = spectatorLocation.clone();
         updatedSpectatorLocation.setWorld(world);
 
@@ -61,7 +42,7 @@ public class GameMap {
         );
     }
 
-    public Location getFurthestSpawn(Player player, Set<Player> enemies){
+    public Location getFurthestSpawn(Player player, Set<Player> enemies) {
         Player nearestPlayer = null;
         double nearestDistance = Double.MAX_VALUE;
         for (Player enemy : enemies) {
@@ -81,47 +62,11 @@ public class GameMap {
 
         for (Location spawn : spawnLocations) {
             double distance = referencePoint.distance(spawn);
-            if (distance > furthestDistance){
+            if (distance > furthestDistance) {
                 furthestDistance = distance;
                 furthestSpawn = spawn;
             }
         }
         return furthestSpawn;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public ItemStack getDisplayItem() {
-        return displayItem;
-    }
-
-    public Set<GameEnums.GameMode> getSupportedModes() {
-        return supportedModes;
-    }
-
-    public String getWorldFolderName() {
-        return worldFolderName;
-    }
-
-    public BoundingBox getBoundaries() {
-        return boundaries;
-    }
-
-    public Location getSpectatorLocation() {
-        return spectatorLocation;
-    }
-
-    public Location[] getSpawnLocations() {
-        return spawnLocations;
-    }
-
-    public Location[] getCrystalLocations() {
-        return crystalLocations;
-    }
-
-    public World getWorld() {
-        return world;
     }
 }

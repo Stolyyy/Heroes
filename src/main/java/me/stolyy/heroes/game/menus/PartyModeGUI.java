@@ -4,6 +4,7 @@ import me.stolyy.heroes.game.minigame.Game;
 import me.stolyy.heroes.game.minigame.GameEnums.TeamColor;
 import me.stolyy.heroes.game.minigame.GameTeam;
 import me.stolyy.heroes.heros.HeroManager;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -85,7 +86,7 @@ public class PartyModeGUI extends GUI{
                     GUIListener.playerGUIMap.put(player, null);
                     player.closeInventory();
                 } else {
-                    player.sendMessage(NamedTextColor.RED + "Cannot Start! Check Team sizes.");
+                    player.sendMessage(Component.text("Cannot Start! Check Team sizes.", NamedTextColor.RED));
                 }
             } case 49 -> { // cancel
                 game.clean();
@@ -166,10 +167,10 @@ public class PartyModeGUI extends GUI{
         ItemStack head = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta meta = (SkullMeta) head.getItemMeta();
         meta.setOwningPlayer(player);
-        List<String> lore = new ArrayList<>();
-        lore.add(NamedTextColor.WHITE + HeroManager.heroToString(HeroManager.getHero(player)));
-        meta.setLore(lore);
-        meta.setDisplayName(player.getName());
+        List<Component> lore = new ArrayList<>();
+        lore.add(Component.text(HeroManager.heroToString(HeroManager.getHero(player)), NamedTextColor.WHITE));
+        meta.lore(lore);
+        meta.displayName(Component.text(player.getName()));
         head.setItemMeta(meta);
         return head;
     }

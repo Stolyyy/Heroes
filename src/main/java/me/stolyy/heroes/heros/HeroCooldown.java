@@ -8,7 +8,7 @@ import me.stolyy.heroes.utility.effects.Particles;
 import me.stolyy.heroes.utility.effects.Sounds;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
+import net.kyori.adventure.title.Title;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -17,11 +17,18 @@ import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+
+import java.time.Duration;
+import java.util.LinkedList;
+import java.util.List;
 
 public abstract class HeroCooldown extends Hero {
     private static final Plugin PLUGIN = Heroes.getInstance();
     private static final int BAR_LENGTH = 10;
     private static final int UPDATES_PER_SECOND = 10;
+
+    protected final List<BukkitTask> activeTasks = new LinkedList<>();
 
     private int doubleJumpCount = 0;
     private boolean canDoubleJump = true;
@@ -81,31 +88,53 @@ public abstract class HeroCooldown extends Hero {
     public void onDeath(){}
     public void onRespawn(){}
     public void onElimination(){
-        //reset everything
-        //end runnable tasks
+        cancelTasks();
     }
 
-    protected void ultTimer(){
-        new BukkitRunnable() {
+    public void cancelTasks() {
+        for (BukkitTask task : activeTasks) {
+            if (!task.isCancelled()) {
+                task.cancel();
+            }
+        }
+        activeTasks.clear();
+    }
+
+    protected void ultTimer() {
+        final Title.Times times = Title.Times.times(
+                Duration.ofMillis(250),  // Fade in: 5 ticks
+                Duration.ofMillis(1250), // Stay: 25 ticks
+                Duration.ofMillis(500)   // Fade out: 10 ticks
+        );
+
+        BukkitTask ultTimerTask = new BukkitRunnable() {
             int elapsedTime = 0;
+
             @Override
             public void run() {
-                String title;
-                if (elapsedTime < 0.4 * ultimate.duration()) {
-                    title = "" + NamedTextColor.DARK_GREEN;
-                } else if (elapsedTime < 0.7 * ultimate.duration()) {
-                    title = "" + NamedTextColor.YELLOW;
-                } else {
-                    title = "" + NamedTextColor.RED;
-                }
-                player.sendTitle(title  + (int) (ultimate.duration() - elapsedTime), "", 5, 25, 10);
-                elapsedTime++;
-
-                if (elapsedTime == ultimate.duration()) {
+                if (elapsedTime >= ultimate.duration()) {
                     this.cancel();
+                    return;
                 }
+
+                NamedTextColor color;
+                if (elapsedTime < 0.4 * ultimate.duration()) {
+                    color = NamedTextColor.DARK_GREEN;
+                } else if (elapsedTime < 0.7 * ultimate.duration()) {
+                    color = NamedTextColor.YELLOW;
+                } else {
+                    color = NamedTextColor.RED;
+                }
+
+                int timeLeft = (int) (ultimate.duration() - elapsedTime);
+                Component mainTitle = Component.text(timeLeft, color);
+                Title title = Title.title(mainTitle, Component.empty(), times);
+                player.showTitle(title);
+
+                elapsedTime++;
             }
         }.runTaskTimer(PLUGIN, 0L, 20L);
+        activeTasks.add(ultTimerTask);
     }
 
     protected void cooldown(Ability ability) {
@@ -117,8 +146,12 @@ public abstract class HeroCooldown extends Hero {
 
         switch (abilityType) {
             case PRIMARY -> {
-                endLogic = () -> player.sendActionBar(Component.text(NamedTextColor.GREEN + "Primary Ability Ready!"));
-                updateLogic = () -> player.sendActionBar(Component.text(NamedTextColor.GREEN + "Primary Cooldown: " + createProgressBar(ability.timeUntilUse() / ability.cd())));
+                endLogic = () -> player.sendActionBar(Component.text("Primary Ability Ready!", NamedTextColor.GREEN));
+                updateLogic = () -> {
+                    Component prefix = Component.text("Primary Cooldown: ", NamedTextColor.GREEN);
+                    Component progressBar = createProgressBar(ability.timeUntilUse() / ability.cd());
+                    player.sendActionBar(prefix.append(progressBar));
+                };
             }
             case SECONDARY -> {
                 endLogic = () -> updateItemDurability(1, (short) 0, 5);
@@ -126,7 +159,7 @@ public abstract class HeroCooldown extends Hero {
             }
             case ULTIMATE -> {
                 endLogic = () -> {
-                    player.sendMessage(NamedTextColor.GREEN + "Ultimate Ability Ready!");
+                    player.sendMessage(Component.text("Ultimate Ability Ready!", NamedTextColor.GREEN));
                     updateItemDurability(2, (short) 0, 7);
                 };
                 updateLogic = () -> updateItemDurability(2, ability.timeUntilUse() / ability.cd(), 4);
@@ -138,7 +171,7 @@ public abstract class HeroCooldown extends Hero {
 
     private void updateUI(Ability ability, Runnable endLogic, Runnable updateLogic) {
         Hero h = this;
-        new BukkitRunnable() {
+        BukkitTask cooldownUITask = new BukkitRunnable() {
             @Override
             public void run() {
                 ability.updateCooldown(1.0 / UPDATES_PER_SECOND);
@@ -156,6 +189,7 @@ public abstract class HeroCooldown extends Hero {
                 }
             }
         }.runTaskTimer(PLUGIN, 0L, 20L / UPDATES_PER_SECOND);
+        activeTasks.add(cooldownUITask);
     }
 
     protected void updateItemDurability(int slot, double percentComplete, int customModelData) {
@@ -172,13 +206,14 @@ public abstract class HeroCooldown extends Hero {
         }
     }
 
-    private String createProgressBar(double percentage) {
-        percentage = Math.min(1, percentage);
-        int filledBars = (int) (percentage / BAR_LENGTH);
-        return NamedTextColor.GREEN +
-                "|".repeat(Math.max(0, filledBars)) +
-                NamedTextColor.RED +
-                "|".repeat(Math.max(0, BAR_LENGTH - filledBars));
+    private Component createProgressBar(double percentage) {
+        percentage = Math.min(1, Math.max(0, percentage));
+        int filledBars = (int) (percentage * BAR_LENGTH);
+
+        Component filledPart = Component.text("|".repeat(filledBars), NamedTextColor.GREEN);
+        Component emptyPart = Component.text("|".repeat(BAR_LENGTH - filledBars), NamedTextColor.RED);
+
+        return filledPart.append(emptyPart);
     }
 
     protected int doubleJumpCount() {

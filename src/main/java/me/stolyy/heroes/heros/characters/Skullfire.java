@@ -24,6 +24,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import java.util.HashMap;
@@ -79,7 +80,7 @@ public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload
         if (isReloading) return;
         isReloading = true;
         Sounds.playSoundToWorld(player, "melee.reload", 2.0f, 1.0f);
-        player.sendMessage(NamedTextColor.RED + "Reloading...");
+        player.sendMessage(Component.text("Reloading...", NamedTextColor.RED));
         ItemStack gunItem = player.getInventory().getItem(0);
         cooldown(primary);
 
@@ -95,7 +96,7 @@ public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload
                         isReloading = false;
                         updateAmmoDisplay();
                         updateItemDurability(0, (short) 0, 8002);
-                        player.sendMessage(NamedTextColor.GREEN + "Reload complete!");
+                        player.sendMessage(Component.text("Reload complete!", NamedTextColor.GREEN));
                         this.cancel();
                     } else {
                         updateItemDurability(0, (short) (25 - (25 * currentTick / reloadTicks)), 8002);
@@ -111,7 +112,7 @@ public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload
                     ammo = 7;
                     isReloading = false;
                     updateAmmoDisplay();
-                    player.sendMessage(NamedTextColor.GREEN + "Reload complete!");
+                    player.sendMessage(Component.text("Reload complete!", NamedTextColor.GREEN));
                 }
             }.runTaskLater(Heroes.getInstance(), (long) (20*primary.cd()));
         }
@@ -196,7 +197,10 @@ public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload
     @Override
     public void useUltimateAbility() {
         if(!ultimate.ready() || ultimate.inUse()) {
-            player.sendMessage(NamedTextColor.RED + "Ultimate ability is on cooldown! " + (int) ultimate.timeUntilUse() + " seconds remaining.");
+            player.sendMessage(
+                    Component.text("Ultimate ability is on cooldown! ", NamedTextColor.YELLOW)
+                            .append(Component.text((int) ultimate.timeUntilUse(), NamedTextColor.WHITE))
+                            .append(Component.text(" seconds remaining.", NamedTextColor.YELLOW)));
             return;
         }
 
@@ -206,7 +210,7 @@ public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload
         updateAmmoDisplay();
         player.playSound(player.getLocation(), "skullfire.crystal", SoundCategory.MASTER, 5.0f, 1.0f);
 
-        new BukkitRunnable(){
+        BukkitTask ult = new BukkitRunnable(){
             int timer = 0;
             @Override
             public void run() {
@@ -217,6 +221,7 @@ public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload
                 timer++;
             }
         }.runTaskTimer(Heroes.getInstance(), 0L, 1L);
+        activeTasks.add(ult);
     }
 
     public void chainUpdate(Player target) {

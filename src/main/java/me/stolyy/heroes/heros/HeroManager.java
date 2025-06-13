@@ -17,8 +17,10 @@ public class HeroManager {
     private static final Map<Player, Set<Bug.Charms>> charms = new HashMap<>();
 
     public static void setHero(Player player, Hero hero) {
-        if(heroes.get(player) instanceof HeroEnergy oldHero)
-            oldHero.setCanIncreaseEnergy(false);
+        Hero oldHero = heroes.get(player);
+        ((HeroEnergy)oldHero).setCanIncreaseEnergy(false);
+        ((HeroCooldown) oldHero).cancelTasks();
+
         heroes.put(player, hero);
     }
 

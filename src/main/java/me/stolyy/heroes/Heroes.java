@@ -51,7 +51,7 @@ public final class Heroes extends JavaPlugin implements Listener {
         }
 
         // Register event listeners
-        GameMapManager.initializeMaps();
+        GameMapManager.loadMapsFromConfig();
 
         registerListeners();
         registerCommands();

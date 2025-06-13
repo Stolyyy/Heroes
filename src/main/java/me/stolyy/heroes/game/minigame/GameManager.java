@@ -19,7 +19,10 @@ public class GameManager {
 
 
     public static Game createNewGame(GameEnums.GameMode gameMode){
-        return new Game(GameMapManager.getRandomMap(), gameMode);
+        if(gameMode == GameEnums.GameMode.PARTY){
+            return new Game(GameMapManager.getRandomMapUnion(Set.of(GameEnums.GameMode.ONE_V_ONE, GameEnums.GameMode.TWO_V_TWO)), gameMode);
+        }
+        return new Game(GameMapManager.getRandomMap(gameMode), gameMode);
     }
 
     public static Game createNewGame(GameEnums.GameMode gameMode, GameMap map){

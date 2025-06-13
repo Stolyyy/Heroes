@@ -6,8 +6,6 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 public class Hitbox {
@@ -26,12 +24,12 @@ public class Hitbox {
         return players;
     }
 
-    public static Set<Player> cylinder(Location location, double radius, double height) {
+    public static Set<Player> cylinder(Location location, Vector axis, double radius, double height) {
         double maxSide = Math.max(radius, height);
         Set<Player> players = new HashSet<>(location.getWorld().getNearbyPlayers(location, maxSide * 1.5));
-        players.removeIf(p -> !isInCylinder(p.getLocation(), location, radius, height)
-                && !isInCylinder(p.getEyeLocation(), location, radius, height)
-                && !isInCylinder(p.getBoundingBox().getCenter().toLocation(p.getWorld()), location, radius, height));
+        players.removeIf(p -> !isInCylinder(p.getLocation(), location, axis, radius, height)
+                && !isInCylinder(p.getEyeLocation(), location, axis, radius, height)
+                && !isInCylinder(p.getBoundingBox().getCenter().toLocation(p.getWorld()), location, axis, radius, height));
         return players;
     }
 
@@ -138,9 +136,8 @@ public class Hitbox {
         return projectedCenterDistance > (boxProjectedRadius + rectangleProjectedRadius);
     }
 
-    private static boolean isInCylinder(Location check, Location location, double radius, double height) {
-        Vector toCheck = new Vector(check.getX() - location.getX(), check.getY() - location.getY(), check.getZ() - location.getZ());
-        Vector centralAxis = location.getDirection().clone();
+    private static boolean isInCylinder(Location check, Location origin, Vector centralAxis, double radius, double height) {
+        Vector toCheck = new Vector(check.getX() - origin.getX(), check.getY() - origin.getY(), check.getZ() - origin.getZ());
         double x = toCheck.dot(centralAxis);
         if (!(x >= 0) || !(x <= height)) {
             return false;

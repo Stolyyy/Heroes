@@ -137,8 +137,8 @@ public class PartyModeGUI extends GUI{
         Player targetPlayer = getPlayer(targetItem);
 
         if (sourcePlayer != null && targetPlayer != null) {
-            TeamColor sourceTeam = game.playerTeam(sourcePlayer);
-            TeamColor targetTeam = game.playerTeam(targetPlayer);
+            TeamColor sourceTeam = game.playerColor(sourcePlayer);
+            TeamColor targetTeam = game.playerColor(targetPlayer);
             game.changeTeam(sourcePlayer, targetTeam);
             game.changeTeam(targetPlayer, sourceTeam);
         } else {

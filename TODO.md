@@ -35,7 +35,7 @@
 - [X] [Game] add some level of vertical kb (especially when target is on ground) to all interactions
 - [X] [Design] Cleanup interactions class
 - [ ] [Design] Skullfire method extraction (into reloadable)
-- [ ] [Bug Fixing] End runnables when player dies or is not in game
+- [X] [Bug Fixing] End runnables when player dies or is not in game
 - [X] [Bug Fixing] Reset stats when game ends/starts (so u dont carry 5 charges etc to new game), call stats?
 - [X?] [Design] Listener Cleanup
 - [ ] [Bug Fixing] Cancel button in map selection
@@ -44,16 +44,16 @@
 - [X] [GUI/Character] Bug charm menu
 - [X] [Character] Bug charm display in inventory (and descriptions)
 - [X] [GUI] Team-specific settings (lives, friendly fire, ults, random heroes) 
-- [ ] [Game] Implement all the maps
-- [ ] [Game] Kill wall/ceiling options
+- [X] [Game] Implement all the maps
+- [X] [Game] Kill wall/ceiling options
 
 ## ⚪ Low Priority
 - [X] [Game] reload when u die for characters that need it
-- [ ] [Bug Fixing] Dropping stacked items (i.e. skullfire's gun) puts a new item in your inventory
+- [X] [Bug Fixing] Dropping stacked items (i.e. skullfire's gun) puts a new item in your inventory
 - [X] [Design] Refactor Minigame package to be more readable
 - [ ] [Design] Refactor Party package to be more readable
 - [X] [Character] Skullfire energy display (for djs)
-- [ ] [Bug Fixing] Infinite ultimate is ready spam (spectator press 3 glitch?)
+- [X] [Bug Fixing] Infinite ultimate is ready spam (spectator press 3 glitch?)
 - [X] [Outside] Get OG maps (only good ones)
 - [ ] [Character] Spooderman
 - [X] [Character] Knight or Bulk
@@ -65,7 +65,7 @@
 - [ ] [GUI] Announcer GUI
 - [ ] [NPC] npcs to join game (announcer)
 - [ ] [Design] JSON Files for balancing
-- [ ] [Design] JSON Files for map locations
+- [X] [Design] JSON Files for map locations
 
 
 ## 🔴 Testing Required

@@ -1,5 +1,6 @@
 package me.stolyy.heroes.game.minigame;
 
+import io.papermc.paper.event.player.PlayerPickItemEvent;
 import me.stolyy.heroes.Heroes;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -8,6 +9,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -20,6 +22,22 @@ import java.util.Set;
 public class GameListener implements Listener {
     private static final Map<Player, Integer> suffocationTicks = new HashMap<>();
     private static final Set<Player> respawningPlayers = new HashSet<>();
+
+    @EventHandler
+    public void onItemDrop(PlayerDropItemEvent event){
+        Player player = event.getPlayer();
+        if(GameManager.isPlayerInGame(player)){
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onItemPickup(PlayerPickItemEvent event){
+        Player player = event.getPlayer();
+        if(GameManager.isPlayerInGame(player)){
+            event.setCancelled(true);
+        }
+    }
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent e){

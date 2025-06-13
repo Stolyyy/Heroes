@@ -3,6 +3,7 @@ package me.stolyy.heroes.heros;
 import me.stolyy.heroes.Heroes;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 public abstract class HeroEnergy extends HeroCooldown {
     private double energy;
@@ -23,7 +24,7 @@ public abstract class HeroEnergy extends HeroCooldown {
 
     protected void initializeEnergyUpdates() {
         HeroEnergy heroEnergy = this;
-        new BukkitRunnable(){
+        BukkitTask energyTask = new BukkitRunnable(){
             @Override
             public void run() {
                 if(!HeroManager.getHero(player).equals(heroEnergy)) {
@@ -36,6 +37,7 @@ public abstract class HeroEnergy extends HeroCooldown {
                 updateXpBar();
             }
         }.runTaskTimer(Heroes.getInstance(), 0L, 1L);
+        activeTasks.add(energyTask);
     }
 
     protected void updateXpBar() {

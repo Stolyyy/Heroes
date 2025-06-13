@@ -8,6 +8,8 @@ import me.stolyy.heroes.heros.*;
 import me.stolyy.heroes.heros.abilities.interfaces.PassiveDrop;
 import me.stolyy.heroes.heros.abilities.interfaces.PassiveSneak;
 import me.stolyy.heroes.heros.abilities.interfaces.PassiveSwap;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -52,7 +54,10 @@ public class AbilityListener implements Listener {
                     hero.useSecondaryAbility();
                 } else {
                     //p.sendMessage("Used Ultimate!");
-                    hero.useUltimateAbility();
+                    if(GameManager.getPlayerGame(p).ultimateEnabled(p))
+                        hero.useUltimateAbility();
+                     else
+                        p.sendMessage(Component.text("Your team has ultimate abilities disabled!", NamedTextColor.RED));
                 }
                 new BukkitRunnable() {
                     @Override
@@ -60,8 +65,7 @@ public class AbilityListener implements Listener {
                         p.getInventory().setHeldItemSlot(0);
                     }
                 }.runTaskLater(Heroes.getInstance(), 1L);
-
-        }
+            }
         }
     }
 

@@ -176,7 +176,7 @@ public class GameVisuals {
 
             // Go by life count
             List<Player> teamPlayers = game.allPlayers().stream()
-                    .filter(p -> game.playerTeam(p) == color)
+                    .filter(p -> game.playerColor(p) == color)
                     .sorted(Comparator.comparingInt(p -> game.lives((Player) p)).reversed())
                     .toList();
 
@@ -194,7 +194,7 @@ public class GameVisuals {
         }
 
         List<Player> spectators = game.allPlayers().stream()
-                .filter(p -> game.playerTeam(p) == GameEnums.TeamColor.SPECTATOR)
+                .filter(p -> game.playerColor(p) == GameEnums.TeamColor.SPECTATOR)
                 .toList();
 
         if (!spectators.isEmpty()) {

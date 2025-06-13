@@ -48,12 +48,4 @@ public class GUIListener implements Listener {
             event.setCancelled(true);
         }
     }
-
-    @EventHandler
-    public void onItemDrop(PlayerDropItemEvent event){
-        Player player = event.getPlayer();
-        if(GameManager.isPlayerInGame(player)){
-            event.setCancelled(true);
-        }
-    }
 }

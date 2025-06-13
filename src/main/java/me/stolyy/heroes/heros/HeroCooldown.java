@@ -1,6 +1,7 @@
 package me.stolyy.heroes.heros;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.game.minigame.GameManager;
 import me.stolyy.heroes.heros.abilities.Ability;
 import me.stolyy.heroes.heros.abilities.AbilityType;
 import me.stolyy.heroes.utility.Interactions;
@@ -83,7 +84,9 @@ public abstract class HeroCooldown extends Hero {
         stats();
     }
     public void onGameStart(){
-        cooldown(ultimate);
+        if(GameManager.getPlayerGame(player) != null && GameManager.getPlayerGame(player).ultimateEnabled(player)) {
+            cooldown(ultimate);
+        }
     }
     public void onDeath(){}
     public void onRespawn(){}

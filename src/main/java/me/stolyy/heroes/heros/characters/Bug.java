@@ -125,7 +125,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
 
         Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
             charms = oldCharms;
-            resetCharms();
+            registerCharms();
             cooldown(ultimate);
         },  (long) (ultimate.duration() * 20L));
     }
@@ -156,88 +156,81 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
         shriek = new ConeData(3.5, 4.5, Particle.DUST).setDustOptions(Color.GRAY, 3.0f);
         ultimate = new Ability(AbilityType.ULTIMATE, 0, 0, 90, 10);
 
-
-
         setEnergyStats(0, 100, 0, false);
         initializeEnergyUpdates();
-        soulsPerCast = 33;
-        soulsPerHit = 11.5;
 
         charms = new HashSet<>(HeroManager.getCharms(player));
         registerCharms();
     }
 
 
+    private void registerCharms() {
+        primary.setCd(2.0).setKb(2.5).setDmg(5.0);
+        ((DashData) primary.abilityData()).setDistance(7).setSpeed(3);
 
+        secondary.setKb(3.0).setDmg(7.0);
+        diveShockwave.setRadius(4.0);
+        spirit.setRadius(2.5);
+        shriek.setRadius(3.5).setLength(4.5);
 
+        setJabCooldown(0.5);
+        setJabReach(5.0);
+        setJabDamage(4.0);
 
-    private void registerCharms(){
-        if(charms.contains(Charms.DASHMASTER)) {
+        soulsPerHit = 11.5;
+        soulsPerCast = 33.0;
+        setEnergyPerSecond(0);
+        setCanIncreaseEnergy(false);
+
+        player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(.14);
+        setWeight(1.5);
+
+        if (charms.contains(Charms.DASHMASTER)) {
             primary.setCd(1.5);
         }
-        //if(charms.contains(Charms.GRUBSONG)); //get soul when hit
-        if(charms.contains(Charms.HEAVY_BLOW)) {
+        //Grub song
+        if (charms.contains(Charms.HEAVY_BLOW)) {
             primary.setKb(primary.kb() * 1.2);
             secondary.setKb(secondary.kb() * 1.2);
         }
-        if(charms.contains(Charms.KINGSOUL)) {
+        if (charms.contains(Charms.KINGSOUL)) {
             setEnergyPerSecond(3);
             setCanIncreaseEnergy(true);
         }
-        if(charms.contains(Charms.MARK_OF_PRIDE)) setJabReach(jabReach() + 1.5);
-        //if(charms.contains(Charms.NAIL_MASTER)); //idk
-        if(charms.contains(Charms.QUICK_SLASH)) setJabCooldown(0.333);
-        if(charms.contains(Charms.SHAMAN_STONE)) {
+        if (charms.contains(Charms.MARK_OF_PRIDE)) {
+            setJabReach(jabReach() + 1.5);
+        }
+        //Nail Master
+        if (charms.contains(Charms.QUICK_SLASH)) {
+            setJabCooldown(0.333);
+        }
+        if (charms.contains(Charms.SHAMAN_STONE)) {
             secondary.setDmg(secondary.dmg() * 1.2);
             diveShockwave.setRadius(diveShockwave.radius() * 1.35);
             spirit.setRadius(spirit.radius() * 1.35);
             shriek.setRadius(shriek.radius() * 1.35).setLength(shriek.length() * 1.35);
         }
-        if(charms.contains(Charms.SHARP_SHADOW)) {
+        if (charms.contains(Charms.SHARP_SHADOW)) {
             primary.setDmg(primary.dmg() * 1.2);
             ((DashData) primary.abilityData()).setDistance(10).setSpeed(4);
         }
-        if(charms.contains(Charms.SOUL_EATER)) soulsPerHit *= 1.5;
-        if(charms.contains(Charms.SOUL_TWISTER)) soulsPerCast *= 0.75;
-        if(charms.contains(Charms.SPRINTMASTER)) player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(.16);
-        if(charms.contains(Charms.STEADY_BODY)) setWeight(weight() + 1.5);
-        if(charms.contains(Charms.STRENGTH)) setJabDamage(6);
-        //if(charms.contains(Charms.WEAVERSONG)); //two spiderlings;
+        if (charms.contains(Charms.SOUL_EATER)) {
+            soulsPerHit *= 1.5;
+        }
+        if (charms.contains(Charms.SOUL_TWISTER)) {
+            soulsPerCast *= 0.75;
+        }
+        if (charms.contains(Charms.SPRINTMASTER)) {
+            player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(.16);
+        }
+        if (charms.contains(Charms.STEADY_BODY)) {
+            setWeight(weight() + 1.5);
+        }
+        if (charms.contains(Charms.STRENGTH)) {
+            setJabDamage(6);
+        }
+        //Weaversong
     }
-
-    private void resetCharms(){
-        if(!charms.contains(Charms.DASHMASTER))
-            primary.setCd(2);
-        //if(!charms.contains(Charms.GRUBSONG)); //get soul when hit
-        if(!charms.contains(Charms.HEAVY_BLOW)) {
-            primary.setKb(primary.kb() / 1.2);
-            secondary.setKb(secondary.kb() / 1.2);
-        }
-        if(!charms.contains(Charms.KINGSOUL)) {
-            setEnergyPerSecond(0);
-            setCanIncreaseEnergy(false);
-        }
-        if(!charms.contains(Charms.MARK_OF_PRIDE)) setJabReach(jabReach() - 1.5);
-        //if(!charms.contains(Charms.NAIL_MASTER)); //idk
-        if(!charms.contains(Charms.QUICK_SLASH)) setJabCooldown(0.5);
-        if(!charms.contains(Charms.SHAMAN_STONE)) {
-            secondary.setDmg(secondary.dmg() / 1.2);
-            diveShockwave.setRadius(diveShockwave.radius() / 1.35);
-            spirit.setRadius(spirit.radius() / 1.35);
-            shriek.setRadius(shriek.radius() / 1.35).setLength(shriek.length() / 1.35);
-        }
-        if(!charms.contains(Charms.SHARP_SHADOW)) {
-            primary.setDmg(primary.dmg() / 1.2);
-            ((DashData) primary.abilityData()).setDistance(7).setSpeed(3);
-        }
-        if(!charms.contains(Charms.SOUL_EATER)) soulsPerHit /= 1.5;
-        if(!charms.contains(Charms.SOUL_TWISTER)) soulsPerCast /= 0.75;
-        if(!charms.contains(Charms.SPRINTMASTER)) player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(.14);
-        if(!charms.contains(Charms.STEADY_BODY)) setWeight(weight() - 1.5);
-        if(!charms.contains(Charms.STRENGTH)) setJabDamage(4);
-        //if(!charms.contains(Charms.WEAVERSONG)); //two spiderlings;
-    }
-
 
     public enum Charms {
         DASHMASTER(2, "Faster Dash Cooldown", 17010), //less dash cd

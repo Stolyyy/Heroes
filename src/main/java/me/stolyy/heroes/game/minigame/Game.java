@@ -70,7 +70,7 @@ public class Game {
             team.initialize();
             for(Player p : team.players()){
                 GameEffects.restrictPlayer(p);
-                GameEffects.applyEffects(p, teams.get(playerTeam(p)).settings());
+                GameEffects.applyEffects(p, playerTeam(p).settings());
                 Equipment.equip(p);
                 HeroManager.getHero(p).onCountdown();
             }
@@ -143,7 +143,7 @@ public class Game {
     }
 
     public void removePlayer(Player player) {
-        GameTeam team = teams.get(playerTeam(player));
+        GameTeam team = playerTeam(player);
         if(team == null) return;
         team.remove(player);
         visuals.update();
@@ -154,7 +154,7 @@ public class Game {
     }
 
     public void changeTeam(Player player, TeamColor teamColor) {
-        GameTeam oldTeam = teams.get(playerTeam(player));
+        GameTeam oldTeam = playerTeam(player);
         if(oldTeam != null) oldTeam.remove(player);
 
         if(teamColor == TeamColor.SPECTATOR) addSpectator(player);
@@ -175,7 +175,7 @@ public class Game {
         HeroManager.getHero(player).onDeath();
         visuals.respawning(player);
 
-        GameTeam team = teams.get(playerTeam(player));
+        GameTeam team = playerTeam(player);
         team.subtractLife(player);
         if(team.lives(player) <= 0){
             changeTeam(player, TeamColor.SPECTATOR);
@@ -187,7 +187,7 @@ public class Game {
     public void playerRespawn(Player player) {
         player.setGameMode(org.bukkit.GameMode.ADVENTURE);
         GameEffects.unRestrictPlayer(player);
-        GameEffects.applyEffects(player, teams.get(playerTeam(player)).settings());
+        GameEffects.applyEffects(player, playerTeam(player).settings());
         HeroManager.getHero(player).onRespawn();
     }
 
@@ -225,12 +225,12 @@ public class Game {
     }
 
     public int lives(Player player){
-        return teams.get(playerTeam(player)).lives(player);
+        return playerTeam(player).lives(player);
     }
 
     public Location furthestSpawn(Player player){
         Set<Player> enemies = alivePlayers();
-        enemies.removeAll(teams.get(playerTeam(player)).players());
+        enemies.removeAll(playerTeam(player).players());
         return settings.map().getFurthestSpawn(player, enemies);
     }
 
@@ -243,14 +243,20 @@ public class Game {
     }
 
     public boolean friendlyFire(Player player){
-        return teams.get(playerTeam(player)).settings().friendlyFire();
+        return playerTeam(player).settings().friendlyFire();
     }
 
-    public TeamColor playerTeam(Player player) {
+    public GameTeam playerTeam(Player player) {
         for (GameTeam team : teams.values()) {
-            if(team.contains(player)) return team.color();
+            if(team.contains(player)) return team;
         }
         return null;
+    }
+
+    public TeamColor playerColor(Player player){
+        GameTeam team = playerTeam(player);
+        if(team == null) return TeamColor.SPECTATOR;
+        return team.color();
     }
 
     public Map<TeamColor, GameTeam> teams(){
@@ -264,11 +270,17 @@ public class Game {
         }
     }
 
+    public boolean ultimateEnabled(Player player){
+        GameTeam team = playerTeam(player);
+        if(team == null) return false;
+        return team.settings().ultimatesEnabled();
+    }
+
     //HELPERS
 
 
     private void teleport(Player player){
-        TeamColor teamColor = playerTeam(player);
+        TeamColor teamColor = playerColor(player);
         Location teleportLocation;
         GameMap map = settings.map();
 

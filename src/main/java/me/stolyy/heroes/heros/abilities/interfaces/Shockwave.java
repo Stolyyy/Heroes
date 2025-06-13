@@ -14,21 +14,21 @@ import java.util.Set;
 
 public interface Shockwave {
     default void shockwave(Player player, AbilityType abilityType, ShockwaveData shockwaveData) {
-        Location l = player.getLocation().clone();
-        l.setDirection(new Vector(0,1,0));
-        Set<Player> hitPlayers = new LinkedHashSet<>(Hitbox.cylinder(l, shockwaveData.radius(), 3));
+        Location origin = player.getLocation().clone();
+        Vector verticalAxis = new Vector(0, 1, 0);
+        Set<Player> hitPlayers = new LinkedHashSet<>(Hitbox.cylinder(origin, verticalAxis, shockwaveData.radius(), 3));
         hitPlayers.remove(player);
 
         if(!shockwaveData.piercesWalls()){
-            hitPlayers.removeIf(p -> WallDetection.rayCast(player.getEyeLocation(), p.getLocation()));
+            hitPlayers.removeIf(p -> WallDetection.rayCast(player.getBoundingBox().getCenter().toLocation(player.getWorld()), p.getBoundingBox().getCenter().toLocation(p.getWorld())));
         }
 
         if(shockwaveData.particle() != null) {
             //TODO: Particle explosion effect
             if(shockwaveData.dustOptions() != null) {
-                Particles.directionalRing(l.add(0,0.25,0), shockwaveData.radius(), shockwaveData.particle(), shockwaveData.dustOptions());
+                Particles.directionalRing(origin.add(0,0.25,0), shockwaveData.radius(), shockwaveData.particle(), shockwaveData.dustOptions());
             } else {
-                Particles.directionalRing(l.add(0,0.25,0), shockwaveData.radius(), shockwaveData.particle());
+                Particles.directionalRing(origin.add(0,0.25,0), shockwaveData.radius(), shockwaveData.particle());
             }
         }
         if(shockwaveData.usesBlocks()) {

@@ -66,6 +66,10 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
     public void useSecondaryAbility() {
         double pitch = player.getLocation().getPitch();
         if(!secondary.ready()) return;
+        if(energy() < soulsPerCast) {
+            player.sendMessage(NamedTextColor.RED + "Not enough souls! " + (int) (soulsPerCast - energy()) + " more needed.");
+            return;
+        }
 
         if(Math.abs(pitch) < 45) {
             //neutral: spirit

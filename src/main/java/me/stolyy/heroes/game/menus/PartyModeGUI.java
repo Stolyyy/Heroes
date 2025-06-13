@@ -35,7 +35,7 @@ public class PartyModeGUI extends GUI{
 
         teamSpots.put(TeamColor.RED, List.of(27, 36, 45));
         teamSpots.put(TeamColor.BLUE, List.of(29, 38, 47));
-        teamSpots.put(TeamColor.GREEN, List.of(33, 36, 51));
+        teamSpots.put(TeamColor.GREEN, List.of(33, 42, 51));
         teamSpots.put(TeamColor.YELLOW, List.of(35, 44, 53));
         teamSpots.put(TeamColor.SPECTATOR, List.of(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17));
 

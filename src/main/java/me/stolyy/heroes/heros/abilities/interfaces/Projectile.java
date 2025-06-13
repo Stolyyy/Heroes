@@ -17,13 +17,12 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 public interface Projectile {
-    double GRAVITY_ACCELERATION = 0.098;
+    double GRAVITY_ACCELERATION = 0.08;
 
     default ArmorStand projectile(Player player, AbilityType abilityType, ProjectileData projectileData) {
-        Location location = player.getLocation().clone();
-        Vector direction = player.getEyeLocation().getDirection().clone();
-        ArmorStand armorStand = ArmorStands.summonArmorStand(location, projectileData.customModelData());
-
+        Location location = player.getLocation();
+        Vector direction = player.getEyeLocation().getDirection();
+        ArmorStand armorStand = ArmorStands.summonArmorStand(player.getEyeLocation(), projectileData.customModelData());
 
 
         Set<Player> hitPlayers = new LinkedHashSet<>();
@@ -36,7 +35,7 @@ public interface Projectile {
 
             @Override
             public void run() {
-                hitPlayers.addAll(Hitbox.sphere(currentLocation.add(0,1.85,0), projectileData.radius()));
+                hitPlayers.addAll(Hitbox.sphere(currentLocation.clone().add(0,1.975,0), projectileData.radius()));
                 hitPlayers.remove(player);
 
                 if (projectileData.gravity())
@@ -46,7 +45,7 @@ public interface Projectile {
                 if(armorStand.isDead() || !armorStand.isValid()) {
                     this.cancel();
                     return;
-                } else if(WallDetection.rayCast(currentLocation.clone().add(0,1.85,0), nextLocation.clone().add(0,1.85, 0)) || distanceTraveled >= projectileData.range()) {
+                } else if(WallDetection.rayCast(currentLocation.clone().add(0,1.975,0), nextLocation.clone().add(0,1.975, 0)) || distanceTraveled >= projectileData.range()) {
                     onProjectileHitWall(currentLocation, abilityType);
                     armorStand.remove();
                     this.cancel();

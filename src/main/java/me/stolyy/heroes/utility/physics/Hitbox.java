@@ -22,9 +22,7 @@ public class Hitbox {
     public static Set<Player> rectangle(Location location, double length, double width, double height){
         double maxSide = Math.max(length, Math.max(width, height));
         Set<Player> players = new HashSet<>(location.getWorld().getNearbyPlayers(location, maxSide * 1.5));
-        players.removeIf(p -> !isInRectangle(p.getLocation(), location, length, width, height)
-                && !isInRectangle(p.getEyeLocation(), location, length, width, height)
-                && !isInRectangle(p.getBoundingBox().getCenter().toLocation(p.getWorld()), location, length, width, height));
+        players.removeIf(p -> !isInRectangleSAT(p.getBoundingBox(), location, length, width, height));
         return players;
     }
 

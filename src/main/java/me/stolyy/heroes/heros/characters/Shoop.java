@@ -150,13 +150,13 @@ public class Shoop extends HeroEnergy implements PassiveSneak, Projectile, Hitsc
             @Override
             public void run(){
                 timer++;
-                if(timer >= ultimate.duration() * 20 / 3){
+                if(timer >= ultimate.duration() * 20 / 4){
                     this.cancel();
                     return;
                 }
                 hitscan(player,AbilityType.ULTIMATE, (HitscanData) ultimate.abilityData());
             }
-        }.runTaskTimer(Heroes.getInstance(), 20L, 3L);
+        }.runTaskTimer(Heroes.getInstance(), 20L, 4L);
         Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> cooldown(ultimate), (long) (ultimate.duration() * 20));
     }
 
@@ -173,7 +173,8 @@ public class Shoop extends HeroEnergy implements PassiveSneak, Projectile, Hitsc
         armorStand.addPassenger(player);
 
         player.playSound(player.getLocation(), "shoopdawhoop.active", SoundCategory.MASTER, 3.0f, 1.0f);
-        cooldown(passive);
+        passive.setInUse(true);
+        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> passive.setInUse(false), 6L);
 
         new BukkitRunnable(){
             Location lastLocation = armorStand.getLocation().clone();
@@ -212,7 +213,7 @@ public class Shoop extends HeroEnergy implements PassiveSneak, Projectile, Hitsc
         setHeroType(HeroType.RANGED);
         setWeight(3);
 
-        primary = new Ability(AbilityType.PRIMARY, 1.5, 1, 0.3, new ProjectileData().setRadius(1.5).setRange(100).setCustomModelData(14003));
+        primary = new Ability(AbilityType.PRIMARY, 1.5, 1, 0.3, new ProjectileData().setSpeed(2.5).setRadius(1.5).setRange(100).setCustomModelData(14003));
         secondary = new Ability(AbilityType.SECONDARY, 7, 1, 0, new HitscanData().setParticle(Particle.DUST).setDustOptions(Color.YELLOW, 1.0f));
         ultimate = new Ability(AbilityType.ULTIMATE, 6, 3,100, 4, new HitscanData().setCustomModelData(14004));
         ultimateHits = new HashSet<>();

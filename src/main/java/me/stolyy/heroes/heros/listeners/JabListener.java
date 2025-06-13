@@ -17,7 +17,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class JabListener implements Listener {
-    private static Set<Player> jabCooldowns = new HashSet<>();
+    private static final Set<Player> jabCooldowns = new HashSet<>();
 
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
@@ -34,9 +34,9 @@ public class JabListener implements Listener {
     @EventHandler
     public void onPlayerAttack(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Player p && event.getEntity() instanceof Player t) {
-            if(!Interactions.canInteract(p, t)) return;
             event.setCancelled(true);
-            if(!jabCooldowns.contains(p)) {
+            if(!Interactions.canInteract(p, t)) return;
+            if(jabCooldowns.add(p)) {
                 HeroCooldown hc = HeroManager.getHero(p);
                 hc.jab(t);
                 Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> jabCooldowns.remove(p), (long) (hc.jabCooldown() * 20));

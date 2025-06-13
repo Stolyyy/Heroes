@@ -137,10 +137,15 @@ public abstract class HeroCooldown extends Hero {
     }
 
     private void updateUI(Ability ability, Runnable endLogic, Runnable updateLogic) {
+        Hero h = this;
         new BukkitRunnable() {
             @Override
             public void run() {
                 ability.updateCooldown(1.0 / UPDATES_PER_SECOND);
+                if(HeroManager.getHero(player) != h){
+                    this.cancel();
+                    return;
+                }
 
                 if (ability.ready()) {
                     if(endLogic != null) endLogic.run();

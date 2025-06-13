@@ -56,7 +56,7 @@ public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload
             @Override
             public void run(){
                 if(shots >= shotsPerClick || ammo == 0){
-                    Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> primary.setInUse(false), 8L);
+                    Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> primary.setInUse(false), 6L);
                     this.cancel();
                     return;
                 }
@@ -172,18 +172,18 @@ public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload
 
     @Override
     public void onProjectileHit(Player target, Location location, AbilityType abilityType) {
-        grenadeContact(location);
+        grenadeContact(location.add(0,1,0));
     }
 
     @Override
     public void onProjectileHitWall(Location location, AbilityType abilityType) {
-        grenadeContact(location);
+        grenadeContact(location.add(0,1,0));
     }
 
     public void grenadeContact(Location location) {
         Particles.summonParticle(location, Particle.EXPLOSION_EMITTER, null);
         Sounds.playSoundToWorld(location, "skullfire.explodegrenade", 3.0f, 1.0f);
-        Set<Player> hitPlayers = Hitbox.cube(location, 4);
+        Set<Player> hitPlayers = Hitbox.sphere(location, 5);
         hitPlayers.remove(player);
         for (Player hitPlayer : hitPlayers) {
             Sounds.playSoundToPlayer(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
@@ -258,7 +258,11 @@ public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload
     }
 
     private void bullseye() {
-        if(maxDoubleJumps() < jumpCap) setMaxDoubleJumps(maxDoubleJumps() + 1);
+        if(maxDoubleJumps() < jumpCap) {
+            setMaxDoubleJumps(maxDoubleJumps() + 1);
+            setCanDoubleJump(true);
+            player.setAllowFlight(true);
+        }
         addEnergy(1);
     }
 

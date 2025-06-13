@@ -63,7 +63,7 @@ public class VoidCrawler extends HeroEnergy implements Dash {
             }
 
             //hit logic
-            Set<Player> nearbyPlayers = Hitbox.sphere(currentLocation, 1);
+            Set<Player> nearbyPlayers = Hitbox.sphere(currentLocation, 2);
             nearbyPlayers.remove(player);
             for (Player nearbyPlayer : nearbyPlayers) {
                     Interactions.handleInteraction(startLocation, secondary.dmg(), secondary.kb(), player, nearbyPlayer);

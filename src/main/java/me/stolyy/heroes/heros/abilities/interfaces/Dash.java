@@ -1,7 +1,6 @@
 package me.stolyy.heroes.heros.abilities.interfaces;
 
 import me.stolyy.heroes.Heroes;
-import me.stolyy.heroes.heros.HeroManager;
 import me.stolyy.heroes.heros.abilities.AbilityType;
 import me.stolyy.heroes.heros.abilities.data.DashData;
 import me.stolyy.heroes.utility.physics.Hitbox;
@@ -47,7 +46,7 @@ public interface Dash {
                 //}
 
                 //hitbox detection
-                nearbyPlayers.addAll(Hitbox.cube(player.getEyeLocation().setDirection(direction), 2));
+                nearbyPlayers.addAll(Hitbox.cube(player.getEyeLocation().setDirection(direction), 3));
                 for (Player nearbyPlayer : nearbyPlayers) {
                     if (nearbyPlayer != player && !hitPlayer.getOrDefault(nearbyPlayer, false)) {
                         onDashHit(nearbyPlayer, currentLocation, abilityType);

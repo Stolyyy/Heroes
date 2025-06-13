@@ -12,8 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class GUI {
-    protected final Material FILLER_MATERIAL = Material.LIGHT_GRAY_STAINED_GLASS_PANE;
-    protected final Material PLAYER_FILLER_MATERIAL = Material.GRAY_STAINED_GLASS_PANE;
+    protected final Material FILLER_MATERIAL = Material.GRAY_STAINED_GLASS_PANE;
+    protected final Material PLAYER_FILLER_MATERIAL = Material.LIGHT_GRAY_STAINED_GLASS_PANE;
 
     protected Map<Integer, ItemStack> inventoryItems = new HashMap<>();
     protected Inventory inventory;

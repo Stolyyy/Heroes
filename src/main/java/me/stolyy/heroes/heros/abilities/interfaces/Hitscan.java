@@ -20,8 +20,8 @@ public interface Hitscan {
     default void hitscan(Player player, AbilityType abilityType, HitscanData hitscanData) {
         boolean useParticles = hitscanData.particle() != null;
 
-        Location startLocation = player.getEyeLocation().clone();
-        Vector direction = startLocation.getDirection().clone();
+        Location startLocation = player.getEyeLocation();
+        Vector direction = startLocation.getDirection();
         Location endLocation = startLocation.clone().add(direction.clone().multiply(hitscanData.range()));
 
         double distance = startLocation.distance(endLocation);
@@ -49,7 +49,7 @@ public interface Hitscan {
                 Particles.summonParticle(currentLocation, hitscanData.particle(), hitscanData.dustOptions());
             }
             if(hitscanData.customModelData() > 0) {
-                ArmorStand as = ArmorStands.summonArmorStand(currentLocation, hitscanData.customModelData());
+                ArmorStand as = ArmorStands.summonArmorStand(currentLocation.clone().setDirection(direction), hitscanData.customModelData());
                 Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), as::remove, 5L);
             }
         }

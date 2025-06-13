@@ -19,11 +19,11 @@ public class TeamSettingsGUI extends GUI {
         this.player = player;
         this.partyGUI = partyGUI;
 
-        inventoryItems.put(8, Equipment.customItem(30, "3 Lives"));
-        inventoryItems.put(10, createItem(Material.APPLE, "Prestige Health: Disabled"));
-        inventoryItems.put(12, Equipment.customItem(7, "Ultimates: Enabled"));
-        inventoryItems.put(14, createItem(Material.STONE_SWORD, "Friendly Fire: Disabled"));
-        inventoryItems.put(16, Equipment.customItem(35, "Random Heroes: Disabled"));
+        inventoryItems.put(9, Equipment.customItem(30, "3 Lives"));
+        inventoryItems.put(11, createItem(Material.APPLE, "Prestige Health: Disabled"));
+        inventoryItems.put(13, Equipment.customItem(7, "Ultimates: Enabled"));
+        inventoryItems.put(15, createItem(Material.STONE_SWORD, "Friendly Fire: Disabled"));
+        inventoryItems.put(17, Equipment.customItem(35, "Random Heroes: Disabled"));
         inventoryItems.put(31,createItem(Material.BARRIER, "Cancel"));
 
         for (int i = 0; i < 36; i++) {
@@ -36,11 +36,11 @@ public class TeamSettingsGUI extends GUI {
     @Override
     public void handleClick(int slot) {
         switch(slot){
-            case 8 -> livesClick();
-            case 10 -> togglePrestigeHealth();
-            case 12 -> toggleUltimates();
-            case 14 -> toggleFriendlyFire();
-            case 16 -> toggleRandomHeroes();
+            case 9 -> livesClick();
+            case 11 -> togglePrestigeHealth();
+            case 13 -> toggleUltimates();
+            case 15 -> toggleFriendlyFire();
+            case 17 -> toggleRandomHeroes();
             case 31 -> partyGUI.openGUI();
         }
         for (int i = 0; i < 36; i++) {
@@ -65,17 +65,17 @@ public class TeamSettingsGUI extends GUI {
         }
         ItemStack newItem = Equipment.customItem(30, newLives + " Lives");
         settings.setLives(newLives);
-        inventoryItems.put(8, newItem);
+        inventoryItems.put(9, newItem);
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
     }
 
     private void togglePrestigeHealth(){
         if(settings.maxHealth() == 100) { // enable logic
             settings.setMaxHealth(120);
-            inventoryItems.put(10, createItem(Material.ENCHANTED_GOLDEN_APPLE, "Prestige Health: Enabled"));
+            inventoryItems.put(11, createItem(Material.ENCHANTED_GOLDEN_APPLE, "Prestige Health: Enabled"));
         } else { // disable logic
             settings.setMaxHealth(100);
-            inventoryItems.put(10, createItem(Material.APPLE, "Prestige Health: Disabled"));
+            inventoryItems.put(11, createItem(Material.APPLE, "Prestige Health: Disabled"));
         }
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
     }
@@ -83,21 +83,21 @@ public class TeamSettingsGUI extends GUI {
     private void toggleUltimates(){
         settings.setUltimatesEnabled(!settings.ultimatesEnabled());
         if(settings.ultimatesEnabled()) inventoryItems.put(12, Equipment.customItem(7, "Ultimates: Enabled"));
-        else inventoryItems.put(12, Equipment.customItem(6, "Ultimates: Disabled"));
+        else inventoryItems.put(13, Equipment.customItem(6, "Ultimates: Disabled"));
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
     }
 
     private void toggleFriendlyFire(){
         settings.setFriendlyFire(!settings.friendlyFire());
         if(settings.friendlyFire()) inventoryItems.put(14, createItem(Material.GOLDEN_SWORD, "Friendly Fire: Enabled"));
-        else inventoryItems.put(14, createItem(Material.STONE_SWORD, "Friendly Fire: Disabled"));
+        else inventoryItems.put(15, createItem(Material.STONE_SWORD, "Friendly Fire: Disabled"));
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
     }
 
     private void toggleRandomHeroes(){
         settings.setRandomizeHeroes(!settings.randomizeHeroes());
         if(settings.randomizeHeroes()) inventoryItems.put(16, Equipment.customItem(34, "Random Heroes: Enabled"));
-        else inventoryItems.put(16, Equipment.customItem(35, "Random Heroes: Disabled"));
+        else inventoryItems.put(17, Equipment.customItem(35, "Random Heroes: Disabled"));
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
     }
 }

@@ -10,7 +10,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="606daf4b-1469-4eeb-8180-44b5b6838e57" name="Changes" comment="Bug fixes">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/GUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/GUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/GameSettingsGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/GameSettingsGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/PartyModeGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/PartyModeGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/TeamSettingsGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/TeamSettingsGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/HeroCooldown.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/HeroCooldown.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/interfaces/Dash.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/interfaces/Dash.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/interfaces/Hitscan.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/interfaces/Hitscan.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/interfaces/Projectile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/interfaces/Projectile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Pug.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Pug.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Shoop.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Shoop.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Skullfire.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Skullfire.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/VoidCrawler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/VoidCrawler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/listeners/JabListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/listeners/JabListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/physics/Hitbox.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/physics/Hitbox.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -325,7 +339,15 @@
       <option name="project" value="LOCAL" />
       <updated>1749783450574</updated>
     </task>
-    <option name="localTasksCounter" value="26" />
+    <task id="LOCAL-00026" summary="Bug fixes">
+      <option name="closed" value="true" />
+      <created>1749783708284</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1749783708284</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">

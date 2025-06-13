@@ -8,6 +8,7 @@ import me.stolyy.heroes.heros.abilities.data.ProjectileData;
 import me.stolyy.heroes.heros.abilities.AbilityType;
 import me.stolyy.heroes.heros.HeroType;
 import me.stolyy.heroes.heros.abilities.interfaces.Hitscan;
+import me.stolyy.heroes.heros.abilities.interfaces.PassiveDrop;
 import me.stolyy.heroes.heros.abilities.interfaces.Projectile;
 import me.stolyy.heroes.heros.abilities.interfaces.Reload;
 import me.stolyy.heroes.utility.Interactions;
@@ -29,7 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload {
+public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload, PassiveDrop {
     private boolean isReloading;
     private int consecutiveHits;
     private int ammo;
@@ -249,6 +250,11 @@ public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload
             Particles.ring(target.getLocation().add(0,0.7,0), 0.75, Particle.FLAME);
             chainCount.put(target,0);
         }
+    }
+
+    @Override
+    public void usePassiveDrop() {
+        reload();
     }
 
     private void bullseye() {

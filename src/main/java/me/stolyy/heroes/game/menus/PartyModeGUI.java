@@ -3,11 +3,7 @@ package me.stolyy.heroes.game.menus;
 import me.stolyy.heroes.game.minigame.Game;
 import me.stolyy.heroes.game.minigame.GameEnums.TeamColor;
 import me.stolyy.heroes.game.minigame.GameTeam;
-import me.stolyy.heroes.game.minigame.TeamSettings;
-import me.stolyy.heroes.party.Party;
-import me.stolyy.heroes.party.PartyManager;
 import me.stolyy.heroes.heros.HeroManager;
-import me.stolyy.heroes.Heroes;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -37,7 +33,7 @@ public class PartyModeGUI extends GUI{
         inventoryItems.put(24,createItem(Material.GREEN_CONCRETE, "Green Team:"));
         inventoryItems.put(26,createItem(Material.YELLOW_CONCRETE, "Yellow Team:"));
 
-        teamSpots.put(TeamColor.RED, List.of(35, 44, 53));
+        teamSpots.put(TeamColor.RED, List.of(27, 36, 45));
         teamSpots.put(TeamColor.BLUE, List.of(29, 38, 47));
         teamSpots.put(TeamColor.GREEN, List.of(33, 36, 51));
         teamSpots.put(TeamColor.YELLOW, List.of(35, 44, 53));
@@ -79,7 +75,10 @@ public class PartyModeGUI extends GUI{
 
     public void handleClick(int slot){
         switch (slot){
-            case 31 ->  new GameSettingsGUI(game, player, this);
+            case 31 -> {
+                GUIListener.playerGUIMap.put(player, null);
+                new GameSettingsGUI(game, player, this);
+            }
             case 40 -> { // start
                 if(game.canCountdown()){
                     game.countdown();

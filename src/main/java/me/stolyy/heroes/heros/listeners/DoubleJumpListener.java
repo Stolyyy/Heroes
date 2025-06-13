@@ -41,6 +41,7 @@ public class DoubleJumpListener implements Listener {
             HeroCooldown hc = HeroManager.getHero(p);
             if (p.isOnGround()) {
                 hc.resetDoubleJumps();
+                p.setAllowFlight(true);
             } else if (!hc.canDoubleJump()) {
                 // Prevent entering flight mode if max double jumps are used
                 p.setAllowFlight(false);

@@ -60,7 +60,7 @@ public class Interactions {
     //Private helpers
     private static void handleInteraction(Vector direction, double damage, double knockback, double yKnockback, boolean staticKB, Player attacker, Player victim) {
         if(!canInteract(attacker, victim)) return;
-        handleKnockback(direction, knockback, yKnockback, staticKB, victim);
+        handleKnockback(direction.clone().normalize(), knockback, yKnockback, staticKB, victim);
         Particles.blood(victim);
         handleDamage(damage, attacker, victim);
     }
@@ -81,8 +81,8 @@ public class Interactions {
 
 
     private static void handleKnockback(Vector direction, double knockback, double yKnockback, boolean staticKB, Player victim){
-        knockback *= 0.16;
-        yKnockback *= 0.16;
+        knockback *= 0.12;
+        yKnockback *= 0.12;
         if(!staticKB) {
             double[] xyzReduction = reduceVelocity(victim);
             //Don't apply backwards kb
@@ -90,7 +90,6 @@ public class Interactions {
 
             //reduce based on current velocity
             knockback -= xyzReduction[1];
-            yKnockback -= xyzReduction[1];
 
             //increase based on victim's hp
             double missingHealth = victim.getMaxHealth() - victim.getHealth();
@@ -98,14 +97,15 @@ public class Interactions {
             yKnockback += missingHealth * yKnockback * 0.125;
         }
 
-        //ensure upwards kb if player is on ground
-        /*
-        double pitch = -Math.toDegrees(Math.asin(direction.getY()));
+        //ensure upwards kb if on ground
         if(victim.isOnGround()){
-            pitch = Math.min(pitch, -10.0);
+            direction.setY(Math.max(direction.getY(), 0.2));
+        } //potentially remove, but meant to ensure kb is not too extreme up/down.
+        else if(direction.getY() < -0.2 && direction.getY() > -0.9){
+            direction.setY(direction.getY() + 0.1);
+        } else if(direction.getY() > 0.2 && direction.getY() < 0.9){
+            direction.setY(direction.getY() - 0.1);
         }
-        direction.setY(direction.getY() * (1 - Math.abs(pitch) / 90));
-         */
 
         //check for nonfinite vectors
         if (!Double.isFinite(direction.getX()) || !Double.isFinite(direction.getY()) ||
@@ -119,7 +119,7 @@ public class Interactions {
         victim.setVelocity(new Vector(0,0,0));
         Vector kb = direction.normalize();
         kb.multiply(knockback*weightMultiplier*mitigationMultiplier);
-        //kb.setY(kb.getY() + yKnockback*weightMultiplier*mitigationMultiplier);
+        kb.setY(kb.getY() + yKnockback*weightMultiplier*mitigationMultiplier);
         victim.setVelocity(kb);
     }
 

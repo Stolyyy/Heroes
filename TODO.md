@@ -32,33 +32,35 @@
 
 
 ## 🔵 Medium Priority
-- [ ] [Game] add some level of vertical kb (especially when target is on ground) to all interactions
+- [X] [Game] add some level of vertical kb (especially when target is on ground) to all interactions
 - [X] [Design] Cleanup interactions class
 - [ ] [Design] Skullfire method extraction (into reloadable)
 - [ ] [Bug Fixing] End runnables when player dies or is not in game
+- [X] [Bug Fixing] Reset stats when game ends/starts (so u dont carry 5 charges etc to new game), call stats?
 - [X?] [Design] Listener Cleanup
 - [ ] [Bug Fixing] Cancel button in map selection
 - [X?] [Bug Fixing] Scoreboard lives always display as 3 for the person it is displaying it to
-- [ ] [Bug Fixing] Shoop RTL not in walls (maybe subtract from the location vector)
-- [ ] [GUI/Character] Bug charm menu
-- [ ] [Character] Bug charm display in inventory (and descriptions)
-- [ ] [GUI] Team-specific settings (lives, friendly fire, ults, random heroes) 
+- [X] [Bug Fixing] Shoop RTL not in walls (maybe subtract from the location vector)
+- [X] [GUI/Character] Bug charm menu
+- [X] [Character] Bug charm display in inventory (and descriptions)
+- [X] [GUI] Team-specific settings (lives, friendly fire, ults, random heroes) 
 - [ ] [Game] Implement all the maps
+- [ ] [Game] Kill wall/ceiling options
 
 ## ⚪ Low Priority
 - [X] [Game] reload when u die for characters that need it
 - [ ] [Bug Fixing] Dropping stacked items (i.e. skullfire's gun) puts a new item in your inventory
-- [ ] [Design] Refactor Minigame package to be more readable
+- [X] [Design] Refactor Minigame package to be more readable
 - [ ] [Design] Refactor Party package to be more readable
 - [X] [Character] Skullfire energy display (for djs)
 - [ ] [Bug Fixing] Infinite ultimate is ready spam (spectator press 3 glitch?)
-- [ ] [Outside] Get OG maps (only good ones)
+- [X] [Outside] Get OG maps (only good ones)
 - [ ] [Character] Spooderman
 - [X] [Character] Knight or Bulk
 - [X] [Bug Fixing] Remove swapping heroes mid-game
 - [ ] [Balance] Fine tune numbers (mostly kb)
 - [ ] [Design] Stronger encapsulation (try to keep things within packages)
-- [ ] [GUI] Game settings GUI
+- [X] [GUI] Game settings GUI
 - [ ] [GUI] New Hero Selection methods
 - [ ] [GUI] Announcer GUI
 - [ ] [NPC] npcs to join game (announcer)

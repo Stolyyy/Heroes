@@ -78,15 +78,17 @@ public abstract class HeroCooldown extends Hero {
         ultimate.setTimeUntilUse(ultimate.timeUntilUse() - reduce);
     }
 
+    public void onCountdown(){
+        stats();
+    }
     public void onGameStart(){
-        resetUltTimer();
+        cooldown(ultimate);
     }
     public void onDeath(){}
     public void onRespawn(){}
-    public void onElimination(){}
-
-    public void resetUltTimer(){
-        cooldown(ultimate);
+    public void onElimination(){
+        //reset everything
+        //end runnable tasks
     }
 
     protected void ultTimer(){
@@ -147,11 +149,11 @@ public abstract class HeroCooldown extends Hero {
                 ability.updateCooldown(1.0 / UPDATES_PER_SECOND);
 
                 if (ability.ready()) {
-                    endLogic.run();
+                    if(endLogic != null) endLogic.run();
                     this.cancel();
                 }
                 else {
-                    updateLogic.run();
+                    if(updateLogic != null) updateLogic.run();
                 }
             }
         }.runTaskTimer(PLUGIN, 0L, 20L / UPDATES_PER_SECOND);

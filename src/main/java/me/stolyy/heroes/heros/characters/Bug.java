@@ -55,6 +55,14 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
     }
 
     @Override
+    public void onDashEnd(Location location, AbilityType abilityType){
+        if(abilityType != AbilityType.SECONDARY) return;
+        if(player.isOnGround()){
+            shockwave(player, AbilityType.SECONDARY, diveShockwave);
+        }
+    }
+
+    @Override
     public void useSecondaryAbility() {
         double pitch = player.getLocation().getPitch();
         if(!secondary.ready()) return;
@@ -163,7 +171,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
             secondary.setKb(secondary.kb() * 1.2);
         }
         if(charms.contains(Charms.KINGSOUL)) {
-            setEnergyPerTick(3);
+            setEnergyPerSecond(3);
             setCanIncreaseEnergy(true);
         }
         if(charms.contains(Charms.MARK_OF_PRIDE)) setJabReach(jabReach() + 1.5);
@@ -181,7 +189,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
         }
         if(charms.contains(Charms.SOUL_EATER)) soulsPerHit *= 1.5;
         if(charms.contains(Charms.SOUL_TWISTER)) soulsPerCast *= 0.75;
-        if(charms.contains(Charms.SPRINTMASTER)) player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(1.6);
+        if(charms.contains(Charms.SPRINTMASTER)) player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(.16);
         if(charms.contains(Charms.STEADY_BODY)) setWeight(weight() + 1.5);
         if(charms.contains(Charms.STRENGTH)) setJabDamage(6);
         //if(charms.contains(Charms.WEAVERSONG)); //two spiderlings;
@@ -196,7 +204,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
             secondary.setKb(secondary.kb() / 1.2);
         }
         if(!charms.contains(Charms.KINGSOUL)) {
-            setEnergyPerTick(0);
+            setEnergyPerSecond(0);
             setCanIncreaseEnergy(false);
         }
         if(!charms.contains(Charms.MARK_OF_PRIDE)) setJabReach(jabReach() - 1.5);
@@ -214,7 +222,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
         }
         if(!charms.contains(Charms.SOUL_EATER)) soulsPerHit /= 1.5;
         if(!charms.contains(Charms.SOUL_TWISTER)) soulsPerCast /= 0.75;
-        if(!charms.contains(Charms.SPRINTMASTER)) player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(1.4);
+        if(!charms.contains(Charms.SPRINTMASTER)) player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(.14);
         if(!charms.contains(Charms.STEADY_BODY)) setWeight(weight() - 1.5);
         if(!charms.contains(Charms.STRENGTH)) setJabDamage(4);
         //if(!charms.contains(Charms.WEAVERSONG)); //two spiderlings;
@@ -249,7 +257,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
         }
 
         public int cost(){return this.cost; }
-        public String description(){return this.description();}
+        public String description(){return this.description;}
         public int texture(){return this.texture;}
     }
 }

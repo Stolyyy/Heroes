@@ -19,6 +19,7 @@ public class GameSettingsGUI extends GUI {
     public GameSettingsGUI(Game game, Player player, PartyModeGUI partyGUI) {
         this.inventory = Bukkit.createInventory(player, 54,  "Game Settings");
         this.game = game;
+        this.player = player;
         this.settings = game.settings();
         this.partyGUI = partyGUI;
         inventoryItems.put(8, Equipment.customItem(30, "3 Lives"));

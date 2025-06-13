@@ -55,7 +55,11 @@ public class Equipment {
             fist = customItem(8002, "Gun");
         } else if (h instanceof Bug){
             head = customItem(17000, "shell");
-            //charms
+            chest = customArmor("chest", 30, 30, 50, "Bug Chest");
+            legs = customArmor("legs", 30, 30, 50, "Bug Legs");
+            boots = customArmor("boots", 30, 30, 50, "Bug Boots");
+            fist = customItem(17002, "Nail");
+            equipCharms(p);
         }
 
 
@@ -66,6 +70,14 @@ public class Equipment {
         p.getInventory().setItem(0, fist);
         p.getInventory().setItem(1, secondary);
         p.getInventory().setItem(2, ult);
+    }
+
+    public static void equipCharms(Player player){
+        int i = 9;
+        for(Bug.Charms charm : HeroManager.getCharms(player)){
+            player.getInventory().setItem(i, Equipment.customItem(charm.texture(), charm.toString(), List.of(charm.description(), String.valueOf(charm.cost()))));
+            i++;
+        }
     }
 
     //Create carrot on a stick with custom model data

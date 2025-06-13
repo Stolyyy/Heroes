@@ -60,7 +60,7 @@ public class Particles {
             if(dustOptions != null)
                 location.getWorld().spawnParticle(particle, particleLocation, 1, dustOptions);
             else
-                location.getWorld().spawnParticle(particle, particleLocation, 1);
+                location.getWorld().spawnParticle(particle, particleLocation, 1, 0, 0 ,0);
         }
     }
 

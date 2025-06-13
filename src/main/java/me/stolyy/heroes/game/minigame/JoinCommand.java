@@ -8,9 +8,9 @@ import org.jetbrains.annotations.NotNull;
 public class JoinCommand extends Command {
     //make sure party sizes are good before joining
     public JoinCommand() {
-        super("joinGame");
+        super("join");
         this.setDescription("Join a game");
-        this.setUsage("/joinGame <1v1|2v2|party>");
+        this.setUsage("/join <1v1|2v2|party>");
     }
 
     @Override

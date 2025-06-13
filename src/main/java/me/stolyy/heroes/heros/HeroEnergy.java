@@ -66,6 +66,10 @@ public abstract class HeroEnergy extends HeroCooldown {
         this.energyPerTick = energyPerTick;
         return this;
     }
+    protected HeroEnergy setEnergyPerSecond(double energyPerSecond) {
+        this.energyPerTick = energyPerSecond / 20.0;
+        return this;
+    }
     protected HeroEnergy setCanIncreaseEnergy(boolean canIncreaseEnergy) {
         this.canIncreaseEnergy = canIncreaseEnergy;
         return this;

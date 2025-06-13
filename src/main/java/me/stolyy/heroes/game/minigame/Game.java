@@ -58,7 +58,7 @@ public class Game {
                 visuals.startTimer();
             }
             case ENDED -> {
-                Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), this::clean, 20* RESPAWN_TIME);
+                Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), this::clean, 20 * RESPAWN_TIME);
             }
         }
 
@@ -74,6 +74,7 @@ public class Game {
                 GameEffects.restrictPlayer(p);
                 GameEffects.applyEffects(p, teams.get(playerTeam(p)).settings());
                 Equipment.equip(p);
+                HeroManager.getHero(p).onCountdown();
             }
         }
         Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), this::startGame, 20 * 10);
@@ -123,7 +124,7 @@ public class Game {
             teams.values().forEach(GameTeam::clearPlayers);
             visuals.reset();
             GameMapManager.deleteWorld(settings.map());
-        }, 20 * 3);
+        }, 30);
     }
 
 
@@ -150,6 +151,7 @@ public class Game {
         team.remove(player);
         visuals.update();
         GameEffects.removeEffects(player);
+        HeroManager.getHero(player).onElimination();
         player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
         checkGameEnd();
     }
@@ -180,6 +182,7 @@ public class Game {
         team.subtractLife(player);
         if(team.lives(player) <= 0){
             changeTeam(player, TeamColor.SPECTATOR);
+            HeroManager.getHero(player).onElimination();
             checkGameEnd();
         } else Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> playerRespawn(player), 20 * RESPAWN_TIME);
     }

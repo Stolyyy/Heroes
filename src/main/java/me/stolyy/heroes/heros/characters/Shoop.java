@@ -201,7 +201,7 @@ public class Shoop extends HeroEnergy implements PassiveSneak, Projectile, Hitsc
             if (passive.inUse() && energy() > 10) {
                 event.setCancelled(true);
             }
-            player.teleport(player.getLocation().add(0, 0.75, 0));
+            player.teleport(player.getLocation().subtract(event.getDismounted().getLocation().getDirection()));
         }
     }
 

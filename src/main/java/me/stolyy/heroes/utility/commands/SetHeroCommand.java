@@ -4,10 +4,7 @@ import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.minigame.GameManager;
 import me.stolyy.heroes.heros.Hero;
 import me.stolyy.heroes.heros.HeroManager;
-import me.stolyy.heroes.heros.characters.Pug;
-import me.stolyy.heroes.heros.characters.Shoop;
-import me.stolyy.heroes.heros.characters.Skullfire;
-import me.stolyy.heroes.heros.characters.VoidCrawler;
+import me.stolyy.heroes.heros.characters.*;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -50,7 +47,8 @@ public class SetHeroCommand extends Command {
                 } else if (characterName.equalsIgnoreCase("Bulk")) {
                     //hero = new Bulk(player);
                 } else if (characterName.equalsIgnoreCase("Bug")) {
-                    //hero = new Bug(player);
+                    hero = new Bug(player);
+                    player.playSound(player.getLocation(), Sound.ENTITY_PARROT_IMITATE_SILVERFISH, 2.0f, 1.0f);
                 } else if (characterName.equalsIgnoreCase("Spooderman")) {
                     //hero = new Spooderman(player);
                 } else if (characterName.equalsIgnoreCase("Punishgers")) {

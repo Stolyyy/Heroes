@@ -115,7 +115,7 @@ public class AbilityListener implements Listener {
             return false;
         }
         if (game.gameState() != GameEnums.GameState.IN_PROGRESS) {
-            //player.sendMessage(ChatColor.RED + "DEBUG: Game is not in progress! Current state: " + game.getGameState());
+            //player.sendMessage(ChatColor.RED + "DEBUG: Game is not in progress! Current state: " + game.gameState());
             return false;
         }
         if (player.getGameMode() != GameMode.ADVENTURE) {

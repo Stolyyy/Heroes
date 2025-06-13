@@ -90,7 +90,7 @@ public class GameVisuals {
                     cancel();
                     reset();
                 } else {
-                    draw();
+                    update();
                     timeLeft--;
                 }
             }
@@ -140,7 +140,7 @@ public class GameVisuals {
                     .toList();
             for (Player p : list) {
                 String label = p.getName() + " [" + game.lives(p) + "]";
-                sidebar.getScore(color.chatColor() + label).setScore(--line);
+                sidebar.getScore(color.chatColor() + " " + label).setScore(--line);
             }
         }
         // Spectators at bottom

@@ -22,19 +22,20 @@ public class BugCharmsGUI extends GUI {
         charms = HeroManager.getCharms(player);
 
         charmLocations.put(Charms.DASHMASTER, 13);
-        charmLocations.put(Charms.GRUBSONG, 18);
-        charmLocations.put(Charms.HEAVY_BLOW, 19);
-        charmLocations.put(Charms.KINGSOUL, 20);
-        charmLocations.put(Charms.MARK_OF_PRIDE, 21);
-        charmLocations.put(Charms.NAIL_MASTER, 22);
-        charmLocations.put(Charms.QUICK_SLASH, 23);
-        charmLocations.put(Charms.SHAMAN_STONE, 24);
-        charmLocations.put(Charms.SHARP_SHADOW, 27);
-        charmLocations.put(Charms.SOUL_EATER, 28);
-        charmLocations.put(Charms.SPRINTMASTER, 29);
-        charmLocations.put(Charms.STEADY_BODY, 30);
-        charmLocations.put(Charms.STRENGTH, 31);
-        charmLocations.put(Charms.WEAVERSONG, 32);
+        charmLocations.put(Charms.GRUBSONG, 19);
+        charmLocations.put(Charms.HEAVY_BLOW, 20);
+        charmLocations.put(Charms.KINGSOUL, 21);
+        charmLocations.put(Charms.MARK_OF_PRIDE, 22);
+        charmLocations.put(Charms.NAIL_MASTER, 23);
+        charmLocations.put(Charms.QUICK_SLASH, 24);
+        charmLocations.put(Charms.SHAMAN_STONE, 25);
+        charmLocations.put(Charms.SHARP_SHADOW, 28);
+        charmLocations.put(Charms.SOUL_EATER, 29);
+        charmLocations.put(Charms.SOUL_TWISTER, 30);
+        charmLocations.put(Charms.SPRINTMASTER, 31);
+        charmLocations.put(Charms.STEADY_BODY, 32);
+        charmLocations.put(Charms.STRENGTH, 33);
+        charmLocations.put(Charms.WEAVERSONG, 34);
         inventoryItems.put(49,createItem(Material.BARRIER, "Cancel"));
 
         update();
@@ -45,14 +46,13 @@ public class BugCharmsGUI extends GUI {
     public void update(){
         HeroManager.setCharms(player, charms);
 
-        for(int i = 0; i < 8; i++) inventoryItems.put(i, createItem(Material.GRAY_CONCRETE, "Free Charm Notch"));
+        for(int i = 0; i < Bug.CHARM_NOTCHES; i++) inventoryItems.put(i, createItem(Material.GRAY_CONCRETE, "Free Charm Notch"));
 
-        for(Charms charm : charmLocations.keySet()) inventory.setItem(charmLocations.get(charm), Equipment.customItem(charm.texture(), charm.toString(), List.of(charm.description(), String.valueOf(charm.cost()))));
+        for(Charms charm : charmLocations.keySet()) inventoryItems.put(charmLocations.get(charm), Equipment.customItem(charm.texture(), charm.toString(), List.of(charm.description(), String.valueOf(charm.cost()))));
 
         usedNotches = 0;
         for(Charms charm : charms) {
             usedNotches += charm.cost();
-            enchantItem(charmLocations.get(charm));
         }
 
         for(int i = 0; i < usedNotches; i++) inventoryItems.put(i, createItem(Material.LIGHT_GRAY_CONCRETE, "Used Charm Notch"));
@@ -60,6 +60,11 @@ public class BugCharmsGUI extends GUI {
         for (int i = 0; i < 54; i++) {
             inventory.setItem(i, inventoryItems.get(i));
         }
+
+        for(Charms charm : charms)
+            enchantItem(charmLocations.get(charm));
+
+        Equipment.equipCharms(player);
     }
 
     @Override
@@ -71,22 +76,24 @@ public class BugCharmsGUI extends GUI {
         }
         Charms charm = switch(slot){
             case 13 -> Charms.DASHMASTER;
-            case 18 -> Charms.GRUBSONG;
-            case 19 -> Charms.HEAVY_BLOW;
-            case 20 -> Charms.KINGSOUL;
-            case 21 -> Charms.MARK_OF_PRIDE;
-            case 22 -> Charms.NAIL_MASTER;
-            case 23 -> Charms.QUICK_SLASH;
-            case 24 -> Charms.SHAMAN_STONE;
-            case 27 -> Charms.SHARP_SHADOW;
-            case 28 -> Charms.SOUL_EATER;
-            case 29 -> Charms.SPRINTMASTER;
-            case 30 -> Charms.STEADY_BODY;
-            case 31 -> Charms.STRENGTH;
-            case 32 -> Charms.WEAVERSONG;
+            case 19 -> Charms.GRUBSONG;
+            case 20 -> Charms.HEAVY_BLOW;
+            case 21 -> Charms.KINGSOUL;
+            case 22 -> Charms.MARK_OF_PRIDE;
+            case 23 -> Charms.NAIL_MASTER;
+            case 24 -> Charms.QUICK_SLASH;
+            case 25 -> Charms.SHAMAN_STONE;
+            case 28 -> Charms.SHARP_SHADOW;
+            case 29 -> Charms.SOUL_EATER;
+            case 30 -> Charms.SOUL_TWISTER;
+            case 31 -> Charms.SPRINTMASTER;
+            case 32 -> Charms.STEADY_BODY;
+            case 33 -> Charms.STRENGTH;
+            case 34 -> Charms.WEAVERSONG;
             default -> null;
         };
         if (charm == null) {
+            update();
             return;
         }
         if(!charms.remove(charm) && Bug.CHARM_NOTCHES - usedNotches >= charm.cost()){
@@ -99,6 +106,10 @@ public class BugCharmsGUI extends GUI {
 
     @Override
     public void openGUI() {
+        update();
+        GUIListener.playerGUIMap.put(player, this);
+        GUIListener.isReopening.put(player, true);
         player.openInventory(inventory);
+        GUIListener.isReopening.put(player, false);
     }
 }

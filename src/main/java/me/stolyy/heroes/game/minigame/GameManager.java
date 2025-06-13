@@ -1,9 +1,12 @@
 package me.stolyy.heroes.game.minigame;
 
+import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.maps.GameMap;
 import me.stolyy.heroes.game.maps.GameMapManager;
+import me.stolyy.heroes.game.menus.PartyModeGUI;
 import me.stolyy.heroes.party.PartyManager;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
@@ -81,7 +84,7 @@ public class GameManager {
                 for (Player p : game.allPlayers()) {
                     playerGames.put(p, game);
                 }
-
+                new PartyModeGUI(game, player);
                 updateGameStatus(game);
             }
         }
@@ -96,6 +99,7 @@ public class GameManager {
             for(Player p : PartyManager.getPlayersInParty(player)) {
                 game.removePlayer(p);
                 playerGames.remove(p);
+                Heroes.getInstance().teleportToLobby(p);
             }
         }
         else {

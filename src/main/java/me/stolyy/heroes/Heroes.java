@@ -5,15 +5,12 @@ import me.stolyy.heroes.game.menus.GUIListener;
 import me.stolyy.heroes.game.minigame.*;
 import me.stolyy.heroes.heros.listeners.AbilityListener;
 import me.stolyy.heroes.heros.HeroManager;
-import me.stolyy.heroes.utility.commands.SetHeroCommand;
+import me.stolyy.heroes.utility.commands.*;
 import me.stolyy.heroes.heros.listeners.DoubleJumpListener;
 import me.stolyy.heroes.heros.listeners.JabListener;
 import me.stolyy.heroes.party.PartyChatCommand;
 import me.stolyy.heroes.party.PartyCommand;
 import me.stolyy.heroes.party.PartyManager;
-import me.stolyy.heroes.utility.commands.LobbyCommand;
-import me.stolyy.heroes.utility.commands.SpectateCommand;
-import me.stolyy.heroes.utility.commands.StuckCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -96,7 +93,7 @@ public final class Heroes extends JavaPlugin implements Listener {
         registerCommand("p", new PartyCommand());
         registerCommand("partychat", new PartyChatCommand());
         registerCommand("pc", new PartyChatCommand());
-        registerCommand("joinGame", new JoinCommand());
+        registerCommand("join", new JoinCommand());
         registerCommand("spectate", new SpectateCommand());
         registerCommand("leave", new LobbyCommand());
         registerCommand("lobby", new LobbyCommand());
@@ -105,6 +102,7 @@ public final class Heroes extends JavaPlugin implements Listener {
         registerCommand("gg", new LobbyCommand());
         registerCommand("stuck", new StuckCommand());
         registerCommand("s", new StuckCommand());
+        registerCommand("charms", new CharmsCommand());
     }
 
     private void registerCommand(String name, Command command) {

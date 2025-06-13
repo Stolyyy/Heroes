@@ -21,9 +21,12 @@ public class Ability {
     }
     public Ability(AbilityType abilityType, double dmg, double kb, double cd, AbilityData abilityData) {
         this.abilityType = abilityType;
+        ready = !abilityType.equals(AbilityType.ULTIMATE);
+        inUse = false;
         this.dmg = dmg;
         this.kb = kb;
-        this.cd = cd;
+        timeUntilUse = this.cd = cd;
+        duration = 0;
         this.abilityData = abilityData;
     }
     public Ability(AbilityType abilityType, double dmg, double kb, double cd, double duration) {
@@ -37,11 +40,13 @@ public class Ability {
     }
     public Ability(AbilityType abilityType, double dmg, double kb, double cd, double duration, AbilityData abilityData) {
         this.abilityType = abilityType;
+        ready = !abilityType.equals(AbilityType.ULTIMATE);
+        inUse = false;
         this.dmg = dmg;
         this.kb = kb;
-        this.cd = cd;
-        this.abilityData = abilityData;
+        timeUntilUse = this.cd = cd;
         this.duration = duration;
+        this.abilityData = abilityData;
     }
 
     public void cooldown() {

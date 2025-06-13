@@ -152,25 +152,6 @@ public class GameVisuals {
         applyScoreboardToAll();
     }
 
-    public void updateHealth(){
-        if (healthTask != null) healthTask.cancel();
-        healthTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (game.gameState() != GameEnums.GameState.IN_PROGRESS) {
-                    this.cancel();
-                    return;
-                }
-                for (Player p : game.allPlayers()) {
-                    int health = (int) Math.ceil(p.getHealth());
-                    tabHealth.getScore(p.getName()).setScore(health);
-                    belowNameHealth.getScore(p.getName()).setScore(health);
-                }
-            }
-        }.runTaskTimer(Heroes.getInstance(), 0L, 2L);
-    }
-
-
     public void cancelTasks() {
         if (countdownTask != null) countdownTask.cancel();
         if (timerTask != null) timerTask.cancel();

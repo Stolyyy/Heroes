@@ -148,7 +148,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
         diveShockwave = new ShockwaveData(4, Particle.DUST).setDustOptions(Color.GRAY, 3.0f);
         spirit = new ProjectileData(3, 2.5, 50);
         shriek = new ConeData(3.5, 4.5, Particle.DUST).setDustOptions(Color.GRAY, 3.0f);
-        ultimate = new Ability(AbilityType.ULTIMATE, 0, 0, 0, 10);
+        ultimate = new Ability(AbilityType.ULTIMATE, 0, 0, 90, 10);
 
 
 

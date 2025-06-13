@@ -82,7 +82,6 @@ public class Game {
 
     public void startGame() {
         setGameState(GameState.IN_PROGRESS);
-        visuals.updateHealth();
         for(Player p : alivePlayers()) {
             GameEffects.unRestrictPlayer(p);
             HeroManager.getHero(p).onGameStart();

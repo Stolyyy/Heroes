@@ -49,7 +49,7 @@ public abstract class HeroCooldown extends Hero {
     }
 
     public void jab(Player target){
-        Interactions.handleStaticInteraction(jabDamage(), 5, player, target);
+        Interactions.handleStaticInteraction(jabDamage(), 1, player, target);
         onPunch();
     }
 

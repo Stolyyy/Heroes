@@ -70,6 +70,7 @@ public class BugCharmsGUI extends GUI {
     @Override
     public void handleClick(int slot) {
         if(slot == 49) {
+            HeroManager.setHero(player, new Bug(player));
             GUIListener.playerGUIMap.put(player, null);
             player.closeInventory();
             return;

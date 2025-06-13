@@ -16,7 +16,7 @@ public interface Shockwave {
     default void shockwave(Player player, AbilityType abilityType, ShockwaveData shockwaveData) {
         Location l = player.getLocation().clone();
         l.setDirection(new Vector(0,1,0));
-        Set<Player> hitPlayers = new LinkedHashSet<>(Hitbox.cylinder(l, shockwaveData.radius(), 2));
+        Set<Player> hitPlayers = new LinkedHashSet<>(Hitbox.cylinder(l, shockwaveData.radius(), 3));
         hitPlayers.remove(player);
 
         if(!shockwaveData.piercesWalls()){

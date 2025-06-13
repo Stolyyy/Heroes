@@ -81,8 +81,8 @@ public class Interactions {
 
 
     private static void handleKnockback(Vector direction, double knockback, double yKnockback, boolean staticKB, Player victim){
-        knockback *= 0.12;
-        yKnockback *= 0.12;
+        knockback *= 0.16;
+        yKnockback *= 0.16;
         if(!staticKB) {
             double[] xyzReduction = reduceVelocity(victim);
             //Don't apply backwards kb
@@ -93,12 +93,16 @@ public class Interactions {
 
             //increase based on victim's hp
             double missingHealth = victim.getMaxHealth() - victim.getHealth();
-            knockback += missingHealth * knockback * 0.125;
-            yKnockback += missingHealth * yKnockback * 0.125;
+            knockback += missingHealth * knockback * 0.0625;
+            yKnockback += missingHealth * yKnockback * 0.0625;
+        } else {
+            double staticMultiplier = 50; //static kb as if player is missing 50 health
+            knockback += staticMultiplier * knockback * 0.0625;
+            yKnockback += staticMultiplier * yKnockback * 0.0625;
         }
 
         //ensure upwards kb if on ground
-        if(victim.isOnGround()){
+        if(victim.isOnGround() && yKnockback >= 0){
             direction.setY(Math.max(direction.getY(), 0.2));
         } //potentially remove, but meant to ensure kb is not too extreme up/down.
         else if(direction.getY() < -0.2 && direction.getY() > -0.9){
@@ -107,7 +111,6 @@ public class Interactions {
             direction.setY(direction.getY() - 0.1);
         }
 
-        //check for nonfinite vectors
         if (!Double.isFinite(direction.getX()) || !Double.isFinite(direction.getY()) ||
                 !Double.isFinite(direction.getZ()) || direction.lengthSquared() < 0.0001)
             direction = new Vector(0, 1, 0);

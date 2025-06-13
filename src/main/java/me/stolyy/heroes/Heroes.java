@@ -1,6 +1,7 @@
 package me.stolyy.heroes;
 
 import me.stolyy.heroes.game.maps.GameMapManager;
+import me.stolyy.heroes.game.maps.MapAdminCommand;
 import me.stolyy.heroes.game.menus.GUIListener;
 import me.stolyy.heroes.game.minigame.*;
 import me.stolyy.heroes.heros.listeners.AbilityListener;
@@ -32,7 +33,7 @@ import java.util.logging.Level;
 public final class Heroes extends JavaPlugin implements Listener {
 
     private static Heroes instance;
-    private Location lobbyLocation;
+    private static Location lobbyLocation;
 
     public static Heroes getInstance() {
         return instance;
@@ -44,7 +45,7 @@ public final class Heroes extends JavaPlugin implements Listener {
 
         World world = Bukkit.getWorld("world");
         if (world != null) {
-            this.lobbyLocation = new Location(world, 0.5, 0, 500.5);
+            lobbyLocation = new Location(world, 0.5, 0, 500.5);
         } else {
             getLogger().warning("Default world not found. Lobby location not set.");
         }
@@ -95,6 +96,7 @@ public final class Heroes extends JavaPlugin implements Listener {
         registerCommand("pc", new PartyChatCommand());
         registerCommand("join", new JoinCommand());
         registerCommand("spectate", new SpectateCommand());
+        registerCommand("spec", new SpectateCommand());
         registerCommand("leave", new LobbyCommand());
         registerCommand("lobby", new LobbyCommand());
         registerCommand("hub", new LobbyCommand());
@@ -103,6 +105,15 @@ public final class Heroes extends JavaPlugin implements Listener {
         registerCommand("stuck", new StuckCommand());
         registerCommand("s", new StuckCommand());
         registerCommand("charms", new CharmsCommand());
+        registerCommand("charm", new CharmsCommand());
+        registerCommand("bugcharms", new CharmsCommand());
+        registerCommand("bugcharm", new CharmsCommand());
+        registerCommand("ma", new MapAdminCommand());
+        registerCommand("mapadmin", new MapAdminCommand());
+        registerCommand("maps", new MapAdminCommand());
+        registerCommand("editmap", new MapAdminCommand());
+        registerCommand("editmaps", new MapAdminCommand());
+        registerCommand("managemaps", new MapAdminCommand());
     }
 
     private void registerCommand(String name, Command command) {
@@ -133,7 +144,7 @@ public final class Heroes extends JavaPlugin implements Listener {
         HeroManager.removePlayer(player);
     }
 
-    public void teleportToLobby(Player player) {
+    public static void teleportToLobby(Player player) {
         if (lobbyLocation != null) {
             player.teleport(lobbyLocation);
             player.getInventory().clear();
@@ -146,10 +157,10 @@ public final class Heroes extends JavaPlugin implements Listener {
             for (PotionEffect effect : player.getActivePotionEffects()) {
                 player.removePotionEffect(effect.getType());
             }
-            Bukkit.getScheduler().runTaskLater(this, () -> player.setGameMode(GameMode.ADVENTURE), 1L);
+            Bukkit.getScheduler().runTaskLater(getInstance(), () -> player.setGameMode(GameMode.ADVENTURE), 1L);
             player.sendMessage("You have been teleported to the lobby.");
         } else {
-            getLogger().warning("Attempted to teleport player to lobby, but lobby location is not set.");
+            getInstance().getLogger().warning("Attempted to teleport player to lobby, but lobby location is not set.");
         }
     }
 }

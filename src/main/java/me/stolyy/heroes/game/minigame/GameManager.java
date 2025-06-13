@@ -96,7 +96,7 @@ public class GameManager {
             for(Player p : PartyManager.getPlayersInParty(player)) {
                 game.removePlayer(p);
                 playerGames.remove(p);
-                Heroes.getInstance().teleportToLobby(p);
+                Heroes.teleportToLobby(p);
             }
         }
         else {

@@ -2,15 +2,19 @@ package me.stolyy.heroes.game.minigame;
 
 import me.stolyy.heroes.game.maps.GameMap;
 import me.stolyy.heroes.game.maps.GameMapManager;
+import org.bukkit.util.BoundingBox;
 
 //Overall: crystals, map,
 public class GameSettings {
     private final GameMap map;
+    private BoundingBox boundaries;
+    private boolean killWalls;
     private boolean smashCrystals;
     private int timer = 420; //seconds
 
     public GameSettings(GameMap map) {
         this.map = GameMapManager.createWorld(map);
+        boundaries = map.getBoundaries().clone();
     }
 
     public GameSettings copy(GameSettings settings){
@@ -38,6 +42,20 @@ public class GameSettings {
 
     public GameSettings setTimer(int timer) {
         this.timer = timer;
+        return this;
+    }
+
+    public BoundingBox boundaries() {
+        return boundaries;
+    }
+
+    public GameSettings toggleKillWalls() {
+        killWalls = !killWalls;
+        if(killWalls){
+            boundaries = map.getBoundaries().clone().expand(-3);
+        } else {
+            boundaries = map.getBoundaries().clone();
+        }
         return this;
     }
 }

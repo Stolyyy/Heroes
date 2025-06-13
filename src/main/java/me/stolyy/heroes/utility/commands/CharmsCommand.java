@@ -9,12 +9,14 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class CharmsCommand extends Command {
     public CharmsCommand() {
         super("charms");
         this.setDescription("Opens the charms menu for the Bug character");
         this.setUsage("/charms");
+        this.setAliases(List.of("charm", "bugcharms", "bugcharm"));
     }
 
     @Override

@@ -8,6 +8,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 public class SpectateCommand extends Command {
     //adds player as a spectator to the game of a player
     //spectate (player)
@@ -15,6 +17,7 @@ public class SpectateCommand extends Command {
         super("spectate");
         this.setDescription("Spectate a player's game");
         this.setUsage("/spectate <player>");
+        this.setAliases(List.of("spec"));
     }
 
     @Override

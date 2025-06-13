@@ -113,7 +113,7 @@ public class Game {
     public void clean() {
         for(Player p : allPlayers()){
             if(GameManager.getPlayerGame(p) == this){
-                Heroes.getInstance().teleportToLobby(p);
+                Heroes.teleportToLobby(p);
                 GameManager.removePlayerGame(p);
             }
         }
@@ -235,7 +235,7 @@ public class Game {
     }
 
     public BoundingBox mapBounds(){
-        return settings.map().getBoundaries();
+        return settings.boundaries();
     }
 
     public boolean sameTeam(Player first, Player second){

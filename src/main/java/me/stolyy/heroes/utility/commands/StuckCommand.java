@@ -30,7 +30,7 @@ public class StuckCommand extends Command {
         }
         Game game = GameManager.getPlayerGame(player);
         if(game == null){
-            Heroes.getInstance().teleportToLobby(player);
+            Heroes.teleportToLobby(player);
             return true;
         }
         if(isInBlock(player)){

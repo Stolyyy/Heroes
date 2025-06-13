@@ -28,13 +28,13 @@ public interface Cone {
             for(int i = 0; i < coneData.length(); i++) {
                 //TODO: More explodey idk
                 if(coneData.dustOptions() != null) {
-                    Particles.directionalRing(l.add(l.toVector().normalize().multiply(i)), coneData.radius() * i / coneData.length(), coneData.particle(), coneData.dustOptions());
+                    Particles.directionalRing(l.add(l.getDirection().normalize().multiply(i)), coneData.radius() * i / coneData.length(), coneData.particle(), coneData.dustOptions());
                 } else {
-                    Particles.directionalRing(l.add(l.toVector().normalize().multiply(i)), coneData.radius() * i / coneData.length(), coneData.particle());
+                    Particles.directionalRing(l.add(l.getDirection().normalize().multiply(i)), coneData.radius() * i / coneData.length(), coneData.particle());
                 }
             }
         } else {
-            ArmorStand as = ArmorStands.summonArmorStand(l.add(l.toVector().normalize()), coneData.customModelData());
+            ArmorStand as = ArmorStands.summonArmorStand(l.add(l.getDirection().normalize()), coneData.customModelData());
             Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), as::remove, 5L);
         }
 

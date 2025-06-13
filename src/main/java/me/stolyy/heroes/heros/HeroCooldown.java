@@ -23,7 +23,6 @@ public abstract class HeroCooldown extends Hero {
     private static final int BAR_LENGTH = 10;
     private static final int UPDATES_PER_SECOND = 10;
 
-    private boolean canJab = true;
     private int doubleJumpCount = 0;
     private boolean canDoubleJump = true;
 
@@ -50,15 +49,10 @@ public abstract class HeroCooldown extends Hero {
     }
 
     public void jab(Player target){
-        canJab = false;
-        Bukkit.getScheduler().runTaskLater(PLUGIN, () -> canJab = true, (long) jabCooldown() * 20);
         Interactions.handleStaticInteraction(jabDamage(), 5, player, target);
         onPunch();
     }
 
-    public boolean canJab() {
-        return canJab;
-    }
 
     public void onPunch() {
         int reduce = 0;

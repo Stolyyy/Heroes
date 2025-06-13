@@ -35,7 +35,7 @@ public class PartyManager {
 
         invitesPerPlayer.get(invited).add(inviter);
         inviter.sendMessage(Component.text("You have invited " + invited.getName() + " to your party.").color(NamedTextColor.GREEN));
-        invited.sendMessage(Component.text("You've been invited to joinGame " + inviter.getName() + "'s party! ")
+        invited.sendMessage(Component.text("You've been invited to join " + inviter.getName() + "'s party! ")
                     .color(NamedTextColor.YELLOW)
                     .append(Component.text("[Accept]")
                             .color(NamedTextColor.GREEN)

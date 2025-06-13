@@ -54,7 +54,7 @@ public class Hitbox {
         double l = toCheck.dot(centralAxis);
         if(l < 0 || l > length) return false;
 
-        Vector up = new Vector(0, centralAxis.length(), 0);
+        Vector up = new Vector(0, 1, 0);
         Vector widthAxis = centralAxis.crossProduct(up);
         Vector heightAxis;
 

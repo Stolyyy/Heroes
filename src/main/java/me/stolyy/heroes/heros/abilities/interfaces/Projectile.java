@@ -21,7 +21,7 @@ public interface Projectile {
 
     default ArmorStand projectile(Player player, AbilityType abilityType, ProjectileData projectileData) {
         Location location = player.getLocation().clone();
-        Vector direction = location.getDirection().clone();
+        Vector direction = player.getEyeLocation().getDirection().clone();
         ArmorStand armorStand = ArmorStands.summonArmorStand(location, projectileData.customModelData());
 
 

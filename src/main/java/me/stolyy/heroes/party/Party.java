@@ -53,7 +53,7 @@ public class Party {
             if(!members.isEmpty()){
                 leader = members.iterator().next();
                 for(Player member : members) {
-                    member.sendMessage(Component.text(leader.getName() + " is the new PartyModeGUI Leader!").color(NamedTextColor.YELLOW));
+                    member.sendMessage(Component.text(leader.getName() + " is the new Party Leader!").color(NamedTextColor.YELLOW));
                 }
             } else {
                 leader = null;

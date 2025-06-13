@@ -34,11 +34,9 @@ public class Game {
 
         teams.put(TeamColor.RED, new GameTeam(TeamColor.RED));
         teams.put(TeamColor.BLUE, new GameTeam(TeamColor.BLUE));
+        teams.put(TeamColor.GREEN, new GameTeam(TeamColor.GREEN));
+        teams.put(TeamColor.YELLOW, new GameTeam(TeamColor.YELLOW));
         teams.put(TeamColor.SPECTATOR, new GameTeam(TeamColor.SPECTATOR));
-        if(gameMode == GameMode.PARTY){
-            teams.put(TeamColor.GREEN, new GameTeam(TeamColor.GREEN));
-            teams.put(TeamColor.YELLOW, new GameTeam(TeamColor.YELLOW));
-        }
     }
 
 
@@ -282,7 +280,7 @@ public class Game {
         if(teamColor == TeamColor.SPECTATOR) teleportLocation = map.getSpectatorLocation();
         else teleportLocation = map.getSpawnLocations()[index].clone();
 
-        int teamSize = alivePlayersPerTeam().get(teamColor);
+        int teamSize = alivePlayersPerTeam().getOrDefault(teamColor, 0);
         if(teamSize == 1) player.teleport(teleportLocation);
         else if(teamSize == 2) player.teleport(teleportLocation.add(1,0,0));
         else player.teleport(teleportLocation.add(-1,0,0));

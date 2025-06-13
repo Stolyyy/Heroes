@@ -49,7 +49,7 @@ public interface Dash {
                 nearbyPlayers.addAll(Hitbox.cube(player.getEyeLocation().clone().setDirection(direction), 2));
                 for (Player nearbyPlayer : nearbyPlayers) {
                     if (nearbyPlayer != player && !hitPlayer.getOrDefault(nearbyPlayer, false)) {
-                        ((Dash) HeroManager.getHero(player)).onDashHit(nearbyPlayer, currentLocation, abilityType);
+                        onDashHit(nearbyPlayer, currentLocation, abilityType);
                         hitPlayer.put(nearbyPlayer, true);
                     }
                 }

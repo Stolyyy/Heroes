@@ -25,7 +25,11 @@ public interface Shockwave {
 
         if(shockwaveData.particle() != null) {
             //TODO: Particle explosion effect
-            Particles.directionalRing(l.add(0,0.25,0), shockwaveData.radius(), shockwaveData.particle());
+            if(shockwaveData.dustOptions() != null) {
+                Particles.directionalRing(l.add(0,0.25,0), shockwaveData.radius(), shockwaveData.particle(), shockwaveData.dustOptions());
+            } else {
+                Particles.directionalRing(l.add(0,0.25,0), shockwaveData.radius(), shockwaveData.particle());
+            }
         }
         if(shockwaveData.usesBlocks()) {
             //shockwave blocks

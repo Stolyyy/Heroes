@@ -68,7 +68,7 @@ public class Pug extends HeroEnergy implements PassiveSneak, Dash {
             }
 
             private void createRing(int tick) {
-                Location ringCenter = center.clone().add(center.toVector().multiply(tick * spacing));
+                Location ringCenter = center.clone().add(center.getDirection().multiply(tick * spacing));
                 Particles.directionalRing(ringCenter, 0.3 + tick * 0.24, Particle.NOTE);
                 Set<Player> toHit = new LinkedHashSet<>(Hitbox.cylinder(ringCenter, 0.3 + tick * 0.24, spacing));
                 toHit.remove(player);

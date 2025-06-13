@@ -92,6 +92,7 @@ public class GameMapManager {
             world.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
             world.setGameRule(GameRule.NATURAL_REGENERATION, false);
             world.setGameRule(GameRule.DISABLE_ELYTRA_MOVEMENT_CHECK, true);
+            world.setGameRule(GameRule.DISABLE_RAIDS, true);
             world.setFullTime(10000L);
         }
 

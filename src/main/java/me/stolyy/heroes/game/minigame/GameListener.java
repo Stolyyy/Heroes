@@ -52,7 +52,7 @@ public class GameListener implements Listener {
     }
 
     @EventHandler
-    public void onPlayerRespawn(PlayerRespawnEvent event) {
+    public void processPlayerDeath(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
         Game game = GameManager.getPlayerGame(player);
         if (isValidGame(game)) {

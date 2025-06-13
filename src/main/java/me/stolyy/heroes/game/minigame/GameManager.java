@@ -9,13 +9,10 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class GameManager {
-    private static final Set<Game> waitingGames = new HashSet<>();
+    private static final Set<Game> waitingGames = new LinkedHashSet<>();
     private static final Set<Game> activeGames = new HashSet<>();
     private static final Map<Player, Game> playerGames = new HashMap<>();
 
@@ -111,7 +108,7 @@ public class GameManager {
     }
 
     private static Set<Game> filterByMode(Set<Game> gameSet, GameEnums.GameMode gameMode){
-        Set<Game> filtered = new HashSet<>();
+        Set<Game> filtered = new LinkedHashSet<>();
         for(Game g : gameSet){
             if(g.gameMode() == gameMode) filtered.add(g);
         }

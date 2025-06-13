@@ -15,11 +15,11 @@ import java.util.*;
 public interface Dash {
     default void dash(Player player, AbilityType abilityType, DashData dashData) {
         Location startLocation = player.getLocation();
-        final Vector direction = player.getEyeLocation().getDirection().clone();
+        final Vector direction = player.getEyeLocation().getDirection();
         double dashSpeed = dashData.speed(); // Speed of the dash movement
         int maxDurationTicks = 7; // Maximum duration of the dash in ticks
 
-        player.setVelocity(direction.multiply(dashSpeed));
+        player.setVelocity(direction.clone().multiply(dashSpeed));
 
         new BukkitRunnable() {
             double distanceTravelled = 0.0;
@@ -37,6 +37,7 @@ public interface Dash {
                 if (distanceTravelled >= dashData.distance() || ticksElapsed >= maxDurationTicks) {
                     endDash();
                     onDashEnd(currentLocation, abilityType);
+                    return;
                 }
 
                 // Check for wall collision
@@ -46,7 +47,7 @@ public interface Dash {
                 //}
 
                 //hitbox detection
-                nearbyPlayers.addAll(Hitbox.cube(player.getEyeLocation().clone().setDirection(direction), 2));
+                nearbyPlayers.addAll(Hitbox.cube(player.getEyeLocation().setDirection(direction), 2));
                 for (Player nearbyPlayer : nearbyPlayers) {
                     if (nearbyPlayer != player && !hitPlayer.getOrDefault(nearbyPlayer, false)) {
                         onDashHit(nearbyPlayer, currentLocation, abilityType);

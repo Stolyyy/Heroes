@@ -71,7 +71,7 @@ public class Shoop extends HeroEnergy implements PassiveSneak, Projectile, Hitsc
         } else
             secondaryItem = Equipment.customItem(4, "Go hit someone with a lazor");
 
-        player.getInventory().setItem(2, secondaryItem);
+        player.getInventory().setItem(1, secondaryItem);
     }
 
     private void setSecondaryColor(Color color){

@@ -36,7 +36,7 @@ public interface Dash {
 
                 if (distanceTravelled >= dashData.distance() || ticksElapsed >= maxDurationTicks) {
                     endDash();
-                    return;
+                    onDashEnd(currentLocation, abilityType);
                 }
 
                 // Check for wall collision

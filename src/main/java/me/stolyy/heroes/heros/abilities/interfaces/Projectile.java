@@ -36,7 +36,7 @@ public interface Projectile {
 
             @Override
             public void run() {
-                hitPlayers.addAll(Hitbox.sphere(currentLocation, projectileData.radius()));
+                hitPlayers.addAll(Hitbox.sphere(currentLocation.add(0,1.85,0), projectileData.radius()));
                 hitPlayers.remove(player);
 
                 if (projectileData.gravity())

@@ -42,7 +42,7 @@ public interface Hitscan {
 
             if(!hitscanData.piercesWalls() && WallDetection.rayCast(currentLocation, 0.1)) {
                 onHitscanHitWall(currentLocation, abilityType);
-                return;
+                break;
             }
 
             if (useParticles) {

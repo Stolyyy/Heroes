@@ -189,6 +189,7 @@ public class Game {
     public void playerRespawn(Player player) {
         player.setGameMode(org.bukkit.GameMode.ADVENTURE);
         GameEffects.unRestrictPlayer(player);
+        GameEffects.applyEffects(player, teams.get(playerTeam(player)).settings());
         HeroManager.getHero(player).onRespawn();
     }
 

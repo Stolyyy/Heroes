@@ -157,7 +157,7 @@ public class Game {
 
     public void changeTeam(Player player, TeamColor teamColor) {
         GameTeam oldTeam = teams.get(playerTeam(player));
-        oldTeam.remove(player);
+        if(oldTeam != null) oldTeam.remove(player);
 
         if(teamColor == TeamColor.SPECTATOR) addSpectator(player);
         else addPlayer(player, teamColor);

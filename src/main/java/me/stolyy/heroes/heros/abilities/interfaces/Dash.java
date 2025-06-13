@@ -15,7 +15,7 @@ import java.util.*;
 public interface Dash {
     default void dash(Player player, AbilityType abilityType, DashData dashData) {
         Location startLocation = player.getLocation();
-        Vector direction = player.getEyeLocation().getDirection();
+        final Vector direction = player.getEyeLocation().getDirection().clone();
         double dashSpeed = dashData.speed(); // Speed of the dash movement
         int maxDurationTicks = 7; // Maximum duration of the dash in ticks
 
@@ -46,7 +46,7 @@ public interface Dash {
                 //}
 
                 //hitbox detection
-                nearbyPlayers.addAll(Hitbox.cube(currentLocation, 2));
+                nearbyPlayers.addAll(Hitbox.cube(player.getEyeLocation().clone().setDirection(direction), 2));
                 for (Player nearbyPlayer : nearbyPlayers) {
                     if (nearbyPlayer != player && !hitPlayer.getOrDefault(nearbyPlayer, false)) {
                         ((Dash) HeroManager.getHero(player)).onDashHit(nearbyPlayer, currentLocation, abilityType);

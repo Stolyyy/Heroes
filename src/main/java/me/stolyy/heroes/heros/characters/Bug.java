@@ -157,7 +157,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
         soulsPerCast = 33;
         soulsPerHit = 11.5;
 
-        charms = HeroManager.getCharms(player);
+        charms = new HashSet<>(HeroManager.getCharms(player));
         registerCharms();
     }
 

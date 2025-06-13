@@ -142,7 +142,7 @@ public class Pug extends HeroEnergy implements PassiveSneak, Dash {
 
     private void pounce(){
         Vector direction = player.getEyeLocation().getDirection();
-        player.setVelocity(direction.multiply(1 + (pounceCharge / 20)));
+        player.setVelocity(direction.multiply(1.5 + (pounceCharge / 20)));
         Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
             pounceCharge = 0;
         }, 20L);
@@ -158,7 +158,7 @@ public class Pug extends HeroEnergy implements PassiveSneak, Dash {
         ultimate = new Ability(AbilityType.ULTIMATE, 0,0,90, 10);
         pounceCharge = 0;
 
-        setEnergyStats(100,100,0.75,true);
+        setEnergyStats(100,100,0.3,true);
         initializeEnergyUpdates();
     }
 }

@@ -35,7 +35,7 @@ public class Game {
         this.gameMode = gameMode;
 
         GameMap map = GameMapManager.createWorld(gameMap);
-        settings = new GameSettings(map);
+        settings = new GameSettings(Objects.requireNonNull(map));
         visuals = new GameVisuals(this);
         gameState = GameState.WAITING;
 
@@ -53,12 +53,15 @@ public class Game {
         setGameState(GameState.STARTING);
         visuals.showCountdown();
 
+        for(GameTeam team : teams.values()) team.initialize();
+
         for(Player p : onlinePlayers(false)) {
             HeroManager.getHero(p).onCountdown();
             GameEffects.restrictPlayer(p);
             GameEffects.applyEffects(p, playerTeam(p).settings());
             Equipment.equip(p);
         }
+
 
         BukkitTask startTask = Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
             setGameState(GameState.IN_PROGRESS);

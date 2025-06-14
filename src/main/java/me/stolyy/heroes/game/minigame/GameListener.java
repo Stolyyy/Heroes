@@ -95,9 +95,7 @@ public class GameListener implements Listener {
                 Bukkit.dispatchCommand(player, "stuck");
                 suffocationTicks.put(player,0);
             }
-            Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
-                suffocationTicks.put(player, Math.max(suffocationTicks.getOrDefault(player, 0) - 1, 0));
-            }, 20L);
+            Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> suffocationTicks.put(player, Math.max(suffocationTicks.getOrDefault(player, 0) - 1, 0)), 20L);
         }
     }
 

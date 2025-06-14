@@ -49,8 +49,8 @@ public class GameVisuals {
         cancelTasks();
         for(String entry : scoreboard.getEntries()){
             sidebar.getScore(entry).resetScore();
-            tabHealth.getScoreboard().resetScores(entry);
-            belowNameHealth.getScoreboard().resetScores(entry);
+            if(tabHealth.getScoreboard() != null) tabHealth.getScoreboard().resetScores(entry);
+            if(belowNameHealth.getScoreboard() != null) belowNameHealth.getScoreboard().resetScores(entry);
         }
         applyScoreboardToAll();
     }

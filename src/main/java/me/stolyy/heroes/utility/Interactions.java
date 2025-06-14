@@ -152,7 +152,7 @@ public class Interactions {
         if(attackerGame == null || victimGame == null) return false;
         if(!attackerGame.equals(victimGame)) return false;
 
-        if(!victimGame.alivePlayers().contains(victim)) return false;
+        if(!victimGame.onlinePlayers(false).contains(victim)) return false;
 
         if(GameListener.isRespawning(victim)) return false;
 

@@ -1,7 +1,6 @@
 package me.stolyy.heroes.game.minigame;
 
 import me.stolyy.heroes.game.maps.GameMap;
-import me.stolyy.heroes.game.maps.GameMapManager;
 import org.bukkit.util.BoundingBox;
 
 //Overall: crystals, map,
@@ -13,7 +12,7 @@ public class GameSettings {
     private int timer = 420; //seconds
 
     public GameSettings(GameMap map) {
-        this.map = GameMapManager.createWorld(map);
+        this.map = map;
         boundaries = map.boundaries().clone();
     }
 

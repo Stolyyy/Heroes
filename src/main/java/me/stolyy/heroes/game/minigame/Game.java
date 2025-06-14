@@ -4,8 +4,6 @@ import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.maps.GameMap;
 import me.stolyy.heroes.game.maps.GameMapManager;
 import me.stolyy.heroes.heros.HeroManager;
-import me.stolyy.heroes.party.Party;
-import me.stolyy.heroes.party.PartyManager;
 import me.stolyy.heroes.utility.effects.Equipment;
 import me.stolyy.heroes.game.minigame.GameEnums.GameMode;
 import me.stolyy.heroes.game.minigame.GameEnums.TeamColor;
@@ -13,343 +11,305 @@ import me.stolyy.heroes.game.minigame.GameEnums.GameState;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BoundingBox;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class Game {
-    static final int RESPAWN_TIME = 7; //seconds
+    protected static final int RESPAWN_TIME = 7; //seconds
+    protected static final int COUNTDOWN_TIME = 7;
+    protected static final int CLEANUP_DELAY = 5;
+
     private final GameMode gameMode;
-    private GameState gameState;
     private final GameSettings settings;
     private final GameVisuals visuals;
-    private final Map<TeamColor, GameTeam> teams = new HashMap<>();
+    private final Map<TeamColor, GameTeam> teams = new EnumMap<>(TeamColor.class);
+    private final List<BukkitTask> activeTasks = new LinkedList<>();
+
+    private GameState gameState;
 
     public Game(GameMap gameMap, GameMode gameMode) {
         this.gameMode = gameMode;
-        settings = new GameSettings(gameMap);
+
+        GameMap map = GameMapManager.createWorld(gameMap);
+        settings = new GameSettings(map);
         visuals = new GameVisuals(this);
         gameState = GameState.WAITING;
 
-        teams.put(TeamColor.RED, new GameTeam(TeamColor.RED));
-        teams.put(TeamColor.BLUE, new GameTeam(TeamColor.BLUE));
-        teams.put(TeamColor.GREEN, new GameTeam(TeamColor.GREEN));
-        teams.put(TeamColor.YELLOW, new GameTeam(TeamColor.YELLOW));
-        teams.put(TeamColor.SPECTATOR, new GameTeam(TeamColor.SPECTATOR));
+        for (GameEnums.TeamColor color : GameEnums.TeamColor.values()) {
+            teams.put(color, new GameTeam(color));
+        }
     }
+
 
 
     //GAMESTATE METHODS
+    public void start() {
+        if (gameState != GameState.WAITING) return;
 
-
-    public void setGameState(GameState newState) {
-        if(gameState == newState) return;
-        switch(newState) {
-            case WAITING -> {
-               visuals.reset();
-            }
-            case STARTING -> {
-                visuals.showCountdown();
-            }
-            case IN_PROGRESS -> {
-                visuals.startTimer();
-            }
-            case ENDED -> {
-                Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), this::clean, 20 * RESPAWN_TIME);
-            }
-        }
-
-        GameManager.updateGameStatus(this);
-        gameState = newState;
-    }
-
-    public void countdown() {
         setGameState(GameState.STARTING);
-        for(GameTeam team : teams.values()){
-            team.initialize();
-            for(Player p : team.players()){
-                GameEffects.restrictPlayer(p);
-                GameEffects.applyEffects(p, playerTeam(p).settings());
-                Equipment.equip(p);
-                HeroManager.getHero(p).onCountdown();
+        visuals.showCountdown();
+
+        for(Player p : onlinePlayers(false)) {
+            HeroManager.getHero(p).onCountdown();
+            GameEffects.restrictPlayer(p);
+            GameEffects.applyEffects(p, playerTeam(p).settings());
+            Equipment.equip(p);
+        }
+
+        BukkitTask startTask = Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
+            setGameState(GameState.IN_PROGRESS);
+            visuals.startTimer();
+            for (Player p : onlinePlayers(false)) { // Get non-spectators
+                HeroManager.getHero(p).onGameStart();
+                GameEffects.unRestrictPlayer(p);
             }
-        }
-        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), this::startGame, 20 * 10);
+        }, 20 * COUNTDOWN_TIME);
+        activeTasks.add(startTask);
     }
 
-    public void startGame() {
-        setGameState(GameState.IN_PROGRESS);
-        for(Player p : alivePlayers()) {
-            GameEffects.unRestrictPlayer(p);
-            HeroManager.getHero(p).onGameStart();
-        }
-    }
+    public void end(GameEnums.GameEndReason reason) {
+        if (gameState == GameState.ENDED) return;
 
-    public void endGame() {
-        if(teamsWithPlayers() >= 2) {
-            visuals.draw();
+        activeTasks.forEach(BukkitTask::cancel);
+        activeTasks.clear();
+        visuals.cancelTasks();
+
+        if(reason == GameEnums.GameEndReason.TIMEOUT){
+            calculateWinnerByLives();
         } else {
-            for (GameTeam team : teams.values()) {
-                if (team.color() == TeamColor.SPECTATOR) continue;
-                if(!team.players().isEmpty()) visuals.win(team);
-            }
+            Optional<GameTeam> winningTeam = teams.values().stream()
+                    .filter(t -> t.color() != GameEnums.TeamColor.SPECTATOR && !t.onlinePlayers().isEmpty())
+                    .findFirst();
+            winningTeam.ifPresentOrElse(visuals::win, visuals::draw);
         }
-        setGameState(GameState.ENDED);
+
+        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), this::clean, 20L * CLEANUP_DELAY);
     }
 
-    public boolean canCountdown() {
-        return teamsWithPlayers() >= 2;
-    }
-
-    public void checkGameEnd() {
-        if(gameState == GameState.ENDED) return;
-
-        if(teamsWithPlayers() < 2) {
-            endGame();
-        }
-    }
-
-    public void clean() {
-        for(Player p : allPlayers()){
-            if(GameManager.getPlayerGame(p) == this){
-                Heroes.teleportToLobby(p);
-                GameManager.removePlayerGame(p);
-            }
-        }
-        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
-            teams.values().forEach(GameTeam::clearPlayers);
-            visuals.reset();
-            GameMapManager.deleteWorld(settings.map());
-        }, 30);
-    }
 
 
     //PLAYER METHODS
+    public void addPlayer(Player player, TeamColor teamColor) {
+        if(gameState != GameState.WAITING) teamColor = TeamColor.SPECTATOR;
 
+        GameTeam team = teams.get(teamColor);
+        team.add(player);
 
-    public void addPlayer(Player player) {
-        if (gameState != GameState.WAITING) return;
-
-        switch(gameMode) {
-            case ONE_V_ONE -> {
-                add1v1(player);
-            } case TWO_V_TWO -> {
-                add2v2(player);
-            } case PARTY -> {
-                addParty(player);
-            }
+        if(teamColor == TeamColor.SPECTATOR) {
+            player.setGameMode(org.bukkit.GameMode.SPECTATOR);
+        } else {
+            player.setGameMode(org.bukkit.GameMode.ADVENTURE);
+            GameEffects.restrictPlayer(player);
         }
+
+        teleportToSpawn(player, teamColor);
+        visuals.update();
     }
 
     public void removePlayer(Player player) {
         GameTeam team = playerTeam(player);
         if(team == null) return;
+
         team.remove(player);
-        visuals.update();
-        GameEffects.removeEffects(player);
         HeroManager.getHero(player).onElimination();
-        player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
-        checkGameEnd();
+        GameEffects.removeEffects(player);
+        GameEffects.unRestrictPlayer(player);
+        player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
+
+        visuals.update();
+        checkEnd();
     }
 
     public void changeTeam(Player player, TeamColor teamColor) {
         GameTeam oldTeam = playerTeam(player);
-        if(oldTeam != null) oldTeam.remove(player);
+        if(oldTeam == null || oldTeam.color() == teamColor) return;
+        else oldTeam.remove(player);
 
-        if(teamColor == TeamColor.SPECTATOR) addSpectator(player);
-        else addPlayer(player, teamColor);
+        teams.get(teamColor).add(player);
+
+        if (teamColor == TeamColor.SPECTATOR) {
+            player.setGameMode(org.bukkit.GameMode.SPECTATOR);
+            GameEffects.unRestrictPlayer(player);
+        } else {
+            if (gameState == GameState.WAITING) GameEffects.restrictPlayer(player);
+            player.setGameMode(org.bukkit.GameMode.ADVENTURE);
+            teleportToSpawn(player, teamColor);
+        }
+
+        visuals.update();
     }
 
-    public void addSpectator(Player player) {
-        addPlayer(player, TeamColor.SPECTATOR);
-        player.setGameMode(org.bukkit.GameMode.SPECTATOR);
-        GameEffects.unRestrictPlayer(player);
-    }
 
-    public void playerDeath(Player player) {
+
+    //GAME LOGIC
+    protected void handleDeath(Player player) {
         if (gameState != GameState.IN_PROGRESS) return;
 
-        player.setGameMode(org.bukkit.GameMode.SPECTATOR);
-        GameEffects.restrictPlayer(player);
-        HeroManager.getHero(player).onDeath();
-        visuals.respawning(player);
-
         GameTeam team = playerTeam(player);
+        if (team == null) return;
         team.subtractLife(player);
-        if(team.lives(player) <= 0){
-            changeTeam(player, TeamColor.SPECTATOR);
+        HeroManager.getHero(player).onDeath();
+
+        if(team.lives(player) <= 0) {
+            player.sendMessage("You have been eliminated!");
+            changeTeam(player, GameEnums.TeamColor.SPECTATOR);
             HeroManager.getHero(player).onElimination();
-            checkGameEnd();
-        } else Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> playerRespawn(player), 20 * RESPAWN_TIME);
+            checkEnd();
+        } else {
+            visuals.respawning(player);
+            player.setGameMode(org.bukkit.GameMode.SPECTATOR);
+            GameEffects.restrictPlayer(player);
+            BukkitTask respawnTask = Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> handleRespawn(player), 20 * RESPAWN_TIME);
+            activeTasks.add(respawnTask);
+        }
+        visuals.update();
     }
 
-    public void playerRespawn(Player player) {
+    private void handleRespawn(Player player) {
+        if(gameState != GameState.IN_PROGRESS) return;
+
         player.setGameMode(org.bukkit.GameMode.ADVENTURE);
         GameEffects.unRestrictPlayer(player);
         GameEffects.applyEffects(player, playerTeam(player).settings());
         HeroManager.getHero(player).onRespawn();
     }
 
+    public boolean canStart() {
+        long teamsWithPlayers = teams.values().stream()
+                .filter(t -> t.color() != GameEnums.TeamColor.SPECTATOR)
+                .filter(t -> !t.playerUUIDs().isEmpty())
+                .count();
+        return gameState == GameState.WAITING && teamsWithPlayers >= 2;
+    }
 
-    //Getters
+    public boolean checkEnd() {
+        if(gameState == GameState.ENDED) return true;
 
-
-    public Set<Player> allPlayers() {
-        Set<Player> set = new HashSet<>();
-        for (GameTeam team : teams.values()) {
-            set.addAll(team.players());
+        long teamsWithPlayers = teams.values().stream()
+                .filter(t -> t.color() != GameEnums.TeamColor.SPECTATOR)
+                .filter(t -> !t.playerUUIDs().isEmpty())
+                .count();
+        if(teamsWithPlayers <= 1) {
+            end(GameEnums.GameEndReason.LAST_TEAM_STANDING);
+            return true;
         }
-        return Collections.unmodifiableSet(set);
+        return false;
     }
 
-    public Set<Player> alivePlayers() {
-        Set<Player> set = new HashSet<>();
+    private void calculateWinnerByLives() {
+        GameTeam winningTeam = null;
+        int maxLives = -1;
+        boolean isDraw = false;
+
         for (GameTeam team : teams.values()) {
-            if (team.color() == TeamColor.SPECTATOR) continue;
-            set.addAll(team.players());
+            if (team.color() == GameEnums.TeamColor.SPECTATOR) continue;
+
+            int totalLives = team.totalLives();
+            if (totalLives > maxLives) {
+                maxLives = totalLives;
+                winningTeam = team;
+                isDraw = false;
+            } else if (totalLives == maxLives) {
+                isDraw = true;
+            }
         }
-        return set;
+
+        if (isDraw || winningTeam == null) {
+            visuals.draw();
+        } else {
+            visuals.win(winningTeam);
+        }
     }
 
-    public GameMode gameMode() {
-        return gameMode;
+    public void clean() {
+        for (UUID uuid : getAllPlayerUUIDs()) {
+            Player p = Bukkit.getPlayer(uuid);
+            if (p != null) {
+                HeroManager.getHero(p).cancelTasks();
+                Heroes.teleportToLobby(p);
+            }
+        }
+        if (settings.map() != null) {
+            GameMapManager.deleteWorld(settings.map());
+        }
     }
 
-    public GameState gameState() {
-        return gameState;
+    private void teleportToSpawn(Player player, TeamColor teamColor) {
+        if (teamColor == null || teamColor == GameEnums.TeamColor.SPECTATOR) {
+            player.teleport(settings.map().spectatorLocation());
+            return;
+        }
+
+        Location[] spawns = settings.map().spawnLocations();
+        int spawnIndex = teamColor.ordinal() % spawns.length;
+        Location teleportLocation = spawns[spawnIndex].clone();
+
+        int teamSize = playerTeam(player).onlinePlayers().size();
+        if(teamSize == 1) player.teleport(teleportLocation);
+        else if(teamSize == 2) player.teleport(teleportLocation.add(1,0,0));
+        else player.teleport(teleportLocation.add(-1,0,0));
     }
 
-    public GameSettings settings(){
-        return settings;
+
+    //GETTERS
+    public boolean sameTeam(Player first, Player second){ return playerTeam(first) == playerTeam(second); }
+    public boolean friendlyFire(Player player){ return playerTeam(player).settings().friendlyFire(); }
+    public boolean ultimateEnabled(Player player) { return playerTeam(player).settings().ultimatesEnabled();}
+    public int lives(Player player){ return playerTeam(player).lives(player);}
+    public TeamColor playerColor(Player player) { return playerTeam(player).color(); }
+
+    public GameState gameState() { return gameState; }
+    public GameMode gameMode() { return gameMode; }
+    public GameSettings settings() { return settings; }
+    public Map<GameEnums.TeamColor, GameTeam> getTeams() { return Collections.unmodifiableMap(teams); }
+
+    public Set<Player> onlinePlayers(){ return onlinePlayers(true); }
+
+    public Set<Player> onlinePlayers(boolean includeSpectators) {
+        return teams.values().stream()
+                .filter(team -> includeSpectators || team.color() != GameEnums.TeamColor.SPECTATOR)
+                .flatMap(team -> team.onlinePlayers().stream())
+                .collect(Collectors.toSet());
     }
 
-    public int lives(Player player){
-        return playerTeam(player).lives(player);
+    private Set<UUID> getAllPlayerUUIDs() {
+        return teams.values().stream()
+                .flatMap(team -> team.playerUUIDs().stream())
+                .collect(Collectors.toSet());
     }
 
-    public Location furthestSpawn(Player player){
-        Set<Player> enemies = alivePlayers();
-        enemies.removeAll(playerTeam(player).players());
-        return settings.map().getFurthestSpawn(player, enemies);
+    public GameTeam playerTeam(Player player) {
+        for (GameTeam team : teams.values()) {
+            if (team.contains(player)) return team;
+        }
+        return null;
+    }
+
+    public Location getRespawnLocation(Player player){
+        if(playerTeam(player) == null || playerTeam(player).color() == TeamColor.SPECTATOR) {
+            return settings.map().spectatorLocation();
+        }
+        return settings.map().getFurthestSpawn(player, onlinePlayers(false).stream()
+                .filter(p -> !sameTeam(player, p))
+                .collect(Collectors.toSet()));
     }
 
     public BoundingBox mapBounds(){
         return settings.boundaries();
     }
 
-    public boolean sameTeam(Player first, Player second){
-        return playerTeam(first) == playerTeam(second);
+    private void setGameState(GameState newState) {
+        this.gameState = newState;
     }
 
-    public boolean friendlyFire(Player player){
-        return playerTeam(player).settings().friendlyFire();
-    }
-
-    public GameTeam playerTeam(Player player) {
-        for (GameTeam team : teams.values()) {
-            if(team.contains(player)) return team;
-        }
-        return null;
-    }
-
-    public TeamColor playerColor(Player player){
-        GameTeam team = playerTeam(player);
-        if(team == null) return TeamColor.SPECTATOR;
-        return team.color();
-    }
-
-    public Map<TeamColor, GameTeam> teams(){
-        return Collections.unmodifiableMap(teams);
-    }
-
-    public void copyTeamSettingsToAllTeams(TeamSettings teamSettings){
+    public void setAllTeamSettings(TeamSettings teamSettings){
         for(GameTeam team : teams.values()){
             if(team.color() == TeamColor.SPECTATOR) continue;
             team.setSettings(teamSettings);
         }
-    }
-
-    public boolean ultimateEnabled(Player player){
-        GameTeam team = playerTeam(player);
-        if(team == null) return false;
-        return team.settings().ultimatesEnabled();
-    }
-
-    //HELPERS
-
-
-    private void teleport(Player player){
-        TeamColor teamColor = playerColor(player);
-        Location teleportLocation;
-        GameMap map = settings.map();
-
-        int index = 0;
-        if(teamColor == TeamColor.BLUE) index = 1;
-        else if(teamColor == TeamColor.GREEN) index = 2;
-        else if(teamColor == TeamColor.YELLOW) index = 3;
-
-        if(teamColor == TeamColor.SPECTATOR) teleportLocation = map.spectatorLocation();
-        else teleportLocation = map.spawnLocations()[index].clone();
-
-        int teamSize = alivePlayersPerTeam().getOrDefault(teamColor, 0);
-        if(teamSize == 1) player.teleport(teleportLocation);
-        else if(teamSize == 2) player.teleport(teleportLocation.add(1,0,0));
-        else player.teleport(teleportLocation.add(-1,0,0));
-    }
-
-    private void add1v1(Player player) {
-        if(alivePlayers().isEmpty()){
-            addPlayer(player, TeamColor.RED);
-        } else {
-            addPlayer(player, TeamColor.BLUE);
-        }
-    }
-
-    private void add2v2(Player player) {
-        Party party = PartyManager.getPlayerParty(player);
-        TeamColor team = alivePlayers().isEmpty() ? TeamColor.RED : TeamColor.BLUE;
-        for(Player p : party.getMembers())
-            addPlayer(p, team);
-    }
-
-    private void addParty(Player player) {
-        Party party = PartyManager.getPlayerParty(player);
-        addPlayer(player, TeamColor.RED);
-        int count = 1;
-        for(Player p : party.getMembers()){
-            if(p.equals(player)) continue;
-            if (count == 1) addPlayer(p, TeamColor.BLUE);
-            else addSpectator(p);
-            count++;
-        }
-    }
-
-    public void addPlayer(Player player, TeamColor teamColor) {
-        GameManager.setPlayerGame(player, this);
-        teams.get(teamColor).add(player);
-        visuals.update();
-        GameEffects.restrictPlayer(player);
-        teleport(player);
-    }
-
-    private Set<Player> spectators() {
-        return teams.get(TeamColor.SPECTATOR).players();
-    }
-
-    private Map<TeamColor, Integer> alivePlayersPerTeam() {
-        Map<TeamColor, Integer> map = new HashMap<>();
-        for (GameTeam team : teams.values()) {
-            if (team.color() == TeamColor.SPECTATOR) continue;
-            map.put(team.color(), team.players().size());
-        }
-        return map;
-    }
-
-    private int teamsWithPlayers(){
-        int teamsWithPlayers = 0;
-        for(Integer i : alivePlayersPerTeam().values())
-            if(i > 0) teamsWithPlayers++;
-        return teamsWithPlayers;
     }
 }

@@ -1,23 +1,18 @@
 package me.stolyy.heroes.party;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Party {
     private UUID leader;
-    private Set<UUID> members;
+    private final Set<UUID> members;
 
     public Party(Player leader) {
         this.leader = leader.getUniqueId();
-        this.members = new HashSet<>();
+        this.members = new LinkedHashSet<>();
         this.members.add(leader.getUniqueId());
     }
 

@@ -27,7 +27,6 @@ public class GameVisuals {
 
     private BukkitTask countdownTask;
     private BukkitTask timerTask;
-    private BukkitTask healthTask;
     private int timeLeft;
 
     public GameVisuals(Game game) {
@@ -70,14 +69,14 @@ public class GameVisuals {
             @Override
             public void run() {
                 if(time == 5) {
-                    for(Player p : game.allPlayers()) Sounds.playSoundToPlayer(p, "announcer.startgame", 1, 1);
+                    for(Player p : game.onlinePlayers()) Sounds.playSoundToPlayer(p, "announcer.startgame", 1, 1);
                 }
                 if (time > 0) {
                     Component mainTitle = Component.text(String.valueOf(time), NamedTextColor.YELLOW);
                     Component subtitle = Component.empty();
                     Title title = Title.title(mainTitle, subtitle, times);
 
-                    for (Player p : game.allPlayers()) {
+                    for (Player p : game.onlinePlayers()) {
                         p.showTitle(title);
                     }
                     time--;
@@ -86,7 +85,7 @@ public class GameVisuals {
                     Component subtitle = Component.text("Match Started");
                     Title title = Title.title(mainTitle, subtitle, times);
 
-                    for (Player p : game.allPlayers()) {
+                    for (Player p : game.onlinePlayers()) {
                         p.showTitle(title);
                     }
                     cancel();
@@ -103,7 +102,7 @@ public class GameVisuals {
             @Override
             public void run() {
                 if (timeLeft <= 0) {
-                    game.endGame();
+                    game.end(GameEnums.GameEndReason.TIMEOUT);
                     cancel();
                     reset();
                 } else {
@@ -169,13 +168,13 @@ public class GameVisuals {
         String timeScoreText = LegacyComponentSerializer.legacySection().serialize(timeComponent);
         sidebar.getScore(timeScoreText).setScore(game.settings().timer());
 
-        int line = game.allPlayers().size() + 1;
+        int line = game.onlinePlayers().size() + 1;
 
         for (GameEnums.TeamColor color : GameEnums.TeamColor.values()) {
             if (color == GameEnums.TeamColor.SPECTATOR) continue;
 
             // Go by life count
-            List<Player> teamPlayers = game.allPlayers().stream()
+            List<Player> teamPlayers = game.onlinePlayers().stream()
                     .filter(p -> game.playerColor(p) == color)
                     .sorted(Comparator.comparingInt(p -> game.lives((Player) p)).reversed())
                     .toList();
@@ -193,7 +192,7 @@ public class GameVisuals {
             }
         }
 
-        List<Player> spectators = game.allPlayers().stream()
+        List<Player> spectators = game.onlinePlayers().stream()
                 .filter(p -> game.playerColor(p) == GameEnums.TeamColor.SPECTATOR)
                 .toList();
 
@@ -215,11 +214,10 @@ public class GameVisuals {
     public void cancelTasks() {
         if (countdownTask != null) countdownTask.cancel();
         if (timerTask != null) timerTask.cancel();
-        if (healthTask != null) healthTask.cancel();
     }
 
     private void applyScoreboardToAll() {
-        for (Player p : game.allPlayers()) {
+        for (Player p : game.onlinePlayers()) {
             p.setScoreboard(scoreboard);
             p.sendPlayerListHeaderAndFooter(
                     Component.text("SMASH HEROES 4", NamedTextColor.GOLD),

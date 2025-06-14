@@ -51,7 +51,7 @@
 - [X] [Game] reload when u die for characters that need it
 - [X] [Bug Fixing] Dropping stacked items (i.e. skullfire's gun) puts a new item in your inventory
 - [X] [Design] Refactor Minigame package to be more readable
-- [ ] [Design] Refactor Party package to be more readable
+- [X] [Design] Refactor Party package to be more readable
 - [X] [Character] Skullfire energy display (for djs)
 - [X] [Bug Fixing] Infinite ultimate is ready spam (spectator press 3 glitch?)
 - [X] [Outside] Get OG maps (only good ones)

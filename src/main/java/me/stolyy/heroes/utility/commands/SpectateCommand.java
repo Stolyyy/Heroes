@@ -38,13 +38,7 @@ public class SpectateCommand extends Command {
             return true;
         }
 
-        Game game = GameManager.getPlayerGame(target);
-        if (game == null) {
-            player.sendMessage("That player is not in a game.");
-            return true;
-        }
-
-        game.addSpectator(player);
+        GameManager.spectateGame(player, target);
         return true;
     }
 }

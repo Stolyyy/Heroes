@@ -25,8 +25,7 @@ public class LobbyCommand extends Command {
             return true;
         }
 
-        GameManager.leaveGame(player);
-        Heroes.teleportToLobby(player);
+        GameManager.leaveGame(player, true);
 
         return true;
     }

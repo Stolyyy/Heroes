@@ -12,10 +12,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class PartyManager {
+
     private static final Heroes plugin = Heroes.getInstance();
     private static final Map<UUID, Party> playerPartyMap = new HashMap<>();
-    private static final Set<PartyInvite> pendingInvites = new HashSet<>();
-    private static final BukkitTask expirationTask = Bukkit.getScheduler().runTaskTimer(plugin, PartyManager::processExpiredInvites, 100L, 100L);;
+    private static final Set<PartyInvite> pendingInvites = new LinkedHashSet<>();
+    private static final BukkitTask expirationTask = Bukkit.getScheduler().runTaskTimer(plugin, PartyManager::processExpiredInvites, 100L, 100L);
 
     private static final long INVITE_EXPIRATION = 60 * 1000; // 60 seconds
 
@@ -205,6 +206,10 @@ public class PartyManager {
                 .map(i -> Bukkit.getPlayer(i.inviter()))
                 .filter(p -> p != null && p.isOnline())
                 .collect(Collectors.toSet());
+    }
+
+    public static boolean isInParty(Player player) {
+        return getPlayerParty(player.getUniqueId()) != null;
     }
 
     public static boolean isPartyLeader(Player player) {

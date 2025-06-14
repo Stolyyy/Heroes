@@ -17,6 +17,12 @@ public class GameEnums {
         ENDED
     }
 
+    public enum GameEndReason {
+        TIMEOUT,
+        LAST_TEAM_STANDING,
+        FORFEIT
+    }
+
     public enum TeamColor {
         RED(NamedTextColor.RED),
         BLUE(NamedTextColor.BLUE),

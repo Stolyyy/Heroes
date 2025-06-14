@@ -1,165 +1,167 @@
 package me.stolyy.heroes.game.minigame;
 
 import me.stolyy.heroes.Heroes;
-import me.stolyy.heroes.game.maps.GameMap;
 import me.stolyy.heroes.game.maps.GameMapManager;
 import me.stolyy.heroes.game.menus.PartyModeGUI;
+import me.stolyy.heroes.party.Party;
 import me.stolyy.heroes.party.PartyManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.*;
 
 public class GameManager {
     private static final Set<Game> waitingGames = new LinkedHashSet<>();
-    private static final Set<Game> activeGames = new HashSet<>();
-    private static final Map<Player, Game> playerGames = new HashMap<>();
+    private static final Map<UUID, Game> playerGames = new HashMap<>();
 
-
-
-    public static Game createNewGame(GameEnums.GameMode gameMode){
-        if(gameMode == GameEnums.GameMode.PARTY){
-            return new Game(GameMapManager.getRandomMapInAll(Set.of(GameEnums.GameMode.ONE_V_ONE, GameEnums.GameMode.TWO_V_TWO)), gameMode);
-        }
-        return new Game(GameMapManager.getRandomMap(gameMode), gameMode);
-    }
-
-    public static Game createNewGame(GameEnums.GameMode gameMode, GameMap map){
-        return new Game(map, gameMode);
-    }
 
     public static void joinGame(Player player, GameEnums.GameMode gameMode) {
-        if (getPlayerGame(player) != null) {
-            leaveGame(player);
+        if (playerGames.containsKey(player.getUniqueId())) {
+            leaveGame(player, false);
         }
 
         switch (gameMode) {
-            case ONE_V_ONE -> {
-                if (PartyManager.isInParty(player)) {
-                    player.sendMessage(Component.text("You cannot enter 1v1 in a party. Try Party mode instead.", NamedTextColor.RED));
-                    return;
-                }
-
-                Set<Game> games = filterByMode(waitingGames, gameMode);
-                Game game;
-                if (!games.isEmpty())
-                    game = games.iterator().next();
-                else game = createNewGame(gameMode);
-                game.addPlayer(player);
-
-                if (game.canCountdown()) game.countdown();
-                playerGames.put(player, game);
-                updateGameStatus(game);
-
-            }
-            case TWO_V_TWO -> {
-                if (!PartyManager.isInParty(player) || PartyManager.getPartySize(player) != 2) {
-                    player.sendMessage(Component.text("You must be in a party of 2 players to joinGame 2v2", NamedTextColor.RED));
-                    return;
-                }
-
-                Set<Game> games = filterByMode(waitingGames, gameMode);
-                Game game;
-                if (!games.isEmpty())
-                    game = games.iterator().next();
-                else game = createNewGame(gameMode);
-                game.addPlayer(player);
-
-                for (Player p : game.allPlayers()) {
-                    playerGames.put(p, game);
-                }
-
-                if (game.canCountdown()) game.countdown();
-                updateGameStatus(game);
-
-            }
-            case PARTY -> {
-                if (!PartyManager.isInParty(player)) {
-                    player.sendMessage(Component.text("You must be in a party to joinGame party mode!", NamedTextColor.RED));
-                    return;
-                }
-                Game game = createNewGame(gameMode);
-                game.addPlayer(player);
-                for (Player p : game.allPlayers()) {
-                    playerGames.put(p, game);
-                }
-                new PartyModeGUI(game, player);
-                updateGameStatus(game);
-            }
+            case ONE_V_ONE -> handle1v1Join(player);
+            case TWO_V_TWO -> handle2v2Join(player);
+            case PARTY -> handlePartyJoin(player);
         }
     }
 
-    public static boolean leaveGame(Player player){
+    public static void spectateGame(Player spectator, Player target) {
+        Game game = getPlayerGame(target);
+        if (game == null || game.gameState() != GameEnums.GameState.IN_PROGRESS) {
+            spectator.sendMessage(Component.text("That player is not in an active game.", NamedTextColor.RED));
+            return;
+        }
+
+        leaveGame(spectator, false);
+
+        game.addPlayer(spectator, GameEnums.TeamColor.SPECTATOR);
+        playerGames.put(spectator.getUniqueId(), game);
+        spectator.sendMessage(Component.text("You are now spectating " + target.getName() + "'s game.", NamedTextColor.AQUA));
+    }
+
+    public static void leaveGame(Player player, boolean teleportToLobby) {
         Game game = getPlayerGame(player);
-        if(game == null) return false;
-
-        //remove teammate & party members if someone leaves while waiting
-        if((game.gameMode() == GameEnums.GameMode.TWO_V_TWO || game.gameMode() == GameEnums.GameMode.PARTY) && game.gameState() == GameEnums.GameState.WAITING) {
-            for(Player p : PartyManager.getPlayersInParty(player)) {
-                game.removePlayer(p);
-                playerGames.remove(p);
-                Heroes.teleportToLobby(p);
-            }
+        if (game == null) {
+            if (teleportToLobby) Heroes.teleportToLobby(player);
+            return;
         }
-        else {
+
+        // If a player leaves a waiting 2v2/party game, the whole party leaves.
+        if (game.gameState() == GameEnums.GameState.WAITING && game.gameMode() != GameEnums.GameMode.ONE_V_ONE && PartyManager.isInParty(player)) {
+            Set<Player> partyMembers = PartyManager.getPartyMembers(player);
+            partyMembers.forEach(member -> {
+                game.removePlayer(member);
+                playerGames.remove(member.getUniqueId());
+                if (teleportToLobby) Heroes.teleportToLobby(member);
+            });
+        } else {
             game.removePlayer(player);
-            playerGames.remove(player);
+            playerGames.remove(player.getUniqueId());
+            if (teleportToLobby) Heroes.teleportToLobby(player);
         }
-        updateGameStatus(game);
-        return true;
-    }
 
-    private static Set<Game> filterByMode(Set<Game> gameSet, GameEnums.GameMode gameMode){
-        Set<Game> filtered = new LinkedHashSet<>();
-        for(Game g : gameSet){
-            if(g.gameMode() == gameMode) filtered.add(g);
-        }
-        return filtered;
-    }
-
-    static void updateGameStatus(Game game){
-        if(game == null) return;
-
-        switch(game.gameState()){
-            case WAITING -> {
-                activeGames.remove(game);
-                waitingGames.add(game);
-            } case IN_PROGRESS, STARTING -> {
-                waitingGames.remove(game);
-                activeGames.add(game);
-            } default -> {
-                activeGames.remove(game);
-                waitingGames.remove(game);
-            }
+        if (game.onlinePlayers().isEmpty()) {
+            game.end(GameEnums.GameEndReason.FORFEIT);
+            waitingGames.remove(game);
         }
     }
 
-    public static Game getPlayerGame(Player player){
-        return playerGames.get(player);
-    }
-
-    public static boolean isPlayerInGame(Player player){
-        return playerGames.get(player) != null;
-    }
-
-    public static Set<Game> getActiveGames(){
-        return activeGames;
-    }
-
-    public static Set<Game> getWaitingGames(){
-        return waitingGames;
-    }
-
-    public static void removePlayerGame(Player player){
-        playerGames.remove(player);
-    }
-
-    public static void setPlayerGame(Player player, Game game){
-        if (getPlayerGame(player) != null) {
-            leaveGame(player);
+    private static void handle1v1Join(Player player) {
+        if (PartyManager.isInParty(player)) {
+            player.sendMessage(Component.text("You cannot join 1v1 while in a party.", NamedTextColor.RED));
+            return;
         }
-        playerGames.put(player, game);
+
+        Game game = findOrCreateWaitingGame(GameEnums.GameMode.ONE_V_ONE);
+
+        game.addPlayer(player, GameEnums.TeamColor.RED);
+        playerGames.put(player.getUniqueId(), game);
+
+        if (game.canStart()) {
+            waitingGames.remove(game);
+            game.start();
+        }
+    }
+
+    private static void handle2v2Join(Player player) {
+        Party party = PartyManager.getPlayerParty(player);
+        if (party == null || party.getSize() != 2) {
+            player.sendMessage(Component.text("You must be in a party of 2 to join 2v2.", NamedTextColor.RED));
+            return;
+        }
+
+        Game game = findOrCreateWaitingGame(GameEnums.GameMode.TWO_V_TWO);
+
+        // Add both party members to the game
+        PartyManager.getPartyMembers(player).forEach(member -> {
+            game.addPlayer(member, GameEnums.TeamColor.RED);
+            playerGames.put(member.getUniqueId(), game);
+        });
+
+        if (game.canStart()) {
+            waitingGames.remove(game);
+            game.start();
+        }
+    }
+
+    private static void handlePartyJoin(Player player) {
+        Party party = PartyManager.getPlayerParty(player);
+        if (party == null) {
+            player.sendMessage(Component.text("You must be in a party to start a party game.", NamedTextColor.RED));
+            return;
+        }
+        if (party.getSize() > 18) {
+            player.sendMessage(Component.text("Your party is too large for this mode (max 18 players).", NamedTextColor.RED));
+            return;
+        }
+
+        Game game = new Game(GameMapManager.getRandomMapInAll(Set.of(GameEnums.GameMode.ONE_V_ONE, GameEnums.GameMode.TWO_V_TWO)), GameEnums.GameMode.PARTY);
+
+        List<Player> members = new ArrayList<>(PartyManager.getPartyMembers(player));
+        members.remove(player);
+        if (!members.isEmpty()) game.addPlayer(player, GameEnums.TeamColor.RED);
+        if (members.size() > 1) game.addPlayer(members.getFirst(), GameEnums.TeamColor.BLUE);
+        for (int i = 1; i < members.size(); i++) {
+            game.addPlayer(members.get(i), GameEnums.TeamColor.SPECTATOR);
+        }
+
+        members.forEach(member -> playerGames.put(member.getUniqueId(), game));
+
+        new PartyModeGUI(game, player);
+    }
+
+    private static Game findOrCreateWaitingGame(GameEnums.GameMode gameMode) {
+        Optional<Game> foundGame = waitingGames.stream()
+                .filter(g -> g.gameMode() == gameMode)
+                .findFirst();
+
+        if (foundGame.isPresent()) {
+            return foundGame.get();
+        } else {
+            Game newGame = new Game(GameMapManager.getRandomMap(gameMode), gameMode);
+            waitingGames.add(newGame);
+            return newGame;
+        }
+    }
+
+
+    // Utility
+
+    public static Game getPlayerGame(Player player) {
+        if (player == null) return null;
+        return playerGames.get(player.getUniqueId());
+    }
+
+    public static boolean isPlayerInGame(Player player) {
+        return player != null && playerGames.containsKey(player.getUniqueId());
+    }
+
+    public static void clear() {
+        new HashSet<>(playerGames.values()).forEach(game -> game.end(GameEnums.GameEndReason.FORFEIT));
+        playerGames.clear();
+        waitingGames.clear();
     }
 }

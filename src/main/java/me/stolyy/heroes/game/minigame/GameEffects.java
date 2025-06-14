@@ -7,9 +7,10 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 public class GameEffects {
-    private static final Set<Player> restricted = new HashSet<>();
+    private static final Set<UUID> restricted = new HashSet<>();
 
     public static void applyEffects(Player player, TeamSettings teamSettings){
         player.setGameMode(org.bukkit.GameMode.ADVENTURE);
@@ -33,13 +34,13 @@ public class GameEffects {
     }
 
     public static void restrictPlayer(Player player){
-        restricted.add(player);
+        restricted.add(player.getUniqueId());
     }
     public static void unRestrictPlayer(Player player){
-        restricted.remove(player);
+        restricted.remove(player.getUniqueId());
     }
 
     public static boolean isRestricted(Player player){
-        return restricted.contains(player);
+        return restricted.contains(player.getUniqueId());
     }
 }

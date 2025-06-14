@@ -64,13 +64,10 @@ public final class Heroes extends JavaPlugin implements Listener {
         Bukkit.getScheduler().cancelTasks(this);
 
         // End all active games
-        for (Game game : GameManager.getActiveGames()) {
-            game.clean();
-        }
 
         // Clear data structures
         HeroManager.clear();
-        //GameManager.clear();
+        GameManager.clear();
         PartyManager.clear();
 
         getLogger().info("Heroes plugin has been disabled!");
@@ -140,7 +137,7 @@ public final class Heroes extends JavaPlugin implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         PartyManager.leaveParty(player);
-        GameManager.leaveGame(player);
+        GameManager.leaveGame(player, false);
         HeroManager.removePlayer(player);
     }
 

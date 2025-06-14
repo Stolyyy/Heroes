@@ -74,20 +74,15 @@ public class GameListener implements Listener {
         Player player = event.getPlayer();
         Game game = GameManager.getPlayerGame(player);
         if (isValidGame(game)) {
-            Location respawnLocation = game.furthestSpawn(player);
+            game.handleDeath(player);
+            Location respawnLocation = game.getRespawnLocation(player);
             event.setRespawnLocation(respawnLocation);
-            game.playerDeath(player);
         }
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        Game game = GameManager.getPlayerGame(player);
-        if (game != null) {
-            game.removePlayer(player);
-            GameManager.leaveGame(player);
-        }
         suffocationTicks.remove(player);
     }
 

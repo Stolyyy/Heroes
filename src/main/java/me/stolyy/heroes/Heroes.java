@@ -71,7 +71,7 @@ public final class Heroes extends JavaPlugin implements Listener {
         // Clear data structures
         HeroManager.clear();
         //GameManager.clear();
-        //PartyManager.clear();
+        PartyManager.clear();
 
         getLogger().info("Heroes plugin has been disabled!");
     }

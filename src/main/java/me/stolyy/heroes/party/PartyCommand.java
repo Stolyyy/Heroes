@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class PartyCommand extends Command {
     public PartyCommand() {
@@ -30,12 +31,23 @@ public class PartyCommand extends Command {
             return true;
         }
 
-        switch (args[0].toLowerCase()) {
+        String subCommand = args[0].toLowerCase();
+        Player target = (args.length > 1) ? Bukkit.getPlayer(args[1]) : null;
+
+        switch (subCommand) {
             case "invite":
-                invite(player, args);
+                if (target == null) {
+                    player.sendMessage(Component.text("Player not found or not specified.", NamedTextColor.RED));
+                    return true;
+                }
+                PartyManager.invitePlayer(player, target);
                 break;
             case "accept":
-                PartyManager.acceptInvite(args[1], player);
+                if (target == null) {
+                    player.sendMessage(Component.text("You must specify whose invite to accept.", NamedTextColor.RED));
+                    return true;
+                }
+                PartyManager.acceptInvite(player, target);
                 break;
             case "list":
                 list(player);
@@ -47,73 +59,65 @@ public class PartyCommand extends Command {
                 PartyManager.disbandParty(player);
                 break;
             case "transfer":
-                transfer(player, args);
+                if (target == null) {
+                    player.sendMessage(Component.text("You must specify a player to transfer leadership to.", NamedTextColor.RED));
+                    return true;
+                }
+                PartyManager.transferLeader(player, target);
                 break;
             default:
                 usage(player);
         }
-
         return true;
     }
 
-    private void invite(Player inviter, String[] args) {
-        if (args.length < 2) {
-            inviter.sendMessage(Component.text("Usage: /party invite <player>", NamedTextColor.RED));
-            return;
-        }
-
-        Player invited = Bukkit.getPlayer(args[1]);
-        if (invited == null) {
-            inviter.sendMessage(Component.text("Player not found.", NamedTextColor.RED));
-            return;
-        }
-
-        PartyManager.invitePlayer(inviter, invited);
-    }
-
     private void list(Player player) {
-        Set<Player> members = PartyManager.getPlayersInParty(player);
-        if (members == null || members.isEmpty()) {
+        Set<Player> members = PartyManager.getPartyMembers(player);
+        if (members.isEmpty()) {
             player.sendMessage(Component.text("You are not in a party.", NamedTextColor.RED));
             return;
         }
-        int memberCount = members.size();
-        Component message = Component.text("Party members (" + memberCount + "):", NamedTextColor.YELLOW);
+
+        Component message = Component.text("Party Members (" + members.size() + "):", NamedTextColor.YELLOW);
         for (Player p : members) {
-            if (p != null) {
-                message = message.append(Component.newline())
-                        .append(Component.text("- " + p.getName(), NamedTextColor.WHITE));
-            }
+            message = message.append(Component.newline())
+                    .append(Component.text("- " + p.getName(), NamedTextColor.WHITE));
         }
         player.sendMessage(message);
     }
 
-    private void transfer(Player currentLeader, String[] args) {
-        if (args.length < 2) {
-            currentLeader.sendMessage(Component.text("Usage: /party transfer <player>", NamedTextColor.RED));
-            return;
-        }
-
-        Player newLeader = Bukkit.getPlayer(args[1]);
-        if (newLeader == null) {
-            currentLeader.sendMessage(Component.text("Player not found.", NamedTextColor.RED));
-            return;
-        }
-
-        PartyManager.transferLeader(currentLeader, newLeader);
-    }
-
     private void usage(Player player) {
-        player.sendMessage(Component.text("Usage: /party <invite|accept|list|leave|disband|transfer> [player]", NamedTextColor.RED));
+        player.sendMessage(Component.text("Usage: " + getUsage(), NamedTextColor.RED));
     }
 
     @Override
-    public List<String> tabComplete(CommandSender sender, String alias, String[] args) throws IllegalArgumentException {
+    public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, String[] args) throws IllegalArgumentException {
+        if (!(sender instanceof Player player)) return Collections.emptyList();
+
         if (args.length == 1) {
             return Arrays.asList("invite", "accept", "list", "leave", "disband", "transfer");
         }
-        if (args.length == 2 && (args[0].equalsIgnoreCase("invite") || args[0].equalsIgnoreCase("transfer"))) {
-            return null; // Return null to default to online player names
+
+        if (args.length == 2) {
+            String subCommand = args[0].toLowerCase();
+            switch (subCommand) {
+                case "invite":
+                    Set<Player> partyMembers = PartyManager.getPartyMembers(player);
+                    return Bukkit.getOnlinePlayers().stream()
+                            .filter(onlinePlayer -> !partyMembers.contains(onlinePlayer))
+                            .map(Player::getName)
+                            .collect(Collectors.toList());
+                case "transfer":
+                    if (!PartyManager.isPartyLeader(player)) return Collections.emptyList();
+                    return PartyManager.getPartyMembers(player).stream()
+                            .filter(member -> !member.equals(player))
+                            .map(Player::getName)
+                            .collect(Collectors.toList());
+                case "accept":
+                    return PartyManager.getPendingInvites(player).stream()
+                            .map(Player::getName)
+                            .collect(Collectors.toList());
+            }
         }
         return Collections.emptyList();
     }

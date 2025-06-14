@@ -6,230 +6,220 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class PartyManager {
-    private static final Set<Party> parties = new HashSet<>();
-    private static final Map<Player, Set<Player>> invitesPerPlayer = new HashMap<>();
-    private static final Map<Player, Party> playerPartyMap = new HashMap<>();
-    private final static long EXPIRATION_TIME = 1200;
+    private static final Heroes plugin = Heroes.getInstance();
+    private static final Map<UUID, Party> playerPartyMap = new HashMap<>();
+    private static final Set<PartyInvite> pendingInvites = new HashSet<>();
+    private static final BukkitTask expirationTask = Bukkit.getScheduler().runTaskTimer(plugin, PartyManager::processExpiredInvites, 100L, 100L);;
 
-    public static void invitePlayer(Player inviter, Player invited){
-        invitesPerPlayer.computeIfAbsent(invited, k -> new HashSet<>());
+    private static final long INVITE_EXPIRATION = 60 * 1000; // 60 seconds
 
-        if(!isInParty(inviter)){
-            parties.add(new Party(new HashSet<>(Collections.singletonList(inviter)), inviter));
-            inviter.sendMessage(Component.text("You have created a new party!").color(NamedTextColor.GREEN));
-        }
-        if(!isPartyLeader(inviter)){
-            inviter.sendMessage("You must be the party leader in order to invite people!");
+    public static void sendMessage(Player sender, Component message) {
+        Party party = getPlayerParty(sender.getUniqueId());
+        if (party == null) {
+            sender.sendMessage(Component.text("You are not in a party.", NamedTextColor.RED));
             return;
         }
 
-        if (invitesPerPlayer.get(invited).contains(inviter)) {
-            inviter.sendMessage("You have already invited this player to your party!");
-            return;
-        }
+        Component formattedMessage = Component.text("[Party] ", NamedTextColor.BLUE)
+                .append(Component.text(sender.getName() + ": ", NamedTextColor.GRAY))
+                .append(message.colorIfAbsent(NamedTextColor.WHITE));
 
-        invitesPerPlayer.get(invited).add(inviter);
-        inviter.sendMessage(Component.text("You have invited " + invited.getName() + " to your party.").color(NamedTextColor.GREEN));
-        invited.sendMessage(Component.text("You've been invited to join " + inviter.getName() + "'s party! ")
-                    .color(NamedTextColor.YELLOW)
-                    .append(Component.text("[Accept]")
-                            .color(NamedTextColor.GREEN)
-                            .clickEvent(ClickEvent.runCommand("/party accept " + inviter.getName()))));
-
-        new BukkitRunnable() {
-            long count = 0;
-            @Override
-            public void run() {
-                count += 5;
-                if(count >= EXPIRATION_TIME) {
-                    removeInvite(invited, inviter, RemoveReason.EXPIRED);
-                    this.cancel();
-                    return;
-                }
-
-                if(!isPartyLeader(inviter)) {
-                    removeInvite(invited, inviter, RemoveReason.NOT_LEADER);
-                    this.cancel();
-                    return;
-                }
-
-                if(!inviter.isOnline()) {
-                    removeInvite(invited, inviter, RemoveReason.INVITER_DISCONNECT);
-                    this.cancel();
-                    return;
-                }
-
-                if(!invited.isOnline()) {
-                    removeInvite(invited, inviter, RemoveReason.INVITED_DISCONNECT);
-                    this.cancel();
-                    return;
-                }
-
-                if(getPlayersInParty(inviter).contains(invited)){
-                    removeInvite(invited, inviter, RemoveReason.ACCEPTED);
-                    this.cancel();
-                    return;
-                }
-
-                Set<Player> inviterSet = invitesPerPlayer.get(invited);
-                if(inviterSet == null || !inviterSet.contains(inviter)) {
-                    removeInvite(invited, inviter, RemoveReason.NO_LONGER_EXISTS);
-                    this.cancel();
-                    return;
-                }
-            }
-        }.runTaskTimer(Heroes.getInstance(), 0, 5);
+        party.getOnlineMembers().forEach(member -> member.sendMessage(formattedMessage));
     }
 
-    private enum RemoveReason{
-        EXPIRED, NOT_LEADER, INVITER_DISCONNECT, INVITED_DISCONNECT, NO_LONGER_EXISTS, ACCEPTED
+    public static Party createParty(Player leader) {
+        leaveParty(leader);
+        Party party = new Party(leader);
+        playerPartyMap.put(leader.getUniqueId(), party);
+        leader.sendMessage(Component.text("You have created a new party.", NamedTextColor.GREEN));
+        return party;
     }
 
-    private static void removeInvite(Player invited, Player inviter, RemoveReason reason){
-        Set<Player> inviterSet = invitesPerPlayer.get(invited);
-        if(inviterSet != null){
-            inviterSet.remove(inviter);
-            if(inviterSet.isEmpty()){
-                invitesPerPlayer.remove(invited);
-            }
+    public static void invitePlayer(Player inviter, Player invited) {
+        UUID inviterId = inviter.getUniqueId();
+        UUID invitedId = invited.getUniqueId();
+
+        Party party = getPlayerParty(inviterId);
+        if (party == null) {
+            party = createParty(inviter);
         }
 
-        switch(reason){
-            case EXPIRED -> {
-                inviter.sendMessage(Component.text("Your invite to " + invited.getName() + " has expired.", NamedTextColor.RED));
-                invited.sendMessage(Component.text("The party invite from " + inviter.getName() + " has expired.", NamedTextColor.RED));
-            }
-            case NOT_LEADER -> {
-                inviter.sendMessage(Component.text("Your invite to " + invited.getName() + " has expired because you are no longer leader.", NamedTextColor.RED));
-                invited.sendMessage(Component.text("The party invite from " + inviter.getName() + " has expired.", NamedTextColor.RED));
-            }
-            case INVITER_DISCONNECT -> invited.sendMessage(Component.text("The party invite from " + inviter.getName() + " has expired because the player has disconnected.", NamedTextColor.RED));
-            case INVITED_DISCONNECT -> inviter.sendMessage(Component.text("Your invite to " + invited.getName() + " has expired because the player has disconnected.", NamedTextColor.RED));
-            case NO_LONGER_EXISTS -> {
-                inviter.sendMessage(Component.text("The invite no longer exists.", NamedTextColor.RED));
-                invited.sendMessage(Component.text("The invite from " + inviter.getName() + " no longer exists.", NamedTextColor.RED));
-            }
-        }
-        if (invitesPerPlayer.get(invited) != null && invitesPerPlayer.get(invited).isEmpty()) {
-            invitesPerPlayer.remove(invited);
-        }
-    }
-
-    public static void acceptInvite(String inviterName, Player invited){
-        Player inviter = Bukkit.getServer().getPlayer(inviterName);
-
-
-        if(invitesPerPlayer.get(invited) != null && !invitesPerPlayer.get(invited).contains(inviter)){
-            invited.sendMessage(Component.text("You do not have any invites from " + inviter.getName() + "!", NamedTextColor.RED));
+        if (!party.isLeader(inviterId)) {
+            inviter.sendMessage(Component.text("You must be the party leader to invite players.", NamedTextColor.RED));
             return;
         }
 
-        Party inviterParty = getPlayerParty(inviter);
-        if(inviterParty == null){
-            invited.sendMessage(Component.text(inviter.getName() + " is not in a party!", NamedTextColor.RED));
+        if (party.isMember(invitedId)) {
+            inviter.sendMessage(Component.text(invited.getName() + " is already in your party.", NamedTextColor.YELLOW));
             return;
         }
 
-        Party invitedParty = getPlayerParty(invited);
-        if(invitedParty != null){
-            if(invitedParty.getMembers().contains(inviter)) {
-                invited.sendMessage(Component.text("You are already in " + invitedParty.getLeader().getName() + "'s party!", NamedTextColor.YELLOW));
-                return;
+        if (pendingInvites.stream().anyMatch(i -> i.inviter().equals(inviterId) && i.invited().equals(invitedId))) {
+            inviter.sendMessage(Component.text("You have already sent an invite to this player.", NamedTextColor.RED));
+            return;
+        }
+
+        PartyInvite invite = new PartyInvite(inviterId, invitedId, System.currentTimeMillis());
+        pendingInvites.add(invite);
+
+        inviter.sendMessage(Component.text("You invited " + invited.getName() + " to your party.", NamedTextColor.GREEN));
+        invited.sendMessage(
+                Component.text("You've been invited to join " + inviter.getName() + "'s party! ", NamedTextColor.YELLOW)
+                        .append(Component.text("[Accept]", NamedTextColor.GREEN)
+                                .clickEvent(ClickEvent.runCommand("/party accept " + inviter.getName())))
+        );
+    }
+
+    public static void acceptInvite(Player invited, Player inviter) {
+        if (inviter == null) {
+            invited.sendMessage(Component.text("That player is no longer online.", NamedTextColor.RED));
+            return;
+        }
+
+        UUID inviterId = inviter.getUniqueId();
+        UUID invitedId = invited.getUniqueId();
+
+        boolean inviteFound = pendingInvites.removeIf(i -> i.inviter().equals(inviterId) && i.invited().equals(invitedId));
+
+        if (!inviteFound) {
+            invited.sendMessage(Component.text("You do not have a pending invite from " + inviter.getName() + ".", NamedTextColor.RED));
+            return;
+        }
+
+        Party partyToJoin = getPlayerParty(inviterId);
+        if (partyToJoin == null) {
+            invited.sendMessage(Component.text(inviter.getName() + "'s party no longer exists.", NamedTextColor.RED));
+            return;
+        }
+
+        leaveParty(invited);
+        partyToJoin.addMember(invitedId);
+        playerPartyMap.put(invitedId, partyToJoin);
+
+        Component joinMessage = Component.text(invited.getName() + " has joined the party!", NamedTextColor.YELLOW);
+        partyToJoin.getOnlineMembers().forEach(member -> member.sendMessage(joinMessage));
+    }
+
+    private static void processExpiredInvites() {
+        long currentTime = System.currentTimeMillis();
+        pendingInvites.removeIf(invite -> {
+            if (currentTime - invite.timestamp() > INVITE_EXPIRATION) {
+                Player inviter = Bukkit.getPlayer(invite.inviter());
+                Player invited = Bukkit.getPlayer(invite.invited());
+                if (inviter != null) inviter.sendMessage(Component.text("Your party invite to " + (invited != null ? invited.getName() : "an offline player") + " has expired.", NamedTextColor.RED));
+                if (invited != null) invited.sendMessage(Component.text("Your party invite from " + (inviter != null ? inviter.getName() : "an offline player") + " has expired.", NamedTextColor.RED));
+                return true;
             }
-            invitedParty.removePlayer(invited);
-            invited.sendMessage(Component.text("You left " + invitedParty.getLeader().getName() + "'s party", NamedTextColor.YELLOW));
-            if(invitedParty.getMembers().isEmpty()) parties.remove(invitedParty);
-        }
-
-        if(invitesPerPlayer.get(invited) != null) invitesPerPlayer.get(invited).remove(inviter);
-        if (invitesPerPlayer.get(invited).isEmpty()) invitesPerPlayer.remove(invited);
-        inviterParty.addPlayer(invited);
+            return false;
+        });
     }
 
-    public static void disbandParty(Player player){
-        Party playerParty = getPlayerParty(player);
-        if(playerParty == null){
-            player.sendMessage(Component.text("You are not in a party.", NamedTextColor.RED));
+    public static void leaveParty(Player player) {
+        UUID playerId = player.getUniqueId();
+        Party party = getPlayerParty(playerId);
+
+        if (party == null) {
             return;
         }
-        if(!isPartyLeader(player)){
-            player.sendMessage(Component.text("Only the party leader can disband the party.", NamedTextColor.RED));
-            return;
+
+        Component leaveMessage = Component.text(player.getName() + " has left the party.", NamedTextColor.YELLOW);
+        party.getOnlineMembers().stream()
+                .filter(member -> !member.equals(player))
+                .forEach(member -> member.sendMessage(leaveMessage));
+
+        party.removeMember(playerId);
+        playerPartyMap.remove(playerId);
+
+        player.sendMessage(Component.text("You have left the party.", NamedTextColor.YELLOW));
+
+        if (party.getSize() != 0) {
+            if (party.isLeader(playerId)) {
+                Player newLeader = Bukkit.getPlayer(party.getLeader());
+                if (newLeader != null) {
+                    Component newLeaderMessage = Component.text(newLeader.getName() + " is the new party leader.", NamedTextColor.GOLD);
+                    party.getOnlineMembers().forEach(member -> member.sendMessage(newLeaderMessage));
+                }
+            }
         }
-        parties.remove(playerParty);
-        for(Player member : playerParty.getMembers()) member.sendMessage(Component.text("PartyModeGUI has been disbanded!", NamedTextColor.RED));
-        playerParty.setMembers(null);
-        playerParty.setLeader(null);
     }
 
-    public static void transferLeader(Player leader, Player newLeader){
-        Party playerParty = getPlayerParty(leader);
-        if(playerParty == null){
+    public static void transferLeader(Player currentLeader, Player newLeader) {
+        UUID currentLeaderId = currentLeader.getUniqueId();
+        UUID newLeaderId = newLeader.getUniqueId();
+        Party party = getPlayerParty(currentLeaderId);
+
+        if (party == null || !party.isLeader(currentLeaderId)) {
+            currentLeader.sendMessage(Component.text("You are not the leader of this party.", NamedTextColor.RED));
+            return;
+        }
+
+        if (!party.isMember(newLeaderId)) {
+            currentLeader.sendMessage(Component.text(newLeader.getName() + " is not in your party.", NamedTextColor.RED));
+            return;
+        }
+
+        party.setLeader(newLeaderId);
+        Component message = Component.text(newLeader.getName() + " is the new party leader!", NamedTextColor.GOLD);
+        party.getOnlineMembers().forEach(member -> member.sendMessage(message));
+    }
+
+    public static void disbandParty(Player leader) {
+        UUID leaderId = leader.getUniqueId();
+        Party party = getPlayerParty(leaderId);
+
+        if (party == null) {
             leader.sendMessage(Component.text("You are not in a party.", NamedTextColor.RED));
             return;
         }
-        if(playerParty.getLeader() != leader){
-            leader.sendMessage(Component.text("You are not the leader!", NamedTextColor.RED));
+
+        if (!party.isLeader(leaderId)) {
+            leader.sendMessage(Component.text("You are not the party leader.", NamedTextColor.RED));
             return;
         }
-        playerParty.setLeader(newLeader);
-        for(Player member : playerParty.getMembers()) member.sendMessage(Component.text(leader.getName() + " is the new PartyC Leader!", NamedTextColor.YELLOW));
+
+        Component disbandMessage = Component.text("The party has been disbanded.", NamedTextColor.RED);
+        party.getOnlineMembers().forEach(member -> {
+            member.sendMessage(disbandMessage);
+            playerPartyMap.remove(member.getUniqueId());
+        });
     }
 
-    public static void sendMessage(Player player, Component message){
-        Party playerParty = getPlayerParty(player);
-        if(playerParty == null){
-            player.sendMessage(Component.text("You aren't in a party!", NamedTextColor.RED));
-            return;
+    public static Party getPlayerParty(UUID playerUuid) {
+        return playerPartyMap.get(playerUuid);
+    }
+
+    public static Party getPlayerParty(Player player) {
+        return getPlayerParty(player.getUniqueId());
+    }
+
+    public static Set<Player> getPendingInvites(Player invitedPlayer) {
+        UUID invitedId = invitedPlayer.getUniqueId();
+        return pendingInvites.stream()
+                .filter(i -> i.invited().equals(invitedId))
+                .map(i -> Bukkit.getPlayer(i.inviter()))
+                .filter(p -> p != null && p.isOnline())
+                .collect(Collectors.toSet());
+    }
+
+    public static boolean isPartyLeader(Player player) {
+        Party party = getPlayerParty(player.getUniqueId());
+        return party != null && party.isLeader(player.getUniqueId());
+    }
+
+    public static Set<Player> getPartyMembers(Player player) {
+        Party party = getPlayerParty(player.getUniqueId());
+        return party != null ? party.getOnlineMembers() : Collections.emptySet();
+    }
+
+    public static void clear () {
+        if (!expirationTask.isCancelled()) {
+            expirationTask.cancel();
         }
-        for(Player member : playerParty.getMembers()) member.sendMessage("Party: " + message);
-    }
-
-    public static void leaveParty(Player player){
-        Party playerParty = getPlayerParty(player);
-        if(playerParty == null){
-            player.sendMessage(Component.text("You aren't in a party!", NamedTextColor.RED));
-            return;
-        }
-        playerParty.removePlayer(player);
-        if(playerParty.getMembers().isEmpty()){
-            parties.remove(playerParty);
-        }
-    }
-
-    public static Set<Player> getPlayersInParty(Player player){
-        Party party = getPlayerParty(player);
-
-        return party != null ? party.getMembers() : new HashSet<>();
-    }
-
-    public static boolean isInParty(Player player){
-        return getPlayerParty(player) != null;
-    }
-
-    public static int getPartySize(Player player){
-        return getPlayerParty(player).getSize();
-    }
-
-    public static boolean isPartyLeader(Player player){
-        Party party = getPlayerParty(player);
-        if(party == null || party.getLeader() == null){
-            return false;
-        }
-        return party.getLeader().equals(player);
-    }
-
-    //find a way to use a map later
-    public static Party getPlayerParty(Player player){
-        return playerPartyMap.get(player);
-    }
-
-    public static void setPlayerParty(Player player, Party party){
-        playerPartyMap.put(player, party);
     }
 }

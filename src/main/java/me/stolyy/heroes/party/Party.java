@@ -2,71 +2,68 @@ package me.stolyy.heroes.party;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class Party {
-    private Player leader;
-    private Set<Player> members;
+    private UUID leader;
+    private Set<UUID> members;
 
-    public Party(Set<Player> members, Player leader) {
-        this.members = members;
-        this.leader = leader;
-        for(Player member : members) PartyManager.setPlayerParty(member, this);
+    public Party(Player leader) {
+        this.leader = leader.getUniqueId();
+        this.members = new HashSet<>();
+        this.members.add(leader.getUniqueId());
     }
 
-    public Player getLeader() {
+    protected void addMember(UUID playerUuid) {
+        members.add(playerUuid);
+    }
+
+    protected void removeMember(UUID playerUuid) {
+        members.remove(playerUuid);
+
+        // If the leader left and there are still members, assign a new leader.
+        if (leader.equals(playerUuid) && !members.isEmpty()) {
+            // Get the first UUID from the set to be the new leader.
+            this.leader = members.iterator().next();
+        }
+    }
+
+    protected Set<Player> getOnlineMembers() {
+        return members.stream()
+                .map(Bukkit::getPlayer)
+                .filter(player -> player != null && player.isOnline())
+                .collect(Collectors.toSet());
+    }
+
+    protected UUID getLeader() {
         return leader;
     }
 
-    public void setLeader(Player leader) {
-        if(members.contains(leader)) this.leader = leader;
-    }
-
-    public Set<Player> getMembers() {
-        return members;
-    }
-
-    public void setMembers(Set<Player> members) {
-        this.members = members;
-    }
-
-    public void addPlayer(Player player) {
-        PartyManager.setPlayerParty(player, this);
-        player.sendMessage(Component.text("You joined " + getLeader().getName() + "'s party", NamedTextColor.YELLOW));
-        for(Player member : members) member.sendMessage(Component.text(player.getName() + " has joined the party!", NamedTextColor.YELLOW));
-        members.add(player);
-    }
-
-    public void removePlayer(Player player) {
-        if(!members.contains(player)){
-            player.sendMessage(Component.text("You are not in the party!", NamedTextColor.RED));
-            return;
-        }
-        PartyManager.setPlayerParty(player, null);
-        members.remove(player);
-        for(Player member : members) {
-            member.sendMessage(Component.text(player.getName() + " has left the party!", NamedTextColor.YELLOW));
-        }
-        if(player.equals(leader)) {
-            if(!members.isEmpty()){
-                leader = members.iterator().next();
-                for(Player member : members) {
-                    member.sendMessage(Component.text(leader.getName() + " is the new Party Leader!", NamedTextColor.YELLOW));
-                }
-            } else {
-                leader = null;
-            }
-        }
+    protected Set<UUID> getMembers() {
+        return Collections.unmodifiableSet(members);
     }
 
     public int getSize() {
         return members.size();
     }
 
-    public boolean isMember(Player player){
-        if(members == null) return false;
-        return members.contains(player);
+    public boolean isMember(UUID playerUuid) {
+        return members.contains(playerUuid);
+    }
+
+    public boolean isLeader(UUID playerUuid) {
+        return leader.equals(playerUuid);
+    }
+
+    protected void setLeader(UUID newLeader) {
+        if (members.contains(newLeader))
+            this.leader = newLeader;
     }
 }

@@ -4,6 +4,7 @@ import me.stolyy.heroes.heros.HeroManager;
 import me.stolyy.heroes.heros.characters.Bug;
 import me.stolyy.heroes.heros.characters.Bug.Charms;
 import me.stolyy.heroes.utility.effects.Equipment;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -48,7 +49,7 @@ public class BugCharmsGUI extends GUI {
 
         for(int i = 0; i < Bug.CHARM_NOTCHES; i++) inventoryItems.put(i, createItem(Material.GRAY_CONCRETE, "Free Charm Notch"));
 
-        for(Charms charm : charmLocations.keySet()) inventoryItems.put(charmLocations.get(charm), Equipment.customItem(charm.texture(), charm.toString(), List.of(charm.description(), String.valueOf(charm.cost()))));
+        for(Charms charm : charmLocations.keySet()) inventoryItems.put(charmLocations.get(charm), Equipment.customItem(charm.texture(), charm.toString(), List.of(Component.text(charm.description()), Component.text(charm.cost()))));
 
         usedNotches = 0;
         for(Charms charm : charms) {

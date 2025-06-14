@@ -70,9 +70,9 @@ public class Pug extends HeroEnergy implements PassiveSneak, Dash {
             }
 
             private void createRing(int tick) {
-                Location ringCenter = center.clone().add(center.getDirection().multiply(tick * spacing));
+                Location ringCenter = center.clone().add(center.getDirection().clone().multiply(tick * spacing));
                 Particles.directionalRing(ringCenter, 0.3 + tick * 0.24, Particle.NOTE);
-                Set<Player> toHit = new LinkedHashSet<>(Hitbox.cylinder(ringCenter, 0.6 + tick * 0.24, spacing));
+                Set<Player> toHit = new LinkedHashSet<>(Hitbox.cylinder(ringCenter, center.getDirection(), 0.6 + tick * 0.24, spacing));
                 toHit.remove(player);
                 for (Player target : toHit) {
                     if (!hitPlayers.contains(target)) {
@@ -149,9 +149,7 @@ public class Pug extends HeroEnergy implements PassiveSneak, Dash {
     private void pounce(){
         Vector direction = player.getEyeLocation().getDirection();
         player.setVelocity(direction.multiply(1.1 + (pounceCharge / 20)));
-        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
-            pounceCharge = 0;
-        }, 20L);
+        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> pounceCharge = 0, 20L);
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.google.common.collect.Multimap;
 import me.stolyy.heroes.heros.Hero;
 import me.stolyy.heroes.heros.HeroManager;
 import me.stolyy.heroes.heros.characters.*;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -23,11 +24,11 @@ public class Equipment {
         Hero h = HeroManager.getHero(p);
         ItemStack head = customItem(0, "Hat");
         ItemStack chest = customArmor("chest", 255, 255, 255, "Chest");
-        ItemStack legs = customArmor("legs", 255, 255, 255, "Legs");;
-        ItemStack boots = customArmor("boots", 255, 255, 255, "Boots");;
-        ItemStack fist = customItem(0, "Pick a character");;
-        ItemStack secondary = breakableItem(5, "Secondary");;
-        ItemStack ult = breakableItem(6, "Ultimate!");;
+        ItemStack legs = customArmor("legs", 255, 255, 255, "Legs");
+        ItemStack boots = customArmor("boots", 255, 255, 255, "Boots");
+        ItemStack fist = customItem(0, "Pick a character");
+        ItemStack secondary = breakableItem(5, "Secondary");
+        ItemStack ult = breakableItem(6, "Ultimate!");
         if(h instanceof VoidCrawler) {
             head = customItem(16000, "Void Crawler Helmet");
             chest = customArmor("chest", 199, 219, 236, "Void Crawler Chestplate");
@@ -75,7 +76,7 @@ public class Equipment {
     public static void equipCharms(Player player){
         int i = 9;
         for(Bug.Charms charm : HeroManager.getCharms(player)){
-            player.getInventory().setItem(i, Equipment.customItem(charm.texture(), charm.toString(), List.of(charm.description(), String.valueOf(charm.cost()))));
+            player.getInventory().setItem(i, Equipment.customItem(charm.texture(), charm.toString(), List.of(Component.text(charm.description()), Component.text(charm.cost()))));
             i++;
         }
     }
@@ -86,7 +87,7 @@ public class Equipment {
         ItemMeta meta = item.getItemMeta();
 
         if (meta != null) {
-            meta.setDisplayName(name);
+            meta.displayName(Component.text(name));
             meta.setCustomModelData(customModelData);
             meta.setUnbreakable(true);
             meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
@@ -97,16 +98,16 @@ public class Equipment {
         return item;
     }
 
-    public static ItemStack customItem(int customModelData, String name, List<String> lore) {
+    public static ItemStack customItem(int customModelData, String name, List<Component> lore) {
         ItemStack item = new ItemStack(Material.CARROT_ON_A_STICK);
         ItemMeta meta = item.getItemMeta();
 
         if (meta != null) {
-            meta.setDisplayName(name);
+            meta.displayName(Component.text(name));
             meta.setCustomModelData(customModelData);
             meta.setUnbreakable(true);
             meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
-            meta.setLore(lore);
+            meta.lore(lore);
 
             item.setItemMeta(meta);
         }
@@ -119,7 +120,7 @@ public class Equipment {
         ItemMeta meta = item.getItemMeta();
 
         if (meta != null) {
-            meta.setDisplayName(name);
+            meta.displayName(Component.text(name));
             meta.setCustomModelData(customModelData);
 
             item.setItemMeta(meta);
@@ -143,7 +144,7 @@ public class Equipment {
 
         if (meta != null) {
             meta.setColor(Color.fromRGB(r, g, b));
-            meta.setDisplayName(name);
+            meta.displayName(Component.text(name));
             meta.setUnbreakable(true);
             meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_ATTRIBUTES);
 

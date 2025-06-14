@@ -182,7 +182,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
         setEnergyPerSecond(0);
         setCanIncreaseEnergy(false);
 
-        player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(.14);
+        Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)).setBaseValue(.14);
         setWeight(1.5);
 
         if (charms.contains(Charms.DASHMASTER)) {
@@ -221,7 +221,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
             soulsPerCast *= 0.75;
         }
         if (charms.contains(Charms.SPRINTMASTER)) {
-            player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(.16);
+            Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)).setBaseValue(.16);
         }
         if (charms.contains(Charms.STEADY_BODY)) {
             setWeight(weight() + 1.5);

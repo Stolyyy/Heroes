@@ -14,6 +14,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 public class JabListener implements Listener {
@@ -24,8 +25,8 @@ public class JabListener implements Listener {
         Player player = e.getPlayer();
         if (player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE) {
             HeroCooldown hc = HeroManager.getHero(player);
-            player.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE).setBaseValue(hc.jabReach());
-            player.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(hc.jabDamage());
+            Objects.requireNonNull(player.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE)).setBaseValue(hc.jabReach());
+            Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE)).setBaseValue(hc.jabDamage());
             player.setMaximumNoDamageTicks(1);
         }
     }

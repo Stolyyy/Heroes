@@ -1,14 +1,11 @@
 package me.stolyy.heroes.utility.commands;
 
-import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.menus.BugCharmsGUI;
-import me.stolyy.heroes.game.minigame.GameManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class CharmsCommand extends Command {

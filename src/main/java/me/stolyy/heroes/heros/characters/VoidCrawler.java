@@ -20,6 +20,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
+import java.util.Objects;
 import java.util.Set;
 
 
@@ -93,7 +94,7 @@ public class VoidCrawler extends HeroEnergy implements Dash {
         ultTimer();
         setJabCooldown(300);
         setJabReach(6.5);
-        player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.18);
+        Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)).setBaseValue(0.18);
         //perma 100 void energy
         setEnergy(100);
         setCanIncreaseEnergy(false);
@@ -118,7 +119,7 @@ public class VoidCrawler extends HeroEnergy implements Dash {
                 setJabReach(5);
                 primary.setCd(2);
                 secondary.setCd(5);
-                player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.14);
+                Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)).setBaseValue(0.14);
                 setCanIncreaseEnergy(true);
                 cooldown(ultimate);
             }

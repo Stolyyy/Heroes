@@ -127,6 +127,6 @@ public class AbilityListener implements Listener {
             return false;
         }
         //player.sendMessage(ChatColor.RED + "DEBUG: You are not in the alive player list!");
-        return game.alivePlayers().contains(player);
+        return game.onlinePlayers(false).contains(player);
     }
 }

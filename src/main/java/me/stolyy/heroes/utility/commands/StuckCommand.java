@@ -2,7 +2,6 @@ package me.stolyy.heroes.utility.commands;
 
 import me.stolyy.heroes.game.minigame.Game;
 import me.stolyy.heroes.game.minigame.GameManager;
-import me.stolyy.heroes.game.maps.GameMap;
 import me.stolyy.heroes.Heroes;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -34,7 +33,7 @@ public class StuckCommand extends Command {
             return true;
         }
         if(isInBlock(player)){
-            player.teleport(game.furthestSpawn(player));
+            player.teleport(game.getRespawnLocation(player));
             return true;
         }
         player.sendMessage("You can only use /stuck when in a block!");

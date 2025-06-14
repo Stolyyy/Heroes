@@ -1,7 +1,6 @@
 package me.stolyy.heroes.utility.commands;
 
 import me.stolyy.heroes.game.minigame.GameManager;
-import me.stolyy.heroes.Heroes;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;

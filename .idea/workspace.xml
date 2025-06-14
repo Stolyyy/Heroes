@@ -9,23 +9,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="606daf4b-1469-4eeb-8180-44b5b6838e57" name="Changes" comment="Party package refactor">
+    <list default="true" id="606daf4b-1469-4eeb-8180-44b5b6838e57" name="Changes" comment="Minigame package refactor">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TODO.md" beforeDir="false" afterPath="$PROJECT_DIR$/TODO.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Heroes.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Heroes.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/Game.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/Game.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameEffects.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameEffects.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameEnums.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameEnums.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameListener.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameSettings.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameSettings.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameTeam.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameTeam.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameVisuals.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameVisuals.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/party/Party.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/party/Party.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/party/PartyManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/party/PartyManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/Interactions.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/Interactions.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/commands/LobbyCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/commands/LobbyCommand.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/commands/SpectateCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/commands/SpectateCommand.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/AnnouncerGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/AnnouncerGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/HeroSelectGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/HeroSelectGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/SpectateGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/SpectateGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Bug.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Bug.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Pug.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Pug.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/VoidCrawler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/VoidCrawler.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -404,7 +395,23 @@
       <option name="project" value="LOCAL" />
       <updated>1749860439902</updated>
     </task>
-    <option name="localTasksCounter" value="34" />
+    <task id="LOCAL-00034" summary="Minigame package refactor">
+      <option name="closed" value="true" />
+      <created>1749868362942</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1749868362942</updated>
+    </task>
+    <task id="LOCAL-00035" summary="Minigame package refactor">
+      <option name="closed" value="true" />
+      <created>1749868673192</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1749868673192</updated>
+    </task>
+    <option name="localTasksCounter" value="36" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -442,6 +449,7 @@
     <MESSAGE value="Map system changes" />
     <MESSAGE value="Bug fixes" />
     <MESSAGE value="Party package refactor" />
-    <option name="LAST_COMMIT_MESSAGE" value="Party package refactor" />
+    <MESSAGE value="Minigame package refactor" />
+    <option name="LAST_COMMIT_MESSAGE" value="Minigame package refactor" />
   </component>
 </project>

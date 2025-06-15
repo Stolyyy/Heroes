@@ -17,6 +17,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 import java.util.List;
+import java.util.Set;
 
 public class Equipment {
     //Give player proper equipment (armor, tools) based on hero
@@ -74,10 +75,15 @@ public class Equipment {
     }
 
     public static void equipCharms(Player player){
-        int i = 9;
-        for(Bug.Charms charm : HeroManager.getCharms(player)){
-            player.getInventory().setItem(i, Equipment.customItem(charm.texture(), charm.toString(), List.of(Component.text(charm.description()), Component.text(charm.cost()))));
-            i++;
+        //CLEARS TOP ROW OF PLAYER INVENTORY
+        Set<Bug.Charms> charms = HeroManager.getCharms(player);
+        for(int i = 9; i < 18; i++){
+            if(charms.iterator().hasNext()) {
+                Bug.Charms charm = charms.iterator().next();
+                player.getInventory().setItem(i, Equipment.customItem(charm.texture(), charm.toString(), List.of(Component.text(charm.description()), Component.text(charm.cost()))));
+            } else {
+                player.getInventory().setItem(i, new ItemStack(Material.AIR));
+            }
         }
     }
 

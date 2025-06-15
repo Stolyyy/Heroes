@@ -19,6 +19,7 @@ public class GameSettings {
     public GameSettings copy(GameSettings settings){
         setSmashCrystals(settings.smashCrystals());
         setTimer(settings.timer());
+        if(this.killWalls != settings.killWalls()) toggleKillWalls();
         return this;
     }
 
@@ -46,6 +47,10 @@ public class GameSettings {
 
     public BoundingBox boundaries() {
         return boundaries;
+    }
+
+    public boolean killWalls(){
+        return killWalls;
     }
 
     public GameSettings toggleKillWalls() {

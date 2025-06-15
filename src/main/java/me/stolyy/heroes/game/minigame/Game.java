@@ -25,6 +25,7 @@ public class Game {
 
     private final GameMode gameMode;
     private final GameSettings settings;
+    private final TeamSettings defaultTeamSettings;
     private final GameVisuals visuals;
     private final Map<TeamColor, GameTeam> teams = new EnumMap<>(TeamColor.class);
     private final List<BukkitTask> activeTasks = new LinkedList<>();
@@ -36,6 +37,7 @@ public class Game {
 
         GameMap map = GameMapManager.createWorld(gameMap);
         settings = new GameSettings(Objects.requireNonNull(map));
+        defaultTeamSettings = new TeamSettings();
         visuals = new GameVisuals(this);
         gameState = GameState.WAITING;
 
@@ -309,7 +311,12 @@ public class Game {
         this.gameState = newState;
     }
 
+    public TeamSettings defaultTeamSettings() {
+        return defaultTeamSettings;
+    }
+
     public void setAllTeamSettings(TeamSettings teamSettings){
+        this.defaultTeamSettings.copy(teamSettings);
         for(GameTeam team : teams.values()){
             if(team.color() == TeamColor.SPECTATOR) continue;
             team.setSettings(teamSettings);

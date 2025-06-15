@@ -1,7 +1,9 @@
 package me.stolyy.heroes.game.minigame;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.game.maps.GameMap;
 import me.stolyy.heroes.game.maps.GameMapManager;
+import me.stolyy.heroes.game.menus.GUIManager;
 import me.stolyy.heroes.game.menus.PartyModeGUI;
 import me.stolyy.heroes.party.Party;
 import me.stolyy.heroes.party.PartyManager;
@@ -69,6 +71,32 @@ public class GameManager {
         }
     }
 
+    public static Game changeMap(Game oldGame, GameMap newMap) {
+        Game newGame = new Game(newMap, oldGame.gameMode());
+
+        newGame.settings().copy(oldGame.settings());
+        newGame.setAllTeamSettings(oldGame.defaultTeamSettings());
+
+        Map<Player, GameEnums.TeamColor> playerTeams = new HashMap<>();
+        for (Player p : oldGame.onlinePlayers()) {
+            playerTeams.put(p, oldGame.playerColor(p));
+        }
+
+        for (Map.Entry<Player, GameEnums.TeamColor> entry : playerTeams.entrySet()) {
+            Player player = entry.getKey();
+            GameEnums.TeamColor teamColor = entry.getValue();
+
+            TeamSettings oldTeamSettings = oldGame.getTeams().get(teamColor).settings();
+            newGame.getTeams().get(teamColor).setSettings(oldTeamSettings);
+
+            newGame.addPlayer(player, teamColor);
+            playerGames.put(player.getUniqueId(), newGame);
+        }
+
+        oldGame.clean();
+        return newGame;
+    }
+
     private static void handle1v1Join(Player player) {
         if (PartyManager.isInParty(player)) {
             player.sendMessage(Component.text("You cannot join 1v1 while in a party.", NamedTextColor.RED));
@@ -130,7 +158,7 @@ public class GameManager {
 
         members.forEach(member -> playerGames.put(member.getUniqueId(), game));
 
-        new PartyModeGUI(game, player);
+        GUIManager.open(player, new PartyModeGUI(game, player));
     }
 
     private static Game findOrCreateWaitingGame(GameEnums.GameMode gameMode) {

@@ -66,6 +66,10 @@ public class GameMapManager {
         return pool.stream().skip(index).findFirst().orElse(null);
     }
 
+    public static Set<GameMap> getMapsForMode(GameEnums.GameMode mode) {
+        return Collections.unmodifiableSet(mapPools.getOrDefault(mode, Collections.emptySet()));
+    }
+
     public static World loadTemplateForEditing(String mapName) {
         GameMap template = templateMaps.stream().filter(m -> m.name().equalsIgnoreCase(mapName)).findFirst().orElse(null);
         if (template == null) return null;

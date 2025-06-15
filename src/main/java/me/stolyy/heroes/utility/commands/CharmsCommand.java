@@ -1,6 +1,7 @@
 package me.stolyy.heroes.utility.commands;
 
 import me.stolyy.heroes.game.menus.BugCharmsGUI;
+import me.stolyy.heroes.game.menus.GUIManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -23,7 +24,7 @@ public class CharmsCommand extends Command {
             return true;
         }
 
-        new BugCharmsGUI(player);
+        GUIManager.open(player, new BugCharmsGUI(player));
 
         return true;
     }

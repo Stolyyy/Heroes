@@ -16,6 +16,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -77,9 +78,10 @@ public class Equipment {
     public static void equipCharms(Player player){
         //CLEARS TOP ROW OF PLAYER INVENTORY
         Set<Bug.Charms> charms = HeroManager.getCharms(player);
+        Iterator<Bug.Charms> charmsIterator = charms.iterator();
         for(int i = 9; i < 18; i++){
-            if(charms.iterator().hasNext()) {
-                Bug.Charms charm = charms.iterator().next();
+            if(charmsIterator.hasNext()) {
+                Bug.Charms charm = charmsIterator.next();
                 player.getInventory().setItem(i, Equipment.customItem(charm.texture(), charm.toString(), List.of(Component.text(charm.description()), Component.text(charm.cost()))));
             } else {
                 player.getInventory().setItem(i, new ItemStack(Material.AIR));

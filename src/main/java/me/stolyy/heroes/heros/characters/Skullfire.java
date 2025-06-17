@@ -124,7 +124,7 @@ public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload
         if (primaryItem != null) {
             ItemMeta meta = primaryItem.getItemMeta();
             if (meta != null) {
-                meta.displayName(Component.text(NamedTextColor.GOLD + "Skullfire Gun (" + ammo + "/7)"));
+                meta.displayName(Component.text("Skullfire Gun (" + ammo + "/7)", NamedTextColor.GOLD));
                 primaryItem.setItemMeta(meta);
             }
             primaryItem.setAmount(Math.max(1, ammo)); // Ensure at least 1 is displayed
@@ -298,7 +298,7 @@ public class Skullfire extends HeroEnergy implements Hitscan, Projectile, Reload
         consecutiveHits = 0;
         ammo = 7;
         isReloading = false;
-        secondary = new Ability(AbilityType.SECONDARY, 7, 3, 8, new ProjectileData(2, 0.5, 70, true, 8003));
+        secondary = new Ability(AbilityType.SECONDARY, 7, 3, 8, new ProjectileData(2, 0.5, 70, true, false, 8003));
         //dmg/kb is added on top of primary stats
         ultimate = new Ability(AbilityType.ULTIMATE, 1, .5, 100, 10, new HitscanData().setRange(120).setParticle(Particle.FLAME));
         chainCount = new HashMap<>();

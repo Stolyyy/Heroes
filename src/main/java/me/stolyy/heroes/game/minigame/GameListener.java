@@ -73,7 +73,7 @@ public class GameListener implements Listener {
     public void processPlayerDeath(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
         Game game = GameManager.getPlayerGame(player);
-        if (isValidGame(game)) {
+        if (game != null) {
             game.handleDeath(player);
             Location respawnLocation = game.getRespawnLocation(player);
             event.setRespawnLocation(respawnLocation);

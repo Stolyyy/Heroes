@@ -21,8 +21,8 @@ import java.util.stream.Collectors;
 public class GameMapManager {
     private static final Heroes plugin = Heroes.getInstance();
     private static final File mapConfigFolder = new File(plugin.getDataFolder(), "maps");
-    private static final File templatesFolder = new File(plugin.getDataFolder(), "templates");
-    private static final File activeWorldsFolder = new File(plugin.getDataFolder(), "active_worlds");
+    private static final File templatesFolder = new File(plugin.getServer().getWorldContainer(), "templates");
+    private static final File activeWorldsFolder = new File(plugin.getServer().getWorldContainer(), "active_worlds");
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     private static final Set<GameMap> templateMaps = new LinkedHashSet<>();
@@ -73,10 +73,9 @@ public class GameMapManager {
     public static World loadTemplateForEditing(String mapName) {
         GameMap template = templateMaps.stream().filter(m -> m.name().equalsIgnoreCase(mapName)).findFirst().orElse(null);
         if (template == null) return null;
-
         World world = Bukkit.getWorld(template.worldFolderName());
         if (world == null) {
-            world = new WorldCreator("templates/" + template.worldFolderName()).createWorld();
+            world = new WorldCreator("templates/" + template.worldFolderName()).generator("VoidGenerator").createWorld();
         }
         if(world != null) {
             world.setGameRule(GameRule.DO_MOB_SPAWNING, false);
@@ -118,25 +117,42 @@ public class GameMapManager {
             }
 
             String property = commandArgs[2].toLowerCase();
+            int index = (commandArgs.length > 3) ? Integer.parseInt(commandArgs[3]) : -1;
 
             switch (property) {
                 case "spectatorlocation":
+                    Map<String, Double> newLocMap = Map.of("x", player.getLocation().getX(), "y", player.getLocation().getY(), "z", player.getLocation().getZ());
+                    data.put("spectatorLocation", newLocMap);
+                    break;
                 case "spawnlocation":
                 case "crystallocation": {
                     // handles all location-based settings
-                    Map<String, Double> newLocMap = Map.of("x", player.getLocation().getX(), "y", player.getLocation().getY(), "z", player.getLocation().getZ());
-                    int index = (commandArgs.length > 3) ? Integer.parseInt(commandArgs[3]) : -1;
+                    String listKey = property + "s";
 
-                    if (property.equals("spectatorlocation")) {
-                        data.put("spectatorLocation", newLocMap);
-                    } else { // Handles spawn and crystal locations
-                        List<Map<String, Double>> locs = (List<Map<String, Double>>) data.get(property + "s"); // "spawnlocations" or "crystallocations"
-                        if (index >= 0 && index < locs.size()) {
-                            locs.set(index, newLocMap);
-                        } else {
-                            player.sendMessage("Error: Invalid index '" + index + "'.");
-                            return false;
-                        }
+                    // 1. Find the actual key from the JSON, ignoring case.
+                    String actualKey = data.keySet().stream()
+                            .filter(k -> k.equalsIgnoreCase(listKey))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (actualKey == null) {
+                        player.sendMessage("Error: The map '" + mapName + "' does not have a '" + listKey + "' property to set.");
+                        return false;
+                    }
+
+
+                    List<Map<String, Double>> locs = (List<Map<String, Double>>) data.get(actualKey);
+                    if (locs == null) {
+                        player.sendMessage("Error: '" + actualKey + "' property is present but null in the JSON file.");
+                        return false;
+                    }
+
+                    if (index >= 0 && index < locs.size()) {
+                        Map<String, Double> locMap = Map.of("x", player.getLocation().getX(), "y", player.getLocation().getY(), "z", player.getLocation().getZ());
+                        locs.set(index, locMap);
+                    } else {
+                        player.sendMessage("Error: Invalid index '" + index + "'. Maximum index for " + listKey + " is " + (locs.size() - 1) + ".");
+                        return false;
                     }
                     break;
                 }

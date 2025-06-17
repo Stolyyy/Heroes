@@ -92,9 +92,9 @@ public class VoidCrawler extends HeroEnergy implements Dash {
 
         Sounds.playSoundToWorld(player, "duskcrawler.crystal", 5.0f, 1.0f);
         ultTimer();
-        setJabCooldown(300);
+        setJabCooldown(.3);
         setJabReach(6.5);
-        Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)).setBaseValue(0.18);
+        Objects.requireNonNull(player.getAttribute(Attribute.MOVEMENT_SPEED)).setBaseValue(0.18);
         //perma 100 void energy
         setEnergy(100);
         setCanIncreaseEnergy(false);
@@ -115,11 +115,11 @@ public class VoidCrawler extends HeroEnergy implements Dash {
         BukkitTask resetUlt = new BukkitRunnable() {
             @Override
             public void run() {
-                setJabCooldown(500);
+                setJabCooldown(.50);
                 setJabReach(5);
                 primary.setCd(2);
                 secondary.setCd(5);
-                Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)).setBaseValue(0.14);
+                Objects.requireNonNull(player.getAttribute(Attribute.MOVEMENT_SPEED)).setBaseValue(0.14);
                 setCanIncreaseEnergy(true);
                 cooldown(ultimate);
             }

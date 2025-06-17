@@ -1,6 +1,0 @@
-name: Heroes
-version: '1.0'
-main: me.stolyy.heroes.Heroes
-api-version: '1.21'
-commands:
-  setcharacter:

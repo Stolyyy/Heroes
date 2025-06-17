@@ -41,10 +41,6 @@ public class Party {
         return leader;
     }
 
-    protected Set<UUID> getMembers() {
-        return Collections.unmodifiableSet(members);
-    }
-
     public int getSize() {
         return members.size();
     }

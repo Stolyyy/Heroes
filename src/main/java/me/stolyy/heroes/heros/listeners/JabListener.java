@@ -25,8 +25,8 @@ public class JabListener implements Listener {
         Player player = e.getPlayer();
         if (player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE) {
             HeroCooldown hc = HeroManager.getHero(player);
-            Objects.requireNonNull(player.getAttribute(Attribute.PLAYER_ENTITY_INTERACTION_RANGE)).setBaseValue(hc.jabReach());
-            Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE)).setBaseValue(hc.jabDamage());
+            Objects.requireNonNull(player.getAttribute(Attribute.ENTITY_INTERACTION_RANGE)).setBaseValue(hc.jabReach());
+            Objects.requireNonNull(player.getAttribute(Attribute.ATTACK_DAMAGE)).setBaseValue(hc.jabDamage());
             player.setMaximumNoDamageTicks(1);
         }
     }

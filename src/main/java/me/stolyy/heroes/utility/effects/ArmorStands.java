@@ -11,7 +11,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 public class ArmorStands {
     public static ArmorStand summonArmorStand(Location location, int customModelData){
-        ArmorStand armorStand = (ArmorStand) location.getWorld().spawnEntity(location.clone().subtract(0,1.975,0), EntityType.ARMOR_STAND);
+        ArmorStand armorStand = (ArmorStand) location.getWorld().spawnEntity(location.clone().subtract(0,1.85,0), EntityType.ARMOR_STAND);
         armorStand.setRotation(location.getPitch(), location.getYaw());
         armorStand.setVisible(false);
         armorStand.setGravity(false);

@@ -21,7 +21,7 @@ import java.util.*;
 public class PartyModeGUI extends GUI{
     protected final ItemStack PLAYER_FILLER_ITEM;
 
-    private final Map<TeamColor, List<Integer>> teamSpots = new HashMap<>();
+    private Map<TeamColor, List<Integer>> teamSpots;
     private Game game;
     private int selectedSlot = -1;
 
@@ -40,8 +40,7 @@ public class PartyModeGUI extends GUI{
         if (slot < 0 || slot >= inventory.getSize()) return;
 
         switch(slot){
-            case 31 -> GUIManager.open(player, new GameSettingsGUI(game, player, this));
-            case 40 -> {
+            case 31 -> {
                 if(game.canStart()) {
                     game.start();
                     GUIManager.close(player);
@@ -49,6 +48,7 @@ public class PartyModeGUI extends GUI{
                     player.sendMessage(Component.text("Cannot Start! Check Team sizes.", NamedTextColor.RED));
                 }
             }
+            case 40 -> GUIManager.open(player, new GameSettingsGUI(game, player, this));
             case 49 -> {
                 GameManager.leaveGame(player, true);
                 GUIManager.close(player);
@@ -94,8 +94,9 @@ public class PartyModeGUI extends GUI{
 
     @Override
     protected void populate(){
-        inventoryItems.put(31,createItem(Material.BONE_MEAL, "Game Settings"));
-        inventoryItems.put(40,createItem(Material.DIAMOND, "Start Game!"));
+        teamSpots = new HashMap<>();
+        inventoryItems.put(40,createItem(Material.NETHER_STAR, "Game Settings"));
+        inventoryItems.put(31,createItem(Material.DIAMOND, "Start Game!"));
         inventoryItems.put(49,createItem(Material.BARRIER, "Cancel"));
         inventoryItems.put(18,createItem(Material.RED_CONCRETE, "Red Team:"));
         inventoryItems.put(20,createItem(Material.BLUE_CONCRETE, "Blue Team:"));

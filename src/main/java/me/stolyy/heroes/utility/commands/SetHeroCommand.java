@@ -69,7 +69,7 @@ public class SetHeroCommand extends Command {
                     player.playSound(player.getLocation(), "skullfire.select", SoundCategory.MASTER, 2.0f, 1.0f);
                 } else if (characterName.equalsIgnoreCase("Pug")) {
                     hero = new Pug(player);
-                    player.playSound(player.getLocation(), Sound.ENTITY_WOLF_HOWL, 2.0f, 1.0f);
+                    player.playSound(player.getLocation(), Sound.ENTITY_WOLF_BIG_GROWL, 2.0f, 1.0f);
                 }
 
                 if (hero != null) {

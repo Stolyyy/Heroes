@@ -16,7 +16,7 @@ public interface Dash {
         Location startLocation = player.getLocation();
         final Vector direction = player.getEyeLocation().getDirection();
         double dashSpeed = dashData.speed(); // Speed of the dash movement
-        int maxDurationTicks = 7; // Maximum duration of the dash in ticks
+        int maxDurationTicks = 10; // Maximum duration of the dash in ticks
 
         player.setVelocity(direction.clone().multiply(dashSpeed));
 

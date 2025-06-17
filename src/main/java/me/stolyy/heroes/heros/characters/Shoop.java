@@ -219,7 +219,7 @@ public class Shoop extends HeroEnergy implements PassiveSneak, Projectile, Hitsc
         setHeroType(HeroType.RANGED);
         setWeight(3);
 
-        primary = new Ability(AbilityType.PRIMARY, 1.5, 1, 0.3, new ProjectileData().setSpeed(2.5).setRadius(1.5).setRange(100).setCustomModelData(14003));
+        primary = new Ability(AbilityType.PRIMARY, 1.5, 1, 0.3, new ProjectileData().setSpeed(2.5).setRadius(1).setRange(100).setCustomModelData(14003));
         secondary = new Ability(AbilityType.SECONDARY, 7, 1, 0, new HitscanData().setParticle(Particle.DUST).setDustOptions(Color.YELLOW, 1.0f));
         ultimate = new Ability(AbilityType.ULTIMATE, 6, 3,100, 4, new HitscanData().setCustomModelData(14004));
         ultimateHits = new HashSet<>();

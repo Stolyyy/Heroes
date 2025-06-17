@@ -15,7 +15,7 @@ public class GameEffects {
 
     public static void applyEffects(Player player, TeamSettings teamSettings){
         player.setGameMode(org.bukkit.GameMode.ADVENTURE);
-        Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_MAX_HEALTH)).setBaseValue(teamSettings.maxHealth());
+        Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(teamSettings.maxHealth());
         player.setHealth(teamSettings.maxHealth());
         player.setHealthScale(20.0);
         player.setHealthScaled(true);
@@ -26,7 +26,7 @@ public class GameEffects {
 
     public static void removeEffects(Player player){
         player.setGameMode(org.bukkit.GameMode.ADVENTURE);
-        Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_MAX_HEALTH)).setBaseValue(20.0);
+        Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(20.0);
         player.setHealth(20.0);
         player.setHealthScaled(false);
         player.removePotionEffect(PotionEffectType.SPEED);

@@ -35,7 +35,7 @@ public class GameVisuals {
         ScoreboardManager manager = Bukkit.getScoreboardManager();
         scoreboard = manager.getNewScoreboard();
 
-        this.sidebar = scoreboard.registerNewObjective("GameInfo", Criteria.DUMMY, Component.text(NamedTextColor.GOLD + "SMASH HEROES 4"));
+        this.sidebar = scoreboard.registerNewObjective("GameInfo", Criteria.DUMMY, Component.text("SMASH HEROES 4", NamedTextColor.GOLD));
         this.sidebar.setDisplaySlot(DisplaySlot.SIDEBAR);
 
         this.tabHealth = scoreboard.registerNewObjective("tabHealth", Criteria.HEALTH, Component.text("❤"));
@@ -147,8 +147,7 @@ public class GameVisuals {
                     player.showTitle(title);
                     timer--;
                 } else {
-                    Component mainTitle = Component.text("Welcome Back!", NamedTextColor.YELLOW)
-                            .append(Component.text(timer, NamedTextColor.GOLD));
+                    Component mainTitle = Component.text("Welcome Back!", NamedTextColor.YELLOW);
                     Component subtitle = Component.text("Go!", NamedTextColor.GREEN);
                     Title title = Title.title(mainTitle, subtitle, times);
                     player.showTitle(title);
@@ -182,7 +181,7 @@ public class GameVisuals {
             if (!teamPlayers.isEmpty()) {
                 sidebar.getScore("§" + color.ordinal()).setScore(--line);
                 for (Player p : teamPlayers) {
-                    String livesStr = " [" + game.lives(p) + "♥]";
+                    String livesStr = " ♥" + game.lives(p);
                     Component playerComponent = Component.text(p.getName())
                             .color(color.chatColor())
                             .append(Component.text(livesStr, NamedTextColor.WHITE));

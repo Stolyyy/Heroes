@@ -103,9 +103,15 @@ public class GameManager {
             return;
         }
 
-        Game game = findOrCreateWaitingGame(GameEnums.GameMode.ONE_V_ONE);
+        Game game = findGame(GameEnums.GameMode.ONE_V_ONE);
 
-        game.addPlayer(player, GameEnums.TeamColor.RED);
+        if(game == null) {
+            game = createGame(GameEnums.GameMode.ONE_V_ONE);
+            game.addPlayer(player, GameEnums.TeamColor.RED);
+        } else {
+            game.addPlayer(player, GameEnums.TeamColor.BLUE);
+        }
+
         playerGames.put(player.getUniqueId(), game);
 
         if (game.canStart()) {
@@ -121,12 +127,21 @@ public class GameManager {
             return;
         }
 
-        Game game = findOrCreateWaitingGame(GameEnums.GameMode.TWO_V_TWO);
+        Game game = findGame(GameEnums.GameMode.TWO_V_TWO);
+        GameEnums.TeamColor teamColor;
+
+        if(game == null) {
+            teamColor = GameEnums.TeamColor.RED;
+            game = createGame(GameEnums.GameMode.TWO_V_TWO);
+        } else {
+            teamColor = GameEnums.TeamColor.BLUE;
+        }
 
         // Add both party members to the game
+        Game finalGame = game;
         PartyManager.getPartyMembers(player).forEach(member -> {
-            game.addPlayer(member, GameEnums.TeamColor.RED);
-            playerGames.put(member.getUniqueId(), game);
+            finalGame.addPlayer(member, teamColor);
+            playerGames.put(member.getUniqueId(), finalGame);
         });
 
         if (game.canStart()) {
@@ -149,30 +164,29 @@ public class GameManager {
         Game game = new Game(GameMapManager.getRandomMapInAll(Set.of(GameEnums.GameMode.ONE_V_ONE, GameEnums.GameMode.TWO_V_TWO)), GameEnums.GameMode.PARTY);
 
         List<Player> members = new ArrayList<>(PartyManager.getPartyMembers(player));
+        members.forEach(member -> playerGames.put(member.getUniqueId(), game));
+
         members.remove(player);
-        if (!members.isEmpty()) game.addPlayer(player, GameEnums.TeamColor.RED);
-        if (members.size() > 1) game.addPlayer(members.getFirst(), GameEnums.TeamColor.BLUE);
+        game.addPlayer(player, GameEnums.TeamColor.RED);
+        if (!members.isEmpty()) game.addPlayer(members.getFirst(), GameEnums.TeamColor.BLUE);
+
         for (int i = 1; i < members.size(); i++) {
             game.addPlayer(members.get(i), GameEnums.TeamColor.SPECTATOR);
         }
 
-        members.forEach(member -> playerGames.put(member.getUniqueId(), game));
-
         GUIManager.open(player, new PartyModeGUI(game, player));
     }
 
-    private static Game findOrCreateWaitingGame(GameEnums.GameMode gameMode) {
-        Optional<Game> foundGame = waitingGames.stream()
+    private static Game findGame(GameEnums.GameMode gameMode) {
+        return waitingGames.stream()
                 .filter(g -> g.gameMode() == gameMode)
-                .findFirst();
-
-        if (foundGame.isPresent()) {
-            return foundGame.get();
-        } else {
-            Game newGame = new Game(GameMapManager.getRandomMap(gameMode), gameMode);
-            waitingGames.add(newGame);
-            return newGame;
-        }
+                .findFirst()
+                .orElse(null);
+    }
+    private static Game createGame(GameEnums.GameMode gameMode) {
+        Game newGame = new Game(GameMapManager.getRandomMap(gameMode), gameMode);
+        waitingGames.add(newGame);
+        return newGame;
     }
 
 
@@ -188,7 +202,7 @@ public class GameManager {
     }
 
     public static void clear() {
-        new HashSet<>(playerGames.values()).forEach(game -> game.end(GameEnums.GameEndReason.FORFEIT));
+        new HashSet<>(playerGames.values()).forEach(Game::clean);
         playerGames.clear();
         waitingGames.clear();
     }

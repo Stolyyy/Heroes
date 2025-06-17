@@ -9,7 +9,6 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import java.util.*;
 
 public class GUIManager {
-    private static final Heroes plugin = Heroes.getInstance();
     private static final Map<UUID, GUI> openGuis = new HashMap<>();
     private static final Set<UUID> changingGuis = new HashSet<>();
 
@@ -17,16 +16,16 @@ public class GUIManager {
         changingGuis.add(player.getUniqueId());
         gui.open();
         openGuis.put(player.getUniqueId(), gui);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> changingGuis.remove(player.getUniqueId()), 1L);
+        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> changingGuis.remove(player.getUniqueId()), 1L);
     }
 
     public static void close(Player player) {
         changingGuis.add(player.getUniqueId());
-
-        player.closeInventory();
         openGuis.remove(player.getUniqueId());
+        player.closeInventory();
 
-        Bukkit.getScheduler().runTaskLater(plugin, () -> changingGuis.remove(player.getUniqueId()), 1L);
+
+        Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> changingGuis.remove(player.getUniqueId()), 1L);
     }
 
     public static void handleClick(InventoryClickEvent event) {
@@ -50,7 +49,7 @@ public class GUIManager {
         if (gui == null) return;
 
         if (gui.isLocked()) {
-            Bukkit.getScheduler().runTaskLater(plugin, gui::open, 1L);
+            Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), gui::open, 1L);
         } else {
             openGuis.remove(playerUuid);
         }
@@ -58,5 +57,11 @@ public class GUIManager {
 
     public static boolean hasOpenGui(Player player) {
         return openGuis.containsKey(player.getUniqueId());
+    }
+
+    public static void clear() {
+        openGuis.keySet().forEach(uuid -> Objects.requireNonNull(Bukkit.getPlayer(uuid)).closeInventory());
+        openGuis.clear();
+        changingGuis.clear();
     }
 }

@@ -1,12 +1,20 @@
 package me.stolyy.heroes.heros;
 
 import me.stolyy.heroes.heros.abilities.Ability;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
+
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 
 public abstract class Hero {
     protected final Player player;
     private HeroType heroType;
     private double weight;
+
+    protected final List<BukkitTask> activeTasks = new LinkedList<>();
 
     private double jabCooldown = 0.5;
     private double jabDamage = 1.0;
@@ -59,6 +67,7 @@ public abstract class Hero {
     }
     protected Hero setJabReach(double jabReach) {
         this.jabReach = jabReach;
+        Objects.requireNonNull(player.getAttribute(Attribute.ENTITY_INTERACTION_RANGE)).setBaseValue(jabReach);
         return this;
     }
     protected Hero setMaxDoubleJumps(int maxDoubleJumps) {

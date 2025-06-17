@@ -14,7 +14,7 @@ import java.util.*;
 
 public class BugCharmsGUI extends GUI {
     private final Set<Charms> charms;
-    private final Map<Charms, Integer> charmLocations = new HashMap<>();
+    private Map<Charms, Integer> charmLocations;
     private int usedNotches = 0;
 
     public BugCharmsGUI(Player player) {
@@ -47,6 +47,7 @@ public class BugCharmsGUI extends GUI {
 
     @Override
     protected void populate() {
+        charmLocations = new HashMap<>();
         charmLocations.put(Charms.DASHMASTER, 13);
         charmLocations.put(Charms.GRUBSONG, 19);
         charmLocations.put(Charms.HEAVY_BLOW, 20);

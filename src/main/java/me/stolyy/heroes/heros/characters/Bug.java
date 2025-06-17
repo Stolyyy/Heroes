@@ -22,7 +22,7 @@ import java.util.*;
 public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave {
     public static int CHARM_NOTCHES = 9;
 
-    private final Map<Player, Boolean> diveHitPlayers = new HashMap<>();
+    private Set<Player> diveHitPlayers;
     private DashData dive;
     private ShockwaveData diveShockwave;
     private ProjectileData spirit;
@@ -49,7 +49,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
             Interactions.handleInteraction(player.getEyeLocation().getDirection(), primary.dmg(), primary.kb(), player, target);
             Sounds.playSoundToWorld(player, "melee.sword.meleehit", 1.0f, 1.0f);
         } else {
-            diveHitPlayers.put(target, true);
+            diveHitPlayers.add(target);
             Interactions.handleInteraction(player.getEyeLocation().getDirection(), secondary.dmg(), secondary.kb(), player, target);
             Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> diveHitPlayers.remove(target), 10L);
         }
@@ -96,7 +96,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
 
     @Override
     public void onShockwaveHit(Player target, AbilityType abilityType) {
-        if(diveHitPlayers.get(target)) return;
+        if(diveHitPlayers.contains(target)) return;
         Sounds.playSoundToPlayer(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
         Interactions.handleInteraction(secondary.dmg(), secondary.kb(), player, target);
     }
@@ -150,6 +150,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
         primary = new Ability(AbilityType.PRIMARY, 5, 2.5, 2, new DashData());
 
         secondary = new Ability(AbilityType.SECONDARY, 7, 3, 0.5);
+        diveHitPlayers  = new HashSet<>();
         dive = new DashData(25, 5);
         diveShockwave = new ShockwaveData(4, Particle.DUST).setDustOptions(Color.GRAY, 3.0f);
         spirit = new ProjectileData(3, 2.5, 50);
@@ -182,7 +183,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
         setEnergyPerSecond(0);
         setCanIncreaseEnergy(false);
 
-        Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)).setBaseValue(.14);
+        Objects.requireNonNull(player.getAttribute(Attribute.MOVEMENT_SPEED)).setBaseValue(.14);
         setWeight(1.5);
 
         if (charms.contains(Charms.DASHMASTER)) {
@@ -221,7 +222,7 @@ public class Bug extends HeroEnergy implements Dash, Projectile, Cone, Shockwave
             soulsPerCast *= 0.75;
         }
         if (charms.contains(Charms.SPRINTMASTER)) {
-            Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)).setBaseValue(.16);
+            Objects.requireNonNull(player.getAttribute(Attribute.MOVEMENT_SPEED)).setBaseValue(.16);
         }
         if (charms.contains(Charms.STEADY_BODY)) {
             setWeight(weight() + 1.5);

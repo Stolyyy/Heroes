@@ -30,7 +30,7 @@ public class PrincessEntity {
             skeleton.setCustomName("Princess");
             skeleton.setCustomNameVisible(true);
             skeleton.setInvulnerable(true);
-            skeleton.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.3);
+            skeleton.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.3);
             skeleton.setFireTicks(0);
             skeleton.setShouldBurnInDay(false);
             skeleton.setTarget(null);

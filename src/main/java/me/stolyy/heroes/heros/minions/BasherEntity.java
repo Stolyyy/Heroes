@@ -25,7 +25,7 @@ public class BasherEntity {
             zombie.setCustomNameVisible(true);
             zombie.setInvulnerable(true);
             zombie.setBaby(false);
-            zombie.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.5); zombie.setFireTicks(0);
+            zombie.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.5); zombie.setFireTicks(0);
             zombie.setShouldBurnInDay(false);
             zombie.setTarget(null);
             zombie.setAggressive(false);

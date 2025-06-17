@@ -3,6 +3,7 @@ package me.stolyy.heroes;
 import me.stolyy.heroes.game.maps.GameMapManager;
 import me.stolyy.heroes.game.maps.MapAdminCommand;
 import me.stolyy.heroes.game.menus.GUIListener;
+import me.stolyy.heroes.game.menus.GUIManager;
 import me.stolyy.heroes.game.minigame.*;
 import me.stolyy.heroes.heros.listeners.AbilityListener;
 import me.stolyy.heroes.heros.HeroManager;
@@ -16,6 +17,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -23,11 +25,11 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandMap;
 
 import java.lang.reflect.Field;
+import java.util.Objects;
 import java.util.logging.Level;
 
 public final class Heroes extends JavaPlugin implements Listener {
@@ -61,14 +63,12 @@ public final class Heroes extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
-        Bukkit.getScheduler().cancelTasks(this);
-
-        // End all active games
-
-        // Clear data structures
-        HeroManager.clear();
         GameManager.clear();
+        HeroManager.clear();
         PartyManager.clear();
+        GUIManager.clear();
+
+        Bukkit.getScheduler().cancelTasks(this);
 
         getLogger().info("Heroes plugin has been disabled!");
     }
@@ -145,7 +145,7 @@ public final class Heroes extends JavaPlugin implements Listener {
         if (lobbyLocation != null) {
             player.teleport(lobbyLocation);
             player.getInventory().clear();
-            player.setHealth(player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue());
+            player.setHealth(Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH)).getValue());
             player.setFoodLevel(20);
             player.setExp(0);
             player.setLevel(0);

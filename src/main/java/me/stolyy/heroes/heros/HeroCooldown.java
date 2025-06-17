@@ -21,15 +21,11 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.time.Duration;
-import java.util.LinkedList;
-import java.util.List;
 
 public abstract class HeroCooldown extends Hero {
     private static final Plugin PLUGIN = Heroes.getInstance();
     private static final int BAR_LENGTH = 10;
     private static final int UPDATES_PER_SECOND = 10;
-
-    protected final List<BukkitTask> activeTasks = new LinkedList<>();
 
     private int doubleJumpCount = 0;
     private boolean canDoubleJump = true;

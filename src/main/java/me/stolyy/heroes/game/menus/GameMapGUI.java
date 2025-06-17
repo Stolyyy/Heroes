@@ -36,6 +36,7 @@ public class GameMapGUI extends GUI {
         this.parentGUI = parentGUI;
         this.availableMaps = new ArrayList<>(GameMapManager.getMapsForMode(GameEnums.GameMode.PARTY));
         this.selectedMap = game.settings().map();
+        update();
     }
 
 
@@ -123,6 +124,7 @@ public class GameMapGUI extends GUI {
                 break;
             }
         }
+        super.update();
     }
 
     private ItemStack createMapItem(GameMap map) {

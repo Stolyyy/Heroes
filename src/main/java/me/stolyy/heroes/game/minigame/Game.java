@@ -92,6 +92,7 @@ public class Game {
             winningTeam.ifPresentOrElse(visuals::win, visuals::draw);
         }
 
+        gameState = GameState.ENDED;
         Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), this::clean, 20L * CLEANUP_DELAY);
     }
 
@@ -234,7 +235,7 @@ public class Game {
         for (UUID uuid : getAllPlayerUUIDs()) {
             Player p = Bukkit.getPlayer(uuid);
             if (p != null) {
-                HeroManager.getHero(p).cancelTasks();
+                removePlayer(p);
                 Heroes.teleportToLobby(p);
             }
         }

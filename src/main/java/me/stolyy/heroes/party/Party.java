@@ -23,9 +23,7 @@ public class Party {
     protected void removeMember(UUID playerUuid) {
         members.remove(playerUuid);
 
-        // If the leader left and there are still members, assign a new leader.
         if (leader.equals(playerUuid) && !members.isEmpty()) {
-            // Get the first UUID from the set to be the new leader.
             this.leader = members.iterator().next();
         }
     }

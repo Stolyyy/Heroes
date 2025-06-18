@@ -38,7 +38,7 @@
 - [X] [Bug Fixing] End runnables when player dies or is not in game
 - [X] [Bug Fixing] Reset stats when game ends/starts (so u dont carry 5 charges etc to new game), call stats?
 - [X?] [Design] Listener Cleanup
-- [ ] [Bug Fixing] Cancel button in map selection
+- [X] [Bug Fixing] Cancel button in map selection
 - [X?] [Bug Fixing] Scoreboard lives always display as 3 for the person it is displaying it to
 - [X] [Bug Fixing] Shoop RTL not in walls (maybe subtract from the location vector)
 - [X] [GUI/Character] Bug charm menu

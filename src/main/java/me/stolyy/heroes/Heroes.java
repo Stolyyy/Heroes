@@ -5,11 +5,11 @@ import me.stolyy.heroes.game.maps.MapAdminCommand;
 import me.stolyy.heroes.game.menus.GUIListener;
 import me.stolyy.heroes.game.menus.GUIManager;
 import me.stolyy.heroes.game.minigame.*;
-import me.stolyy.heroes.heros.listeners.AbilityListener;
+import me.stolyy.heroes.hero.listeners.AbilityListener;
 import me.stolyy.heroes.heros.HeroManager;
 import me.stolyy.heroes.utility.commands.*;
-import me.stolyy.heroes.heros.listeners.DoubleJumpListener;
-import me.stolyy.heroes.heros.listeners.JabListener;
+import me.stolyy.heroes.hero.listeners.MovementListener;
+import me.stolyy.heroes.hero.listeners.JabListener;
 import me.stolyy.heroes.party.PartyChatCommand;
 import me.stolyy.heroes.party.PartyCommand;
 import me.stolyy.heroes.party.PartyManager;
@@ -27,6 +27,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandMap;
+import org.bukkit.scheduler.BukkitScheduler;
 
 import java.lang.reflect.Field;
 import java.util.Objects;
@@ -40,6 +41,7 @@ public final class Heroes extends JavaPlugin implements Listener {
     public static Heroes getInstance() {
         return instance;
     }
+    public static BukkitScheduler getScheduler() { return getInstance().getServer().getScheduler(); }
 
     @Override
     public void onEnable() {
@@ -77,7 +79,7 @@ public final class Heroes extends JavaPlugin implements Listener {
     private void registerListeners() {
         Bukkit.getPluginManager().registerEvents(this, this);
         Bukkit.getPluginManager().registerEvents(new AbilityListener(), this);
-        Bukkit.getPluginManager().registerEvents(new DoubleJumpListener(), this);
+        Bukkit.getPluginManager().registerEvents(new MovementListener(), this);
         Bukkit.getPluginManager().registerEvents(new JabListener(), this);
         Bukkit.getPluginManager().registerEvents(new GUIListener(), this);
         Bukkit.getPluginManager().registerEvents(new GameListener(), this);

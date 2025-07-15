@@ -46,36 +46,6 @@ public abstract class GUI {
         }
     }
 
-    protected ItemStack createItem(Material material, String name) {
-        ItemStack item = new ItemStack(material);
-        ItemMeta meta = item.getItemMeta();
-        meta.displayName(Component.text(name));
-        item.setItemMeta(meta);
-        return item;
-    }
-
-    protected static ItemStack createItem(Material material, String name, List<String> lore) {
-        ItemStack item = new ItemStack(material);
-        ItemMeta meta = item.getItemMeta();
-        meta.displayName(Component.text(name));
-        meta.lore(lore.stream().map(Component::text).toList());
-        item.setItemMeta(meta);
-        return item;
-    }
-
-    protected void highlightItem(ItemStack item){
-        ItemMeta meta = item.getItemMeta();
-        meta.addEnchant(Enchantment.UNBREAKING, 1, true);
-        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-        item.setItemMeta(meta);
-    }
-
-    protected void removeHighlight(ItemStack item){
-        ItemMeta meta = item.getItemMeta();
-        meta.removeEnchantments();
-        item.setItemMeta(meta);
-    }
-
     public boolean isLocked(){
         return false;
     }

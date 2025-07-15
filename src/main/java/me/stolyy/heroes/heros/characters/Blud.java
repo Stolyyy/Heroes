@@ -5,7 +5,7 @@ import me.stolyy.heroes.heros.abilities.*;
 import me.stolyy.heroes.heros.abilities.interfaces.Dash;
 import me.stolyy.heroes.heros.abilities.interfaces.Hitscan;
 import me.stolyy.heroes.heros.abilities.interfaces.Projectile;
-import me.stolyy.heroes.heros.abilities.AbilityType;
+import me.stolyy.heroes.hero.config.AbilityType;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 

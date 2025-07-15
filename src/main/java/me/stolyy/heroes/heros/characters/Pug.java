@@ -4,10 +4,10 @@ import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.heros.HeroEnergy;
 import me.stolyy.heroes.heros.abilities.Ability;
 import me.stolyy.heroes.heros.abilities.data.DashData;
-import me.stolyy.heroes.heros.abilities.interfaces.PassiveSneak;
+import me.stolyy.heroes.hero.components.UseSneak;
 import me.stolyy.heroes.utility.Interactions;
-import me.stolyy.heroes.heros.abilities.AbilityType;
-import me.stolyy.heroes.heros.HeroType;
+import me.stolyy.heroes.hero.config.AbilityType;
+import me.stolyy.heroes.hero.config.HeroType;
 import me.stolyy.heroes.heros.minions.BasherEntity;
 import me.stolyy.heroes.heros.minions.PrincessEntity;
 import me.stolyy.heroes.heros.abilities.interfaces.Dash;
@@ -23,7 +23,7 @@ import org.bukkit.util.Vector;
 
 import java.util.*;
 
-public class Pug extends HeroEnergy implements PassiveSneak, Dash {
+public class Pug extends HeroEnergy implements UseSneak, Dash {
     private BasherEntity basher;
     private PrincessEntity princess;
 

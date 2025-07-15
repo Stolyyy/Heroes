@@ -1,8 +1,7 @@
 package me.stolyy.heroes.heros.abilities;
 
-import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.hero.config.AbilityType;
 import me.stolyy.heroes.heros.abilities.data.AbilityData;
-import org.bukkit.Bukkit;
 
 public class Ability {
     private AbilityType abilityType;

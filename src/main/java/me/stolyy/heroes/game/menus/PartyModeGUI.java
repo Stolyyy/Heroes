@@ -166,18 +166,6 @@ public class PartyModeGUI extends GUI{
         return null;
     }
 
-    private ItemStack createPlayerHead(Player player) {
-        ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-        SkullMeta meta = (SkullMeta) head.getItemMeta();
-        meta.setOwningPlayer(player);
-        List<Component> lore = new ArrayList<>();
-        lore.add(Component.text(HeroManager.heroToString(HeroManager.getHero(player)), NamedTextColor.WHITE));
-        meta.lore(lore);
-        meta.displayName(Component.text(player.getName()));
-        head.setItemMeta(meta);
-        return head;
-    }
-
     public void setGame(Game newGame) {
         this.game = newGame;
     }

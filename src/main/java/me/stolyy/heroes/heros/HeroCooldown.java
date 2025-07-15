@@ -3,7 +3,7 @@ package me.stolyy.heroes.heros;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.minigame.GameManager;
 import me.stolyy.heroes.heros.abilities.Ability;
-import me.stolyy.heroes.heros.abilities.AbilityType;
+import me.stolyy.heroes.hero.config.AbilityType;
 import me.stolyy.heroes.utility.Interactions;
 import me.stolyy.heroes.utility.effects.Particles;
 import me.stolyy.heroes.utility.effects.Sounds;

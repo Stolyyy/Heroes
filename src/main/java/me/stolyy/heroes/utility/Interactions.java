@@ -146,6 +146,7 @@ public class Interactions {
     //check for gamemode adventure, same game, different teams, and if alive
     public static boolean canInteract(Player attacker, Player victim){
         if(!victim.getGameMode().equals(GameMode.ADVENTURE)) return false;
+        if(attacker.getUniqueId().equals(victim.getUniqueId())) return false;
 
         Game attackerGame = GameManager.getPlayerGame(attacker);
         Game victimGame = GameManager.getPlayerGame(victim);

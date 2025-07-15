@@ -3,11 +3,11 @@ package me.stolyy.heroes.heros.characters;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.heros.abilities.Ability;
 import me.stolyy.heroes.heros.abilities.data.HitscanData;
-import me.stolyy.heroes.heros.abilities.interfaces.PassiveSneak;
+import me.stolyy.heroes.hero.components.UseSneak;
 import me.stolyy.heroes.heros.abilities.data.ProjectileData;
-import me.stolyy.heroes.heros.abilities.AbilityType;
+import me.stolyy.heroes.hero.config.AbilityType;
 import me.stolyy.heroes.heros.HeroEnergy;
-import me.stolyy.heroes.heros.HeroType;
+import me.stolyy.heroes.hero.config.HeroType;
 import me.stolyy.heroes.utility.effects.Equipment;
 import me.stolyy.heroes.utility.Interactions;
 import me.stolyy.heroes.utility.effects.Particles;
@@ -31,7 +31,7 @@ import org.bukkit.util.Vector;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Shoop extends HeroEnergy implements PassiveSneak, Projectile, Hitscan, Listener {
+public class Shoop extends HeroEnergy implements UseSneak, Projectile, Hitscan, Listener {
     private Set<Player> ultimateHits;
     private Ability passive;
 

@@ -22,6 +22,7 @@ public class GameEffects {
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1));
         player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, Integer.MAX_VALUE, 1));
         player.addPotionEffect(new PotionEffect(PotionEffectType.SATURATION, Integer.MAX_VALUE, 0));
+        player.setMaximumNoDamageTicks(1);
     }
 
     public static void removeEffects(Player player){
@@ -32,6 +33,7 @@ public class GameEffects {
         player.removePotionEffect(PotionEffectType.SPEED);
         player.removePotionEffect(PotionEffectType.JUMP_BOOST);
         player.removePotionEffect(PotionEffectType.SATURATION);
+        player.setMaximumNoDamageTicks(10);
     }
 
     public static void restrictPlayer(Player player){

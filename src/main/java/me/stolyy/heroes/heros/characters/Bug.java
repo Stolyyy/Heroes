@@ -1,6 +1,8 @@
 package me.stolyy.heroes.heros.characters;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.hero.config.AbilityType;
+import me.stolyy.heroes.hero.config.HeroType;
 import me.stolyy.heroes.heros.*;
 import me.stolyy.heroes.heros.abilities.*;
 import me.stolyy.heroes.heros.abilities.interfaces.Cone;
@@ -8,7 +10,6 @@ import me.stolyy.heroes.heros.abilities.interfaces.Dash;
 import me.stolyy.heroes.heros.abilities.interfaces.Projectile;
 import me.stolyy.heroes.heros.abilities.interfaces.Shockwave;
 import me.stolyy.heroes.heros.abilities.data.*;
-import me.stolyy.heroes.heros.minions.SpooderEntity;
 import me.stolyy.heroes.utility.Interactions;
 import me.stolyy.heroes.utility.effects.Sounds;
 import net.kyori.adventure.text.Component;

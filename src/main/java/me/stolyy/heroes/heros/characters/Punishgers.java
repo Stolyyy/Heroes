@@ -1,7 +1,6 @@
 package me.stolyy.heroes.heros.characters;
 
 import me.stolyy.heroes.heros.Hero;
-import me.stolyy.heroes.heros.HeroType;
 import org.bukkit.entity.Player;
 
 public class Punishgers extends Hero {

@@ -2,7 +2,7 @@ package me.stolyy.heroes.heros.characters;
 
 import me.stolyy.heroes.heros.abilities.interfaces.Dash;
 import me.stolyy.heroes.heros.abilities.interfaces.Shockwave;
-import me.stolyy.heroes.heros.abilities.AbilityType;
+import me.stolyy.heroes.hero.config.AbilityType;
 import me.stolyy.heroes.heros.Hero;
 import me.stolyy.heroes.heros.abilities.interfaces.Projectile;
 import org.bukkit.Location;

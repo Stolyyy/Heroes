@@ -15,6 +15,9 @@ public abstract class Hero {
     protected final HeroData data;
     protected final Map<String, Ability> abilities;
 
+    protected double damageMultiplier = 1.0;
+    protected double knockbackMultiplier = 1.0;
+
     protected Equipment equipment;
     protected Movement movement;
     protected Jab jab;

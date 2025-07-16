@@ -5,7 +5,6 @@ import io.papermc.paper.datacomponent.item.CustomModelData;
 import io.papermc.paper.datacomponent.item.DyedItemColor;
 import io.papermc.paper.datacomponent.item.ItemLore;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
-import me.stolyy.heroes.hero.data.HeroData;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Color;
@@ -97,6 +96,26 @@ public class CustomItems {
 
     public static void rename(ItemStack item, String newName){
         item.setData(DataComponentTypes.ITEM_NAME, Component.text(newName));
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    public static void setStack(Player player, int slot, int stack){
+        ItemStack item = player.getInventory().getItem(slot);
+        if(item == null) return;
+
+        item.setData(DataComponentTypes.MAX_STACK_SIZE, stack);
+        item.setAmount(stack);
+        player.getInventory().setItem(slot, item);
+    }
+
+    @SuppressWarnings({"UnstableApiUsage", "DataFlowIssue"})
+    public static void setDamage(Player player, int slot, double percentage){
+        ItemStack item = player.getInventory().getItem(slot);
+        if(item == null) return;
+
+        item.setData(DataComponentTypes.DAMAGE,
+                (int) percentage * item.getData(DataComponentTypes.MAX_DAMAGE));
+        player.getInventory().setItem(slot, item);
     }
 
     public static void addLore(ItemStack item, String... lore) {

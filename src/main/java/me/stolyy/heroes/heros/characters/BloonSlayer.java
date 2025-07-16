@@ -1,9 +1,9 @@
 package me.stolyy.heroes.heros.characters;
 
 import me.stolyy.heroes.heros.HeroEnergy;
-import me.stolyy.heroes.hero.config.HeroType;
+import me.stolyy.heroes.hero.configs.HeroType;
 import me.stolyy.heroes.heros.abilities.Ability;
-import me.stolyy.heroes.hero.config.AbilityType;
+import me.stolyy.heroes.hero.configs.AbilityType;
 import org.bukkit.entity.Player;
 
 public class BloonSlayer extends HeroEnergy {

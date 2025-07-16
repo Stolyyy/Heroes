@@ -1,11 +1,11 @@
-package me.stolyy.heroes.hero.config;
+package me.stolyy.heroes.hero.configs;
 
 import java.util.Map;
 
 public record AbilityConfig(
     String name,
     String description,
-    AbilityEnums.AbilityLogic logic,
+    AbilityEnums.AbilityLogicType logicType,
 
     double damage,
     double knockback,
@@ -15,6 +15,8 @@ public record AbilityConfig(
 
     AbilityEnums.AbilityType abilityType,
     AbilityEnums.CooldownType cooldownType,
+    AbilityEnums.CooldownDisplay cooldownDisplay,
+    AbilityEnums.CooldownReadyDisplay cooldownReadyDisplay,
 
     Map<String, Object> properties,
 

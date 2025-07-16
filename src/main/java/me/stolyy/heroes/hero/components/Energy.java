@@ -2,22 +2,22 @@ package me.stolyy.heroes.hero.components;
 
 import me.stolyy.heroes.hero.characters.Hero;
 import me.stolyy.heroes.hero.abilities.Ability;
-import me.stolyy.heroes.hero.data.HeroData.EnergyData;
+import me.stolyy.heroes.hero.configs.EnergyConfig;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
-public class Energy {
+public class Energy implements OnTick {
     private final Hero hero;
 
     private final double maxEnergy;
     private double currentEnergy, regenRate; // regen rate in energy per second
     private boolean canChangeEnergy;
 
-    public Energy(Hero hero, EnergyData data) {
+    public Energy(Hero hero, EnergyConfig config) {
         this.hero = hero;
 
-        maxEnergy = data.getMax();
-        regenRate = data.getRegenerationRate();
+        maxEnergy = config.maxEnergy();
+        regenRate = config.energyRegen();
         currentEnergy = 0;
         canChangeEnergy = true;
     }
@@ -29,13 +29,7 @@ public class Energy {
         hero.getDisplay().setXPBar(currentEnergy, currentEnergy / maxEnergy);
     }
 
-    public void notEnoughEnergy(Ability ability){
-        hero.getPlayer().sendMessage(
-                Component.text("Not enough energy to use " +
-                        ability.getData().getName() + "!", NamedTextColor.RED)
-                        .append(Component.text((int) (ability.energyCost() - currentEnergy) , NamedTextColor.WHITE))
-                        .append(Component.text(" more needed." , NamedTextColor.RED)));
-    }
+    public void clean() { }
 
     public void changeEnergy(double change) {
         currentEnergy = Math.min(Math.max(currentEnergy + change, 0), maxEnergy);

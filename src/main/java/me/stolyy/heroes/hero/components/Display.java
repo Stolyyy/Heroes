@@ -13,7 +13,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.time.Duration;
 
-public class Display {
+public class Display implements OnTick {
     private final Hero hero;
 
     private BukkitTask ultimateCountdownTask;
@@ -25,28 +25,6 @@ public class Display {
 
     public Display(Hero hero) {
         this.hero = hero;
-    }
-
-    @SuppressWarnings("UnstableApiUsage")
-    public void setStack(int slot, int stack){
-        Player player = hero.getPlayer();
-        ItemStack item = player.getInventory().getItem(slot);
-        if(item == null) return;
-
-        item.setData(DataComponentTypes.MAX_STACK_SIZE, stack);
-        item.setAmount(stack);
-        player.getInventory().setItem(slot, item);
-    }
-
-    @SuppressWarnings({"UnstableApiUsage", "DataFlowIssue"})
-    public void setDamage(int slot, double percentage){
-        Player player = hero.getPlayer();
-        ItemStack item = player.getInventory().getItem(slot);
-        if(item == null) return;
-
-        item.setData(DataComponentTypes.DAMAGE,
-                (int) percentage * item.getData(DataComponentTypes.MAX_DAMAGE));
-        player.getInventory().setItem(slot, item);
     }
 
     public void ultTitle(double duration){
@@ -77,6 +55,8 @@ public class Display {
             }
         }.runTaskTimer(Heroes.getInstance(), 0L, 20L);
     }
+
+    public void onTick() {}
 
     public void clean(){
         if (ultimateCountdownTask != null && !ultimateCountdownTask.isCancelled()) {

@@ -1,7 +1,7 @@
 package me.stolyy.heroes.hero.components;
 
 import me.stolyy.heroes.hero.characters.Hero;
-import me.stolyy.heroes.hero.data.HeroData.MovementData;
+import me.stolyy.heroes.hero.configs.MovementConfig;
 import me.stolyy.heroes.utility.effects.Particles;
 import me.stolyy.heroes.utility.effects.Sounds;
 import org.bukkit.Particle;
@@ -13,7 +13,7 @@ import java.util.Objects;
 
 public class Movement {
     private final Hero hero;
-    private final MovementData data;
+    private final MovementConfig config;
 
     private int maxDoubleJumps;
     private int doubleJumpCount = 0;
@@ -21,17 +21,17 @@ public class Movement {
 
     private double moveSpeed, jumpStrength, gravity;
 
-    public Movement(Hero hero, MovementData data) {
+    public Movement(Hero hero, MovementConfig movementConfig) {
         this.hero = hero;
-        this.data = data;
+        this.config = movementConfig;
 
-        moveSpeed = data.getMoveSpeed();
-        jumpStrength = data.getJumpHeight();
-        gravity = data.getGravity();
+        moveSpeed = config.walkSpeed();
+        jumpStrength = config.jumpHeight();
+        gravity = config.gravity();
 
         setPlayerAttributes();
 
-        maxDoubleJumps = data.getMaxDoubleJumps();
+        maxDoubleJumps = config.maxDoubleJumps();
     }
 
     public void performDoubleJump() {
@@ -51,7 +51,6 @@ public class Movement {
 
     public void resetDoubleJumps() {
         doubleJumpCount = 0;
-        maxDoubleJumps = data.getMaxDoubleJumps();
         canJump = true;
         hero.getPlayer().setAllowFlight(true);
     }

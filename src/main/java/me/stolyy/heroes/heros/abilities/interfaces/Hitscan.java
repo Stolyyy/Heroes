@@ -1,7 +1,7 @@
 package me.stolyy.heroes.heros.abilities.interfaces;
 
 import me.stolyy.heroes.Heroes;
-import me.stolyy.heroes.hero.config.AbilityType;
+import me.stolyy.heroes.hero.configs.AbilityType;
 import me.stolyy.heroes.heros.abilities.data.HitscanData;
 import me.stolyy.heroes.utility.effects.Particles;
 import me.stolyy.heroes.utility.physics.Hitbox;

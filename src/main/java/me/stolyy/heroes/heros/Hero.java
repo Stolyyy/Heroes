@@ -1,6 +1,6 @@
 package me.stolyy.heroes.heros;
 
-import me.stolyy.heroes.hero.config.HeroType;
+import me.stolyy.heroes.hero.configs.HeroType;
 import me.stolyy.heroes.heros.abilities.Ability;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;

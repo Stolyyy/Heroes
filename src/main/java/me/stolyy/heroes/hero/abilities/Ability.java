@@ -2,40 +2,48 @@ package me.stolyy.heroes.hero.abilities;
 
 import me.stolyy.heroes.hero.characters.Hero;
 import me.stolyy.heroes.hero.components.Energy;
-import me.stolyy.heroes.hero.config.AbilityConfig;
-import me.stolyy.heroes.hero.data.AbilityData;
+import me.stolyy.heroes.hero.configs.AbilityConfig;
 import org.bukkit.entity.Player;
 
 public abstract class Ability
 {
     protected final Hero hero;
     protected final Player player;
-    protected final Energy energy;
-    protected final AbilityConfig config;
-    protected final AbilityData data;
 
-    public Ability(Hero hero, AbilityData data)
+    protected final Cooldown cooldown;
+    protected final Energy energy;
+
+    protected final AbilityConfig config;
+
+    public Ability(Hero hero, AbilityConfig config)
     {
         this.hero = hero;
-        this.energy = hero.getComponent(Energy.class);
         this.player = hero.getPlayer();
-        this.data = data;
+        this.cooldown = new Cooldown(this);
+        this.energy = hero.getEnergy();
+
+        this.config = config;
     }
 
     public void execute()
     {
-        if(!cooldowns.isReady(this))
+        if(!cooldown.isReady())
         {
-            cooldowns.notReadyYet(this);
+            cooldown.notReadyYet();
+            return;
+        }
+        if(cooldown.isInUse())
+        {
+            cooldown.alreadyInUse();
             return;
         }
         if(energy.getCurrentEnergy() < energyCost())
         {
-            energy.notEnoughEnergy(this);
+            cooldown.notEnoughEnergy();
             return;
         }
         energy.changeEnergy(-energyCost());
-        cooldowns.start(this);
+        cooldown.start();
         onUse();
     }
 
@@ -44,12 +52,14 @@ public abstract class Ability
     public void onHit(Player target) {}
     public void onEnd() {}
 
-    public double damage() { return data.getDamage(); }
-    public double knockback() { return data.getKnockback(); }
-    public double cooldown() { return data.getCooldown(); }
-    public double energyCost() { return 0; }
+    public double damage() { return config.damage(); }
+    public double knockback() { return config.knockback(); }
+    public double cooldownTime() { return config.cooldown(); }
+    public double duration() { return config.duration(); }
+    public double energyCost() { return config.energyCost(); }
 
     public void clean() {}
 
-    public AbilityData getData() { return data; }
+    public AbilityConfig getConfig() { return config; }
+    public Cooldown getCooldown() { return cooldown; }
 }

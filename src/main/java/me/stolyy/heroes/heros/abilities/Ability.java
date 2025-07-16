@@ -1,6 +1,6 @@
 package me.stolyy.heroes.heros.abilities;
 
-import me.stolyy.heroes.hero.config.AbilityType;
+import me.stolyy.heroes.hero.configs.AbilityType;
 import me.stolyy.heroes.heros.abilities.data.AbilityData;
 
 public class Ability {

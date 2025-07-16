@@ -1,6 +1,5 @@
 package me.stolyy.heroes.hero.characters;
 
-import me.stolyy.heroes.hero.components.PassiveDrop;
 import me.stolyy.heroes.hero.components.UseDrop;
 import me.stolyy.heroes.hero.components.UseSneak;
 

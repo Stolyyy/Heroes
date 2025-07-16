@@ -1,7 +1,7 @@
 package me.stolyy.heroes.heros.characters;
 
 import me.stolyy.heroes.heros.HeroEnergy;
-import me.stolyy.heroes.hero.config.AbilityType;
+import me.stolyy.heroes.hero.configs.AbilityType;
 import me.stolyy.heroes.heros.abilities.interfaces.Dash;
 import me.stolyy.heroes.heros.abilities.interfaces.Hitscan;
 import me.stolyy.heroes.hero.components.UseSneak;

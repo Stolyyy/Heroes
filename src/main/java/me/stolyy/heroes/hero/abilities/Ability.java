@@ -58,8 +58,6 @@ public abstract class Ability
     public double duration() { return config.duration(); }
     public double energyCost() { return config.energyCost(); }
 
-    public void clean() {}
-
     public AbilityConfig getConfig() { return config; }
     public Cooldown getCooldown() { return cooldown; }
 }

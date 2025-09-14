@@ -2,9 +2,9 @@ package me.stolyy.heroes.utility.commands;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.minigame.GameManager;
-import me.stolyy.heroes.heros.Hero;
-import me.stolyy.heroes.heros.HeroManager;
-import me.stolyy.heroes.heros.characters.*;
+import me.stolyy.legacy.heros.Hero;
+import me.stolyy.legacy.heros.HeroManager;
+import me.stolyy.legacy.heros.characters.*;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;

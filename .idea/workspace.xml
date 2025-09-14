@@ -9,10 +9,157 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="606daf4b-1469-4eeb-8180-44b5b6838e57" name="Changes" comment="Components 'finished'">
+    <list default="true" id="606daf4b-1469-4eeb-8180-44b5b6838e57" name="Changes" comment="idk">
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Cone.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Hitscan.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Projectile.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Shockwave.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/bots/minionbots/BasherBot.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/bots/minionbots/PrincessBot.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/bots/minionbots/SpooderBuddyBot.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/bots/strategies/AggressiveStrategy.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/bots/strategies/DefensiveStrategy.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/bots/strategies/Strategy.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/hybrid/Cryomancer.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/hybrid/HollowKnight.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/hybrid/Spooderman.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/melee/Bulk.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/melee/Marauder.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/melee/VoidCrawler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/minions/Basher.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/minions/Minion.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/minions/Princess.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/minions/SpooderBuddy.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/ranged/Punishgers.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/ranged/Shoop.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/ranged/Skullfire.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/ranged/Tinman.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/configs/ConfigManager.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/controllers/BotController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/controllers/Controller.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/controllers/PlayerController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/effects/DisplayModel.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/effects/Model.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/effects/Particle.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/HeroManager.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/abilities/Ability.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/bots/Bot.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gradle/8.14.2/checksums/checksums.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.14.2/checksums/checksums.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.14.2/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.14.2/fileHashes/fileHashes.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.14.2/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.14.2/fileHashes/fileHashes.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/2bn5urf5hfqdh27d35pm4gupt/candidates.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/32a44b18-6ea0-422a-ad8e-42ab02273b88/.globals.work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/32a44b18-6ea0-422a-ad8e-42ab02273b88/.strings.work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/32a44b18-6ea0-422a-ad8e-42ab02273b88/_.work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/32a44b18-6ea0-422a-ad8e-42ab02273b88/buildfingerprint.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/32a44b18-6ea0-422a-ad8e-42ab02273b88/entry.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/32a44b18-6ea0-422a-ad8e-42ab02273b88/projectfingerprint.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/32a44b18-6ea0-422a-ad8e-42ab02273b88/work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/3f296a84-4bf3-4edd-9a7e-5da71cae19d5/.globals.work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/3f296a84-4bf3-4edd-9a7e-5da71cae19d5/.strings.work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/3f296a84-4bf3-4edd-9a7e-5da71cae19d5/_.work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/3f296a84-4bf3-4edd-9a7e-5da71cae19d5/build.work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/3f296a84-4bf3-4edd-9a7e-5da71cae19d5/buildfingerprint.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/3f296a84-4bf3-4edd-9a7e-5da71cae19d5/entry.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/3f296a84-4bf3-4edd-9a7e-5da71cae19d5/projectfingerprint.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/3f296a84-4bf3-4edd-9a7e-5da71cae19d5/work.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/configuration-cache/7oxznry9v8e165hgpa9c35tby/candidates.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/file-system.probe" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/file-system.probe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/abilities/Ability.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/abilities/Ability.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Heroes.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/Heroes.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/AbstractTeamSettingsGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/AbstractTeamSettingsGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/BugCharmsGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/BugCharmsGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/GameSettingsGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/GameSettingsGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/PartyModeGUI.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/menus/PartyModeGUI.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/Game.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/Game.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameTeam.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/game/minigame/GameTeam.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/HeroManager.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/abilities/Ability.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/abilities/Charms.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Charms.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/abilities/Cone.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/abilities/Cooldown.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Cooldown.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/abilities/Dash.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Dash.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/abilities/Hitscan.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/abilities/Projectile.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/abilities/Shockwave.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/abilities/minions/Basher.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/abilities/minions/Minion.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/abilities/minions/Princess.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/abilities/minions/SpooderBuddy.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/characters/Bulk.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/characters/Cryomancer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/characters/Hero.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Hero.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/characters/HollowKnight.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/characters/Marauder.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/characters/Pug.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/melee/Pug.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/characters/Shoop.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/characters/Skullfire.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/characters/Spooderman.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/characters/Tinman.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/characters/VoidCrawler.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/components/Ammo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/components/Ammo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/components/CooldownManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/components/CooldownManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/components/Display.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/components/Display.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/components/Energy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/components/Energy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/components/Equipment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/components/Equipment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/components/Jab.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/components/Jab.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/components/Movement.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/components/Movement.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/components/OnTick.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/components/OnTick.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/components/UseDrop.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/components/UseDrop.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/components/UseSneak.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/components/UseSneak.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/components/UseSwap.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/components/UseSwap.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/configs/AbilityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/configs/AbilityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/configs/AbilityEnums.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/configs/AbilityEnums.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/configs/AmmoConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/configs/AmmoConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/configs/CharmConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/configs/CharmConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/configs/ConfigManager.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/configs/EnergyConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/configs/EnergyConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/configs/EquipmentConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/configs/EquipmentConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/configs/HeroConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/configs/HeroConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/configs/HeroType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/configs/HeroType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/configs/JabConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/configs/JabConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/configs/MovementConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/configs/MovementConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/listeners/AbilityListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/listeners/AbilityListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/listeners/JabListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/listeners/JabListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/hero/listeners/MovementListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/listeners/MovementListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/Hero.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/Hero.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/HeroCooldown.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/HeroCooldown.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/HeroEnergy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/HeroEnergy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/HeroManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/HeroManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Ability.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/Ability.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/data/AbilityData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/abilities/data/AbilityData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/data/ConeData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/abilities/data/ConeData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/data/DashData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/abilities/data/DashData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/data/HitscanData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/abilities/data/HitscanData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/data/ProjectileData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/abilities/data/ProjectileData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/data/ShockwaveData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/abilities/data/ShockwaveData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/interfaces/Cone.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/abilities/interfaces/Cone.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/interfaces/Dash.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/abilities/interfaces/Dash.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/interfaces/Hitscan.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/abilities/interfaces/Hitscan.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/interfaces/Projectile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/abilities/interfaces/Projectile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/interfaces/Reload.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/abilities/interfaces/Reload.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/abilities/interfaces/Shockwave.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/abilities/interfaces/Shockwave.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/bots/Bot.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/bots/Bot.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/bots/Strategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/bots/Strategy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/BloonSlayer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/characters/BloonSlayer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Blud.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/characters/Blud.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Bug.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/characters/Bug.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Bulk.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/characters/Bulk.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Pug.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/characters/Pug.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Punishgers.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/characters/Punishgers.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Shoop.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/characters/Shoop.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Skullfire.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/characters/Skullfire.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/Spooderman.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/characters/Spooderman.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/characters/VoidCrawler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/characters/VoidCrawler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/minions/BasherEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/minions/BasherEntity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/minions/Minion.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/minions/Minion.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/minions/PrincessEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/minions/PrincessEntity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/heros/minions/SpooderEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/heros/minions/SpooderEntity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/Interactions.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/Interactions.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/commands/SetHeroCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/commands/SetHeroCommand.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/effects/ArmorStands.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/ArmorStands.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/effects/Equipment.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/Equipment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/stolyy/heroes/utility/effects/Particles.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/stolyy/legacy/Particles.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -59,8 +206,8 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Enum" />
-        <option value="Interface" />
         <option value="Record" />
+        <option value="Interface" />
         <option value="Class" />
       </list>
     </option>
@@ -122,6 +269,11 @@
       <recent name="C:\Users\willi\IdeaProjects\Heroes" />
       <recent name="C:\Users\willi\IdeaProjects\Heroes\src\main\java\me\stolyy\heroes" />
       <recent name="C:\Users\willi\OneDrive\Documents\Heroes" />
+    </key>
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="me.stolyy.heroes.heros.characters" />
+      <recent name="me.stolyy.heroes.hero" />
+      <recent name="me.stolyy.legacy" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="me.stolyy.heroes.hero.abilities" />
@@ -538,7 +690,15 @@
       <option name="project" value="LOCAL" />
       <updated>1752635266382</updated>
     </task>
-    <option name="localTasksCounter" value="42" />
+    <task id="LOCAL-00042" summary="idk">
+      <option name="closed" value="true" />
+      <created>1754867066374</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1754867066374</updated>
+    </task>
+    <option name="localTasksCounter" value="43" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -556,7 +716,6 @@
     <ignored-roots>
       <path value="$PROJECT_DIR$" />
     </ignored-roots>
-    <MESSAGE value="jhkgfkjyhg" />
     <MESSAGE value="Finished New Party System (Party, PartyManager, PartyC, PartyChat)" />
     <MESSAGE value="Drafted GUI" />
     <MESSAGE value="PartyGUI, PartyMap, and GUIListener" />
@@ -581,6 +740,7 @@
     <MESSAGE value="Bug fixes" />
     <MESSAGE value="Half of a refactor for the heroes logic" />
     <MESSAGE value="Components 'finished'" />
-    <option name="LAST_COMMIT_MESSAGE" value="Components 'finished'" />
+    <MESSAGE value="idk" />
+    <option name="LAST_COMMIT_MESSAGE" value="idk" />
   </component>
 </project>

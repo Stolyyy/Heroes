@@ -1,9 +1,9 @@
 package me.stolyy.heroes.game.menus;
 
-import me.stolyy.heroes.heros.HeroManager;
-import me.stolyy.heroes.heros.characters.Bug;
-import me.stolyy.heroes.heros.characters.Bug.Charms;
-import me.stolyy.heroes.utility.effects.Equipment;
+import me.stolyy.legacy.heros.HeroManager;
+import me.stolyy.legacy.heros.characters.Bug;
+import me.stolyy.legacy.heros.characters.Bug.Charms;
+import me.stolyy.legacy.Equipment;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.Sound;

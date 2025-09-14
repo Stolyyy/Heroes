@@ -4,7 +4,6 @@ import me.stolyy.heroes.game.minigame.Game;
 import me.stolyy.heroes.game.minigame.GameEnums.TeamColor;
 import me.stolyy.heroes.game.minigame.GameManager;
 import me.stolyy.heroes.game.minigame.GameTeam;
-import me.stolyy.heroes.heros.HeroManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;

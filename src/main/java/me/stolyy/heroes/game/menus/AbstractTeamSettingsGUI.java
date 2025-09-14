@@ -1,7 +1,7 @@
 package me.stolyy.heroes.game.menus;
 
 import me.stolyy.heroes.game.minigame.TeamSettings;
-import me.stolyy.heroes.utility.effects.Equipment;
+import me.stolyy.legacy.Equipment;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;

@@ -1,6 +1,6 @@
 package me.stolyy.heroes.game.minigame;
 
-import me.stolyy.heroes.heros.HeroManager;
+import me.stolyy.legacy.heros.HeroManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 

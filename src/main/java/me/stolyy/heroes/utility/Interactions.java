@@ -1,17 +1,14 @@
 package me.stolyy.heroes.utility;
 
 import me.stolyy.heroes.game.minigame.Game;
-import me.stolyy.heroes.game.minigame.GameEnums;
 import me.stolyy.heroes.game.minigame.GameListener;
 import me.stolyy.heroes.game.minigame.GameManager;
-import me.stolyy.heroes.heros.HeroManager;
-import me.stolyy.heroes.heros.characters.Bug;
-import me.stolyy.heroes.utility.effects.Particles;
+import me.stolyy.legacy.heros.HeroManager;
+import me.stolyy.legacy.heros.characters.Bug;
+import me.stolyy.legacy.Particles;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
-
-import java.util.Map;
 
 //Map: player, player who hit them last (for stats)
 public class Interactions {

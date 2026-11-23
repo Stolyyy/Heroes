@@ -1,0 +1,227 @@
+name: Spooderman
+hurt_sound:
+  sound: spooderman.pain
+  scope: PLAYER
+  cooldown: 0.5 # seconds between hurt sounds
+  min_damage: 0 # only for hits dealing at least this much damage
+  chance: 1.0 # 0-1 probability the sound plays
+
+stats:
+  type: HYBRID
+  weight: 2.5
+
+combat:
+  jab_damage: 4.0
+
+energy:
+  starting_energy: 100
+  max_energy: 100
+  energy_per_tick: 1
+  can_increase_energy: true
+
+abilities:
+  primary:
+    type: spooderdash
+    name: SPOODA KICK
+    cooldown: 2.0
+    damage: 7
+    knockback: 2.5
+    radius: 1.5
+    speed: 3.0
+    duration: 3
+    kb_angle: -25
+    visuals:
+      activation_sound:
+        sound: melee.punch.meleemiss
+      hit_sound:
+        sound: melee.punch.meleehit
+      dash_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: spooderman
+          texture: dash
+  
+  secondary:
+    type: spooderweb
+    name: Shooting Ropes
+    cooldown: 2.5
+    damage: 8
+    knockback: 2.25
+    radius: 1.25
+    range: 40
+    movement_multiplier: 2.25
+    min_damage: 3
+    dropoff_distance: 8
+    miss_penalty_ms: 2000 # cooldown penalty when the web hits nothing — FILL/tune
+    visuals:
+      fire_sound:
+        sound: entity.spider.ambient
+        volume: 3.0
+        pitch: 1.5
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      wall_sound: {}
+      trail_spacing: 1.0
+      trail_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: spooderman
+          texture: web
+      wall_visual:
+        type: PARTICLE
+        particle: GUST
+  
+  smash:
+    type: cavespooderman
+    name: Cave Spooderman
+    description: Unleash the cave — faster movement, venomous jabs, buddies on demand.
+    cooldown: 90.0 # FILL/tune
+    active_duration: 12.0 # ult duration — FILL/tune
+    speed_multiplier: 1.25 # movement buff while active — FILL/tune
+    dot_damage: 1.0 # per DOT pulse — FILL/tune
+    dot_interval_ticks: 20 # FILL/tune
+    dot_duration_ticks: 60 # FILL/tune
+    slow_duration_ticks: 40 # secondary-hit slowness — FILL/tune
+    slow_amplifier: 0 # Slowness I
+    visuals:
+      activation_sound:
+        sound: spooderman.crystal
+        scope: GLOBAL # ult announcement - audible map-wide (sound-scope rework)
+  
+  passives:
+  - type: spooderfriends
+    name: Friends
+    description: null
+    jabs_per_minion: 3
+    max_minions: 3
+    minion_duration: 7
+    minion:
+      name: Spooder Buddy
+      invincible: false  # FILL - false = killable; true = untargetable (Game.canTarget)
+      skin:
+        head:
+          hero: spooderman
+          texture: spooderbuddy
+        body:
+          hero: spooderman
+          texture: spooderbuddy
+          skin: default
+          scale: 1.6      # FILL - display scale; 1.6 = ~1.8-block body length, 0.4 tall
+          # FILL - vertical lift so the legs touch the ground. The body display rides the NPC's
+          # mount point, which rose when the NPC scale went 0.5 -> 1.0, so this had to come down
+          # from 1.45. Must be dialed in-game until the legs actually touch the ground.
+          anchor_y: 0.75
+          model_yaw: 0    # FILL - degrees; set 180 if the model faces backwards in testing
+      stats:
+        type: MELEE
+        weight: 1.0
+        health: 10
+        speed: 0.4
+        # FILL - raised from 0.5 so the invisible NPC's hitbox overlaps the ITEM_DISPLAY body
+        # players actually see and aim at (at 0.5 the AABB was ~0.3w x 0.9h down at the feet).
+        # The NPC is invisible, so scale has no visual cost. Tradeoffs to watch in-game: the
+        # buddy is an easier target, jab reach shifts slightly with the wider box, and the
+        # bigger collision box may change how it paths through 1-block gaps.
+        scale: 1.0
+      combat:
+        jab_range: 2.0
+        jab_cooldown: 1000
+        jab_damage: 4.0
+      ai:
+        min_target_duration: 40
+        switch_threshold: 3.0
+        search_radius: 20
+        speed_modifier: 0.4 # = its stats.speed - preserves the pace that already read right (see corrected sqrt math)
+        input_delay: 0
+        climb_height_threshold: 2.0
+        stuck_move_threshold: 0.5
+        stuck_check_interval: 10
+        stuck_counter_threshold: 2
+      strategy:
+        preferred_distance: 1.0
+        chase_range: 30
+        can_double_jump: false
+      abilities:
+        passives:
+        - type: spooderbuddyclimb
+          name: Climb
+          climb_speed: 0.4
+        - type: tether
+          name: Tether
+          tether_distance: 30.0
+  - type: spooderclimb
+    name: Climb
+    activation: SNEAK
+    description: null
+    climb_speed: 0.4
+    climb_cost: 4.0
+
+skins:
+  default:
+    armor:
+      chest: 150,27,27
+      legs: 27,43,150
+      boots: 150,27,27
+  masterskin:
+    armor:
+      chest: 34,34,34
+      legs: 34,34,34
+      boots: 34,34,34
+    
+    # B21.2: per-piece cosmetic override — masterskin Spooder Buddies
+    piece_visuals:
+      spooderbuddy:
+        head:
+          hero: spooderman
+          texture: spooderbuddy
+          skin: masterskin
+        body:
+          hero: spooderman
+          texture: spooderbuddy
+          skin: masterskin
+          scale: 1.6      # FILL - display scale; 1.6 = ~1.8-block body length, 0.4 tall
+          # FILL - vertical lift so the legs touch the ground. The body display rides the NPC's
+          # mount point, which rose when the NPC scale went 0.5 -> 1.0, so this had to come down
+          # from 1.45. Must be dialed in-game until the legs actually touch the ground.
+          anchor_y: 0.75
+          model_yaw: 0    # FILL - degrees; set 180 if the model faces backwards in testing
+# Unlock economy (B25): starting-roster hero
+unlock:
+  default-unlocked: true
+
+# Bot config (B28.7) - placeholder values; tune for feel. strategy_type archetype suggested
+# from stats.type; ai.* read by BaseBotAI, strategy.* by the Strategy classes.
+bot:
+  strategy_type: MIDRANGE
+ai:
+  min_target_duration: 40 # FILL - ticks a target is kept before re-evaluating
+  switch_threshold: 3.0 # FILL - how much closer a new target must be to switch
+  search_radius: 100 # FILL - blocks scanned for targets
+  speed_modifier: 1.3 # FILL - x the hero's own pace, now with CORRECT math (sqrt-inverted Citizens squaring): 1.0 = walk parity, 1.3 = always-sprinting
+  input_delay: 2 # FILL - ticks between bot "inputs"
+# Bot movement kit (shared by RECOVER and EVADE): input slots tried lowest-priority-number
+# first; delay_after_ticks is the commit window before the NEXT action.
+movement:
+  actions:
+  - action: primary # Spooder Dash, ~9 blocks along aim
+    priority: 2
+    delay_after_ticks: 10 # FILL
+  - action: secondary # web wall-pull - a whiff over the ledge eats the miss penalty; the loop just moves on
+    priority: 3
+    delay_after_ticks: 12 # FILL
+  - action: jump
+    priority: 1
+    delay_after_ticks: 8 # FILL
+strategy:
+  preferred_distance: 5.0 # FILL - distance the bot tries to hold
+  chase_range: 30 # FILL - max distance it will chase
+  can_double_jump: true
+  panic_distance: 4.0 # FILL - EVADE trigger: a MELEE/HYBRID enemy inside this range makes the bot flee (0 = never)
+  far_distance: 16 # FILL - beyond this counts as "far"
+  ult_min_target_hp_percent: 0.25  # don't ult a target already below this HP fraction
+  ult_min_self_hp_percent: 0.30    # don't ult below this own-HP fraction unless on last life
+  ability_ranges:
+    primary: 7.0 # FILL - use primary within this range
+    secondary: 30.0 # FILL
+    smash: 10.0 # FILL

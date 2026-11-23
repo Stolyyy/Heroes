@@ -1,0 +1,225 @@
+name: Botmon
+hurt_sound:
+  sound: botmun.pain
+  scope: PLAYER
+  cooldown: 0.5 # seconds between hurt sounds
+  min_damage: 0 # only for hits dealing at least this much damage
+  chance: 1.0 # 0-1 probability the sound plays
+
+stats:
+  type: RANGED
+  weight: 3.0
+
+combat:
+  jab_damage: 2.0
+
+energy:
+  starting_energy: 100
+  max_energy: 100
+  energy_per_tick: 0.625
+  can_increase_energy: true
+
+mobility:
+  type: botglide
+  energy_threshold: 80
+  glide_strength: 0.75
+  max_glide_ticks: 18
+  loop_sound_interval: 25
+  visuals:
+    start_sound:
+      sound: entity.bat.takeoff
+    glide_visual:
+      type: PARTICLE
+      shape: ORIENTED_RING
+      offset:
+        y: 1.0
+      particle: LARGE_SMOKE
+      points: 4
+
+abilities:
+  primary:
+    type: botrang
+    name: BOTARANG!
+    cooldown: 1.5
+    damage: 4
+    knockback: 2.0
+    radius: 1.0
+    range: 100
+    speed: 2.25
+    burst_count: 3
+    burst_delay: 250
+    visuals:
+      fire_sound:
+        sound: melee.punch.meleemiss
+        volume: 3
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      projectile_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: botmon
+          texture: botarang
+      wall_visual:
+        type: PARTICLE
+        particle: EXPLOSION
+  
+  secondary:
+    type: botclaw
+    name: bot claw!
+    cooldown: 8.0
+    grapple_range: 50
+    grapple_speed: 0.8
+    arrival_threshold: 3.0
+    y_boost_on_end: 0.85
+    bomb_count: 5
+    bomb_start_delay_ticks: 4
+    bomb_interval_ticks: 3
+    bomb:
+      damage: 3.0
+      knockback: 1.0
+      kb_type: ATTACKER
+      radius: 1.0
+      range: 40
+      speed: 1.6
+      gravity: 0.08
+      aoe:
+        damage: 3.0
+        knockback: 1.0
+        radius: 2.25
+        # Blast ignores line of sight. Independent of the projectile's own pierces_walls, which
+        # only decides whether the shot stops on the wall.
+        pierces_walls: false
+        center_visual:
+          type: PARTICLE
+          particle: EXPLOSION
+        hit_sound:
+          sound: entity.experience_orb.pickup
+          scope: PLAYER
+        center_sound:
+          sound: melee.explosion
+          volume: 3
+      visuals:
+        fire_sound:
+          sound: skullfire.grenadethrow
+        hit_sound:
+          sound: entity.experience_orb.pickup
+          scope: PLAYER
+        projectile_visual:
+          type: ITEM_DISPLAY
+          model:
+            hero: botmon
+            texture: botbomb
+          # Optional, blocks, defaults to 0. How far the model's rear face sits behind its pivot
+          # along the forward axis; the display is slid forward by this so the model starts at
+          # the muzzle instead of straddling it. 0 = the old behaviour. Available on any
+          # ITEM_DISPLAY visual, not just this one.
+          model_back_offset: 0.0
+    visuals:
+      start_sound:
+        scope: PLAYER
+      # One persistent display, re-anchored and re-stretched every grapple tick. Like every
+      # oriented display, the model must point along the plugin's forward convention
+      # (AbstractDisplayBuilder.MODEL_FORWARD, currently local +Z) — that is the axis scaled by
+      # distance. NO transform override here: grapple.json is authored along +X but its
+      # `display.head` rotation [90,-135,90] already lands it on +Z, so the default HEAD transform
+      # is exactly what makes it match the convention. Forcing FIXED bypassed that calibration
+      # (the model ships no `display.fixed` block, so FIXED resolves to identity) and left the
+      # rope pointing along raw +X — 90 degrees off, which read in-game as "sideways".
+      line_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: botmon
+          texture: grapple
+        model_length: 2.0 # FILL - rope length in blocks at scale 1 AFTER the head transform:
+                          # 16px = 1 block authored, doubled by display.head's scale [2,1.25,1.25]
+        # CENTER, not END: grapple.json is one element spanning the full 0..16 of its long axis,
+        # so the display pivot (model coord 8,8,8) is its MIDPOINT. END skips the half-length
+        # correction and half the rope shoots out behind the player.
+        model_origin: CENTER
+        anchor_y: 1.0 # FILL - height above the feet the rope hangs from
+  
+  smash:
+    type: botmobile
+    name: The Botmobile.
+    description: prepare for the awesome botmobile
+    cooldown: 110.0
+    active_duration: 8.0
+    damage: 8.0
+    knockback: 2.5
+    radius: 2.0
+    windup_ticks: 20
+    move_speed: 0.8
+    hit_grace_period_ms: 500
+    wall_check_radius: 2.0
+    knockback_multiplier: 0.2
+    knockback_threshold: 3.0
+    damage_taken_mult: 0.7          # FILL - damage taken multiplier while riding
+    loop_sound_interval: 5
+    visuals:
+      display:
+        model:
+          hero: botmon
+          texture: botmobile
+        scale: 1.2
+      windup_sound:
+        sound: botmun.crystal
+        scope: GLOBAL # ult announcement - audible map-wide (sound-scope rework)
+        volume: 5.0
+      loop_sound:
+        sound: entity.item.pickup
+        pitch: 0
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+
+skins:
+  default:
+    armor:
+      chest: 26,42,52
+      legs: 26,42,52
+      boots: 26,42,52
+  masterskin:
+    armor:
+      chest: 202,22,22
+      legs: 26,42,52
+      boots: 255,255,0
+
+# Unlock economy (B25)
+unlock:
+  default-unlocked: false
+  token-cost: 1
+  smash-level-requirement: 0
+
+# Bot config (B28.7) - placeholder values; tune for feel. strategy_type archetype suggested
+# from stats.type; ai.* read by BaseBotAI, strategy.* by the Strategy classes.
+bot:
+  strategy_type: DEFENSIVE
+ai:
+  min_target_duration: 40 # FILL - ticks a target is kept before re-evaluating
+  switch_threshold: 3.0 # FILL - how much closer a new target must be to switch
+  search_radius: 100 # FILL - blocks scanned for targets
+  speed_modifier: 1.3 # FILL - x the hero's own pace, now with CORRECT math (sqrt-inverted Citizens squaring): 1.0 = walk parity, 1.3 = always-sprinting
+  input_delay: 2 # FILL - ticks between bot "inputs"
+# Bot movement kit (shared by RECOVER and EVADE): input slots tried lowest-priority-number
+# first; delay_after_ticks is the commit window before the NEXT action.
+movement:
+  actions:
+  - action: secondary # Botclaw grapple - whiffs into open air are free (no cooldown burned)
+    priority: 2
+    delay_after_ticks: 12 # FILL
+  - action: jump # Botglide at 80+ energy: ~15 blocks of aim-directional glide
+    priority: 1
+    delay_after_ticks: 8 # FILL
+strategy:
+  preferred_distance: 25.0 # FILL - distance the bot tries to hold
+  chase_range: 40 # FILL - max distance it will chase
+  can_double_jump: true
+  panic_distance: 4.0 # FILL - EVADE trigger: a MELEE/HYBRID enemy inside this range makes the bot flee (0 = never)
+  far_distance: 100 # FILL - beyond this counts as "far" (primary BOTARANG! range)
+  ult_min_target_hp_percent: 0.25  # don't ult a target already below this HP fraction
+  ult_min_self_hp_percent: 0.30    # don't ult below this own-HP fraction unless on last life
+  ability_ranges:
+    primary: 45.0 # FILL - use primary within this range
+    secondary: 25.0 # FILL
+    smash: 20.0 # FILL

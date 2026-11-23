@@ -1,0 +1,348 @@
+name: Bug
+stats:
+  type: HYBRID
+  weight: 1.5
+
+combat:
+  jab_damage: 4.0
+
+energy:
+  starting_energy: 0
+  max_energy: 100
+  energy_per_tick: 0
+  can_increase_energy: true
+
+abilities:
+  primary:
+    type: bugdash
+    name: Mothwing Cloak
+    cooldown: 2.0
+    damage: 5.0
+    knockback: 2.0
+    radius: 1.5
+    speed: 2.5
+    duration: 3
+    visuals:
+      activation_sound:
+        sound: bug.dash
+      hit_sound:
+        sound: melee.sword.meleehit
+      dash_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: bug
+          texture: dash
+  
+  secondary:
+    type: bugspell
+    name: Focus
+    # Tier one: the floor shared by all three spells. Tier two is the per-variant cooldown below,
+    # which nerfs spamming one spell without slowing the other two. Energy cost stays here so
+    # Soul Twister's discount applies to every cast.
+    cooldown: 0.5
+    energy_cost: 33
+    # Aim pitch that picks the variant. Negative is upward.
+    up_pitch_max: -50.0
+    down_pitch_min: 50.0
+    up:
+      name: Howling Wraiths
+      cooldown: 0.0
+      damage: 8.0
+      knockback: 1.6
+      radius: 6.0
+      min_radius: 3.0   # FILL - cone starts this wide at the caster (frustum) instead of a point
+      range: 9.0
+      visuals:
+        activation_sound:
+          sound: bug.scream
+          volume: 2.0
+        hit_sound:
+          sound: entity.experience_orb.pickup
+          scope: PLAYER
+        cone_visual:
+          type: PARTICLE
+          shape: ORIENTED_RING
+          particles:
+          - particle: DUST
+            color: GRAY
+            speed: 1.0
+          - particle: DUST
+            color: WHITE
+            speed: 1.0
+          - particle: DUST
+            color: SILVER
+            speed: 1.0
+          - particle: LARGE_SMOKE
+            speed: 1.0
+          - particle: CLOUD
+            speed: 1.0
+    neutral:
+      name: Vengeful Spirit
+      cooldown: 0.0
+      damage: 6.5
+      knockback: 1.6
+      radius: 1.5
+      pierces_players: true
+      range: 35.0
+      speed: 3.5
+      visuals:
+        fire_sound:
+          sound: bug.fireball
+          volume: 2.0
+        hit_sound:
+          sound: entity.experience_orb.pickup
+          scope: PLAYER
+        projectile_visual:
+          type: ITEM_DISPLAY
+          model:
+            hero: bug
+            texture: spirit
+          scale: 2.0
+    down:
+      name: Desolate Dive
+      cooldown: 2.5 # FILL - the dive's own timer; the whole point of tier two
+      damage: 7.0
+      knockback: 2.3
+      radius: 0.7
+      speed: 3.3
+      duration: 10
+      shockwave:
+        damage: 5.0
+        knockback: 1.6
+        radius: 3.0
+        height: 2.0
+        show_block_wave: true
+        visuals:
+          activation_sound:
+            sound: bug.quakeimpact
+            volume: 2.0
+          hit_sound:
+            sound: entity.experience_orb.pickup
+            scope: PLAYER
+          wave_visual:
+            type: PARTICLE
+            shape: SPHERE
+            radius: 4.5
+            points: 32
+            particles:
+            - particle: DUST
+              color: GRAY
+              spread: 1.0
+              speed: 1.0
+            - particle: DUST
+              color: WHITE
+              spread: 1.0
+              speed: 1.0
+            - particle: DUST
+              color: SILVER
+              spread: 1.0
+              speed: 1.0
+      visuals:
+        activation_sound:
+          sound: bug.quakedash
+          volume: 2.0
+        hit_sound:
+          sound: entity.experience_orb.pickup
+          scope: PLAYER
+  
+  smash:
+    type: bugvoidbeast
+    name: Void Beast
+    cooldown: 105.0
+    active_duration: 8.0
+    visuals:
+      # Sparse follow-aura while the ult is active.
+      aura_visual:
+        type: PARTICLE
+        particle: SCULK_SOUL
+        count: 2
+        spread: 0.4
+        speed: 0.02
+      aura_interval: 10       # FILL - ticks between aura puffs
+      activation_sound:
+        sound: bug.death
+        scope: GLOBAL # ult announcement - audible map-wide (sound-scope rework)
+        volume: 5.0
+  
+  passives:
+  - type: bugcharms
+    name: Charms
+    base_soul_per_hit: 17
+    sprintmaster:
+      speed_mult: 1.2
+      step_height_add: 0.4
+    steady_body:
+      weight_mult: 2.25
+    quick_slash:
+      cd_mult: 0.75
+    strength:
+      damage_mult: 1.5
+    mark_of_pride:
+      range_mult: 1.2
+    dashmaster:
+      cd_mult: 0.8
+    sharp_shadow:
+      damage_mult: 1.2
+      speed_mult: 1.2
+    soul_twister:
+      cost_reduction: 5.0
+    shaman_stone:
+      damage_mult: 1.1
+      kb_mult: 1.1
+      radius_add: 0.25
+    kingsoul:
+      regen_per_second: 2.75
+    soul_eater:
+      multiplier: 1.5
+    grubsong:
+      soul_per_damage: 0.75
+    nail_master:
+      soul_per_hit: 11
+    heavy_blow:
+      kb_dealt_mult: 1.5
+    weaversong:
+      count: 2
+      respawn_delay: 10.0
+      minion:
+        name: Weaverling
+        invincible: false  # FILL - false = killable; true = untargetable (Game.canTarget)
+        skin:
+          head:
+            hero: spooderman
+            texture: spooderbuddy
+            skin: default
+        stats:
+          type: MELEE
+          weight: 0.5
+          health: 10.0
+          speed: 0.375
+          scale: 0.75
+        mobility:
+          max_jumps: 0
+          x_strength: 0.0
+          y_strength: 0.0
+        combat:
+          jab_range: 3.0
+          jab_cooldown: 1000
+          jab_damage: 3.0
+        ai:
+          min_target_duration: 60
+          switch_threshold: 5.0
+          search_radius: 30
+          speed_modifier: 0.25 # = its stats.speed - preserves the pace that already read right (see corrected sqrt math)
+          input_delay: 0
+          climb_height_threshold: 2.0
+          stuck_move_threshold: 0.5
+          stuck_check_interval: 10
+          stuck_counter_threshold: 2
+        strategy:
+          preferred_distance: 1.0
+          chase_range: 30
+          can_double_jump: false
+        abilities:
+          passives:
+          - type: spooderbuddyclimb
+            name: Climb
+            climb_speed: 0.4
+          - type: tether
+            name: Tether
+            tether_distance: 30.0
+
+skins:
+  default:
+    armor:
+      chest: 34,34,68
+      legs: 34,34,68
+      boots: 34,34,68
+  masterskin:
+    armor:
+      chest: 34,34,68
+      legs: 34,34,68
+      boots: 34,34,68
+
+charms:
+  notches: 9
+  dashmaster_cost: 2
+  dashmaster_description: Faster Dash Cooldown
+  grubsong_cost: 2
+  grubsong_description: Get soul when hit
+  heavy_blow_cost: 1
+  heavy_blow_description: Increases knockback on jabs and the dash
+  kingsoul_cost: 4
+  kingsoul_description: Passively gain soul every second
+  mark_of_pride_cost: 3
+  mark_of_pride_description: Increase jab length
+  nail_master_cost: 1
+  nail_master_description: Get soul when you land your primary
+  quick_slash_cost: 3
+  quick_slash_description: Reduce jab cooldown
+  shaman_stone_cost: 3
+  shaman_stone_description: Increase secondary radius, damage, and knockback
+  sharp_shadow_cost: 2
+  sharp_shadow_description: Faster and stronger primary dash
+  soul_eater_cost: 3
+  soul_eater_description: More soul on jab hit
+  soul_twister_cost: 2
+  soul_twister_description: Less soul per secondary cast
+  sprintmaster_cost: 1
+  sprintmaster_description: Faster movement speed and 1 step height
+  steady_body_cost: 2
+  steady_body_description: More weight
+  strength_cost: 3
+  strength_description: More jab damage
+  weaversong_cost: 2
+  weaversong_description: Two permanent spooder buddy minions
+
+# Unlock economy (B25)
+unlock:
+  default-unlocked: false
+  token-cost: 1
+  smash-level-requirement: 0
+
+# Bot config (B28.7) - placeholder values; tune for feel. strategy_type archetype suggested
+# from stats.type; ai.* read by BaseBotAI, strategy.* by the Strategy classes.
+bot:
+  strategy_type: MIDRANGE
+ai:
+  min_target_duration: 40 # FILL - ticks a target is kept before re-evaluating
+  switch_threshold: 3.0 # FILL - how much closer a new target must be to switch
+  search_radius: 100 # FILL - blocks scanned for targets
+  speed_modifier: 1.3 # FILL - x the hero's own pace, now with CORRECT math (sqrt-inverted Citizens squaring): 1.0 = walk parity, 1.3 = always-sprinting
+  input_delay: 2 # FILL - ticks between bot "inputs"
+# Bot movement kit (shared by RECOVER and EVADE): input slots tried lowest-priority-number
+# first; delay_after_ticks is the commit window before the NEXT action.
+movement:
+  actions:
+  - action: primary # Bug Dash, ~7.5 blocks along aim
+    priority: 2
+    delay_after_ticks: 10 # FILL
+  - action: jump
+    priority: 1
+    delay_after_ticks: 8 # FILL
+strategy:
+  preferred_distance: 5.0 # FILL - distance the bot tries to hold
+  chase_range: 30 # FILL - max distance it will chase
+  can_double_jump: true
+  panic_distance: 4.0 # FILL - EVADE trigger: a MELEE/HYBRID enemy inside this range makes the bot flee (0 = never)
+  far_distance: 12 # FILL - beyond this counts as "far"
+  ult_min_target_hp_percent: 0.25  # don't ult a target already below this HP fraction
+  ult_min_self_hp_percent: 0.30    # don't ult below this own-HP fraction unless on last life
+  ability_ranges:
+    primary: 7.0 # FILL - use primary within this range
+    secondary: 25.0 # FILL
+    smash: 10.0 # FILL
+
+# Bot charm presets (bot-architecture V2): when a bot plays bug, it equips one preset picked
+# at random at game start. Each preset is a list of charm names: DASHMASTER, GRUBSONG,
+# HEAVY_BLOW, KINGSOUL, MARK_OF_PRIDE, NAIL_MASTER, QUICK_SLASH, SHAMAN_STONE, SHARP_SHADOW,
+# SOUL_EATER, SOUL_TWISTER, SPRINTMASTER, STEADY_BODY, STRENGTH, WEAVERSONG.
+# Empty = bot bug plays charmless. No notch validation - presets are trusted as authored.
+charm_presets: 
+- [QUICK_SLASH, STRENGTH, MARK_OF_PRIDE]
+- [SHAMAN_STONE, SOUL_TWISTER, KINGSOUL]
+- [DASHMASTER, SPRINTMASTER, SHARP_SHADOW, STEADY_BODY, HEAVY_BLOW] 
+- [SOUL_EATER, WEAVERSONG, GRUBSONG, NAIL_MASTER]
+# FILL - replace with presets, e.g.:
+#charm_presets:
+#- [QUICK_SLASH, STRENGTH, MARK_OF_PRIDE]
+#- [SHAMAN_STONE, SOUL_TWISTER, KINGSOUL]

@@ -1,0 +1,197 @@
+# Game Timing (in seconds)
+timing:
+  countdown: 7
+  respawn: 7
+  cleanup-delay: 5
+  default-game-duration: 420
+
+# Post-respawn invulnerability: no damage or knockback until the first of these ends it.
+spawn-protection:
+  seconds: 3.0        # FILL - protection duration
+  break-distance: 5.0 # FILL - blocks moved from the respawn point that end it (also ends on dealing damage / using any ability)
+
+# World Rules (applied to all game worlds) - Paper 1.21.1
+world-rules:
+  SPAWN_MOBS: false
+  ADVANCE_TIME: false
+  ADVANCE_WEATHER: false
+  KEEP_INVENTORY: true
+  IMMEDIATE_RESPAWN: true
+  NATURAL_HEALTH_REGENERATION: false
+  ELYTRA_MOVEMENT_CHECK: false
+  PLAYER_MOVEMENT_CHECK: false
+  RAIDS: false
+  fixed-time: 10000
+
+# Team Configuration
+teams:
+  colors:
+    - RED
+    - BLUE
+    - GREEN
+    - YELLOW
+    - PURPLE
+    - ORANGE
+    - CYAN
+    - PINK
+
+# Spawn Offsets (for multiple players at same spawn point)
+spawn-offsets:
+  - [0, 0, 0]
+  - [1, 0, 0]
+  - [-1, 0, 0]
+  - [0, 0, 1]
+  - [0, 0, -1]
+  - [1, 0, 1]
+  - [-1, 0, -1]
+  - [1, 0, -1]
+
+# ELO System
+elo:
+  starting-elo: 1000
+  min-elo: 100
+
+  # K = how far a rating can move on a pure 50/50 result. 2v2 is lower on purpose: one player
+  # controls roughly half the outcome there, so the result is about half as much information
+  # about any single player. K/sqrt(2) ~= 23 is the honest band; 20-24 is reasonable.
+  k-factor-1v1: 32          # FILL — 32 is the historical value, ratings on disk were earned at it
+  k-factor-2v2: 24          # FILL — 24 => an even 2v2 moves +/-12 instead of +/-16
+
+  # Lopsided teams (1200+800 vs 1000+1000) make the result weak evidence about EVERYONE in the
+  # match, so the whole match moves less. One K for all four players, so gains shrink exactly as
+  # much as losses — see the EloCalculator javadoc for why the symmetry is what blocks farming.
+  team-gap-damping:
+    gap-cap: 400            # FILL — intra-team gap at which damping saturates; must be > 0
+    max-reduction: 0.35     # FILL — fraction of K removed at the cap; 0.0 disables damping
+                            #        24 * (1 - 0.35) = 15.6 => a 400-gap 2v2 moves +/-8
+
+# Smash Crystal Configuration
+crystals:
+  width: 1.0
+  height: 1.5
+  y-offset: 1.0
+  spawn-delay-ticks: 200
+  default-interval: 100
+  spin-speed: 3.0
+  bob-amplitude: 0.15
+  bob-speed: 0.08
+
+# Queue Configuration
+queue:
+  title-cycle-interval: 2
+  # AFK guard for queued players and armed auto-queues only (not a server-wide kick). Idle = no
+  # camera, movement, click, chat, command or menu input. Queues can sit for minutes and tabbing
+  # out is normal, so the timeout is long; the last afk-warning-seconds show a countdown title with
+  # a sound (once when it starts, then every second for the final five). Any input cancels it. At
+  # the timeout the player leaves every queue and their auto-queue stops.
+  afk-timeout-seconds: 300      # FILL - 5 minutes idle
+  afk-warning-seconds: 30       # FILL - countdown window before the drop
+  afk-warning-sound: "block.note_block.pling"   # FILL
+  afk-warning-sound-volume: 1.0
+  afk-warning-sound-pitch: 1.2
+
+  # /autoqueue <mode> — opt-in, off until a player asks for it, and it survives across games until
+  # they stop it or leave the queue. The countdown only advances while the player could actually be
+  # queued (in the lobby, or still spectating the game they armed from) and stalls while anyone in
+  # their party has a menu open. Budget the whole wait: timing.cleanup-delay above already sits
+  # between the last kill and the lobby teleport, and this countdown starts after that.
+  auto-requeue:
+    countdown-seconds: 8      # FILL — the title ticks 8..1, then the join fires
+    tick-sound-seconds: 3     # FILL — how many trailing seconds get a click; 0 = silent countdown
+    tick-sound: "block.note_block.hat"   # FILL — small and dry, must not read as a hero ability
+    tick-sound-volume: 0.6
+    tick-sound-pitch: 1.5
+
+# Inter-round pick phase, shared by every series preset (Series / Nuzlocke / Ironman).
+# Not in gamemodes.yml: that file's `series:` block is scoped to the plain-SERIES preset.
+series:
+  pick-timeout: 45          # FILL — seconds before a straggler is auto-locked into their current hero; 0 = wait forever
+  waiting-title-delay: 3    # FILL — seconds into the pick phase before "Waiting on..." shows to the players who are ready
+
+# Default Game Settings (overridable per-game via GUI)
+defaults:
+  game:
+    timer: 420
+    kill-walls: false
+    smash-crystals: false
+  team:
+    lives: 3
+    health: 100.0        # absolute starting/max HP (0-1000)
+    friendly-fire: false
+    ultimates-enabled: true
+    randomize-heroes: false
+
+# 7.5: REPLACES the old single `practice-region:` block (delete it; the code no longer reads it and
+# requires `practice-arenas`). First entry is the default arena for /practice with no argument
+# when no other arena spawn is nearer. Values copied from the LIVE practice-region block.
+# `name` is what /practice <arena> takes. Each arena needs world, min/max, spawn (incl. yaw);
+# dummies may be empty.
+practice-arenas:
+  - name: main
+    world: world
+    min-x: -28
+    min-y: 12.5
+    min-z: 568
+    max-x: 29
+    max-y: 35
+    max-z: 602
+    spawn:
+      x: 0.5
+      y: 14
+      z: 581.5
+      yaw: 0
+    dummies:
+      - {x: 10.5, y: 14, z: 581.5}
+      - {x: -10.5, y: 14, z: 581.5}
+
+# 7.13: lobby hero NPC tags (per-viewer text above each hero NPC). Top-level `lobby:` section
+# of game-config.yml (read via Configs.require*).
+
+custom-gui:
+  utility-column: 8
+
+# Bot cap for the custom game GUI's Add Bot button (map-change bot carryover ignores this).
+bots:
+  max-per-game: 8
+
+# Teammate outlines. Each player sees their own teammates glowing in the team colour and nobody
+# else sees it, so enemies gain no through-wall information. Turning this off needs no rebuild.
+teammate-glow:
+  enabled: true
+  # Keep a teammate outlined through their respawn countdown so you can see where they come back.
+  # FILL - costs a small gameplay change: the respawning player must stay visible to their own team
+  # (they currently vanish for everyone), so their frozen body is visible at the spawn point.
+  show-respawning: true
+
+# Discord webhooks. Leave a URL empty to disable that feed.
+discord:
+  error-webhook: ""          # exceptions caught in the game loop, with the game they happened in
+  error-dedupe-minutes: 10   # same exception + top frame is posted at most once per this window
+  error-max-per-hour: 20
+
+# ============================================================================
+# 1) game-config.yml  (read with Configs.require*)
+# ============================================================================
+restart:
+  # Seconds of the final countdown before Bukkit.shutdown(); titles at 30/10/5/4/3/2/1.
+  announce-seconds: 30
+  # /restart drain: longest wait for ranked (1v1/2v2) matches to finish before the rest are cut.
+  drain-cap-seconds: 180
+
+# 7.13: lobby hero NPC tags (per-viewer text above each hero NPC). Top-level `lobby:` section
+# of game-config.yml (read via Configs.require*).
+lobby:
+  npc:
+    # Height of the tag above the NPC's feet (blocks). Was 2.4; +0.3 to make room for the
+    # name hologram.
+    tag-height: 2.7
+    # First line of the tag for heroes the viewer has NOT unlocked (legacy & codes). The cost /
+    # level requirement lines are appended below it by the code.
+    locked-text: "&c&lLOCKED"
+
+# ===== game-config.yml =====
+poll:
+  # /skipmap closes itself after this many seconds if the leader never runs /skipmap end
+  timeout-seconds: 60
+
+# ===== messages.yml =====

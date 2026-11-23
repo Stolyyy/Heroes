@@ -1,0 +1,327 @@
+name: GreenHood
+hurt_sound:
+  sound: greenhood.pain
+  scope: PLAYER
+  cooldown: 0.5 # seconds between hurt sounds
+  min_damage: 0 # only for hits dealing at least this much damage
+  chance: 1.0 # 0-1 probability the sound plays
+
+stats:
+  type: RANGED
+  weight: 2.0
+
+energy:
+  starting_energy: 0
+  max_energy: 0
+  energy_per_tick: 0
+  can_increase_energy: false
+
+abilities:
+  primary:
+    type: arrow
+    name: Arrow
+    description: Draw the bow — hold past full draw to overcharge.
+    cooldown: 0.0
+    knockback: 2.5
+    speed_max: 4.25 # launch speed = max(min_force, vanilla draw force) * speed_max * force_multiplier
+    hit_radius: 1.75 # FILL — swept-box side length for NORMAL + modifier arrows (barrage has its own)
+    normal:
+      min_damage: 3.0
+      max_damage: 7
+      # Per-arrow force (R7): min_force floors vanilla's QUADRATIC draw force (tap bottoms out
+      # at 0.1075 — an arrow that nosedives in a couple of blocks); force_multiplier scales the
+      # resulting velocity for THIS arrow type only. Velocity only — damage reads linear charge.
+      min_force: 0.5 # FILL
+      force_multiplier: 1.0 # FILL
+      overcharge_damage_multiplier: 1.5
+      max_overcharge_ticks: 40
+    barrage: # unused by Green Hood since R7 (kept for the crossbow hero — Arrow requires the keys)
+      damage: 2.0
+      knockback: 2.25
+      min_force: 0.5 # FILL
+      force_multiplier: 1.0 # FILL
+      shot_interval_ticks: 2 # FILL — ticks between sequential barrage arrows
+      base_arrows: 2
+      ticks_per_extra_arrow: 8
+      max_arrows: 7
+      max_angle: 2.5 # degrees off aim, uniform 0..max (was spread: 0.05)
+      hit_radius: 1.75 # FILL — swept-box side length for barrage arrows
+    visuals:
+      # fire_sound plays ONLY for queued barrage shots: vanilla's arrow-shoot sound fires on
+      # every bow release even with the shoot event cancelled (it sits after the shoot call in
+      # BowItem.releaseUsing), so a custom sound on the release path doubled it.
+      fire_sound:
+        sound: entity.arrow.shoot
+      hit_sound:
+        sound: entity.arrow.hit_player
+        scope: PLAYER
+  
+  secondary:
+    type: ballista
+    name: Ballista
+    description: Load the ballista — your next shot fires a powerful hitscan bolt.
+    cooldown: 8.0 # FILL
+    range: 60 # FILL
+    radius: 0.7 # FILL — hitscan bolt thickness
+    knockback: 4.0 # FILL
+    min_damage: 4.0 # FILL
+    max_damage: 10.0 # FILL
+    overcharge_damage_multiplier: 1.3 # FILL
+    max_overcharge_ticks: 40 # FILL
+    visuals:
+      # Loading the bolt: a green spark ring pops at chest height.
+      arm_sound:
+        sound: item.crossbow.loading_end
+      arm_visual:
+        type: PARTICLE
+        shape: ORIENTED_RING
+        offset: {x: 0.0, y: 1.2, z: 0.0}
+        radius: 0.6
+        points: 14
+        particles:
+          - particle: ELECTRIC_SPARK
+            count: 1
+          - particle: DUST
+            color: "#7CFC00"
+            size: 0.9
+      # While loaded: a faint pulse at eye height every armed_visual_interval_ticks.
+      armed_visual_interval_ticks: 8
+      armed_visual:
+        type: PARTICLE
+        offset: {x: 0.0, y: -0.2, z: 0.0}
+        particles:
+          - particle: ENCHANTED_HIT
+            count: 2
+            spread: 0.25
+          - particle: DUST
+            color: "#7CFC00"
+            size: 0.6
+            spread: 0.15
+      fire_sound:
+        sound: item.crossbow.shoot
+      hit_sound:
+        sound: entity.arrow.hit_player
+      # Bolt: a bright core with a green dust sheath.
+      trail_visual:
+        type: PARTICLE
+        particles:
+          - particle: END_ROD
+            count: 1
+          - particle: DUST
+            color: "#7CFC00"
+            size: 0.8
+            spread: 0.05
+      # Impact: a burst sphere of sparks and dust.
+      hit_visual:
+        type: PARTICLE
+        shape: SPHERE
+        radius: 0.6
+        points: 14
+        particles:
+          - particle: ELECTRIC_SPARK
+            count: 1
+            speed: 0.1
+          - particle: DUST
+            color: "#7CFC00"
+            size: 1.0
+      # Overcharged: the same shapes in gold-to-red, with a flame core.
+      overcharged_fire_sound:
+        sound: item.crossbow.shoot
+      overcharged_trail_visual:
+        type: PARTICLE
+        particles:
+          - particle: END_ROD
+            count: 1
+          - particle: FLAME
+            count: 1
+            spread: 0.05
+          - particle: DUST_COLOR_TRANSITION
+            color: "#FFD700"
+            to_color: "#FF4500"
+            size: 1.0
+            spread: 0.08
+      overcharged_hit_visual:
+        type: PARTICLE
+        shape: SPHERE
+        radius: 1.0
+        points: 20
+        particles:
+          - particle: FLAME
+            count: 1
+            speed: 0.08
+          - particle: DUST_COLOR_TRANSITION
+            color: "#FFD700"
+            to_color: "#FF4500"
+            size: 1.2
+          - particle: LAVA
+            count: 1
+  
+  smash:
+    type: skyfall
+    name: Skyfall # FILL — placeholder name; renaming later orphans this ability's stats rows
+    description: Rise untouchable — each full draw unleashes a piercing volley.
+    cooldown: 100.0 # FILL
+    shots: 3 # FILL — charges per cast
+    draw_time_ticks: 20 # FILL — a shot's OWN draw clock (auto-fires when the bar fills)
+    shot_window_ticks: 80 # FILL — time to BEGIN the next draw; expiring forfeits a charge
+    lift_ticks: 15 # FILL — upward glide length at cast
+    lift_speed: 0.35 # FILL — blocks/tick during the glide
+    range: 75 # FILL — beam + burst length, through walls
+    beam_radius: 0.6 # FILL — aim-beam thickness while drawing
+    draw_damage: 1.0 # FILL — chip damage per beam tick-hit while drawing
+    draw_hit_interval_ticks: 10 # FILL — per-victim re-hit gate on the draw beam
+    burst_damage: 9.0 # FILL — "shoop 5-charge" territory
+    burst_knockback: 3.5 # FILL
+    burst_radius: 1.2 # FILL — burst thickness (wider than the aim beam)
+    visuals:
+      beam_spacing: 2.0 # FILL — blocks between beam particles
+      beam_visual_start_offset: 3.5 # blocks in front of the shooter's eyes the beam particles start; hit detection unaffected
+      activation_sound:
+        sound: greenhood.crystal
+        scope: GLOBAL # ult announcement - audible map-wide (sound-scope rework)
+        volume: 5.0
+      burst_sound:
+        sound: entity.generic.explode
+        pitch: 1.4
+      charge_lost_sound:
+        sound: block.fire.extinguish
+        scope: PLAYER
+      draw_visual:
+        type: PARTICLE
+        particle: ELECTRIC_SPARK
+        count: 1
+      burst_visual:
+        type: PARTICLE
+        particle: FIREWORK
+        count: 3
+        spread: 0.2
+
+  passives:
+  - type: deathsgrasp
+    name: Death's Grasp
+    description: Q — hurl yourself forward; anyone you strike is flung back the way you came.
+    activation: DROP
+    cooldown: 7.0 # FILL
+    launch_strength: 1.8 # FILL — single pounce-style impulse; gravity owns the arc from there
+                         # (no per-tick thrust, no hard stop; pug's uncharged pounce is 1.1)
+    hitbox_ticks: 10 # FILL — how long the swept hitbox rides the flight after launch
+    radius: 1.5 # FILL — swept-box half-extent around the flight path
+    damage: 5.0 # FILL
+    knockback: 3.0 # FILL — victim launch strength, along your REVERSED travel direction
+    lift_knockback: 0.5 # FILL — additive upward component so the fling doesn't spike them into the floor
+    visuals:
+      activation_sound:
+        sound: entity.ender_dragon.flap
+      hit_sound:
+        sound: entity.player.attack.knockback
+      trail_visual:
+        type: PARTICLE
+        particle: CRIT
+        count: 2
+        spread: 0.2
+  - type: pearlarrow
+    name: Pearl Arrow
+    description: F — your next shot teleports you to wherever it lands.
+    activation: SWAP
+    cooldown: 14.0 # FILL
+    speed_min: 1.2 # FILL — arrow launch speed floor (blocks/tick)
+    speed_scale: 0.9 # FILL — speed added at full draw force: speed = speed_min + force * speed_scale
+    pearl_damage: 3.0 # FILL — on a direct victim hit, before the teleport
+    pearl_knockback: 5.0 # FILL
+    visuals:
+      arm_sound:
+        sound: entity.ender_pearl.throw
+      teleport_sound:
+        sound: entity.enderman.teleport
+      teleport_visual:
+        type: PARTICLE
+        particle: PORTAL
+        count: 30
+        spread: 0.5
+  - type: tripminearrow
+    name: Tripmine Arrow
+    description: Sneak — your next shot plants a tripmine.
+    activation: SNEAK
+    cooldown: 8.0
+    tripmine_timer_ticks: 200
+    tripmine_radius: 2.5
+    tripmine_damage: 7.0
+    tripmine_knockback: 3.25
+    trigger_delay_ticks: 5 # FILL — fuse between an enemy tripping the mine and the blast (dodge window)
+    min_force: 0.5 # FILL — per-arrow draw-force floor
+    force_multiplier: 0.9 # FILL — per-arrow velocity scale
+    visuals:
+      arm_sound:
+        sound: block.tripwire.click_on
+      trigger_sound:
+        sound: entity.tnt.primed
+      explosion_sound:
+        sound: entity.generic.explode
+      tripmine_display:
+        type: PARTICLE
+        particle: DUST
+        color: 255,40,40
+      explosion_visual:
+        type: PARTICLE
+        particle: EXPLOSION_EMITTER
+
+skins:
+  default:
+    hand:
+      material: BOW
+      hero: greenhood
+      texture: item
+      skin: default
+    armor:
+      chest: 30,110,45
+      legs: 25,60,30
+      boots: 30,110,45
+  masterskin:
+    hand:
+      material: BOW
+      hero: greenhood
+      texture: item
+      skin: masterskin
+    armor:
+      chest: 30,110,45
+      legs: 25,60,30
+      boots: 30,110,45
+
+# Bot config (B28.5) — placeholder values; tune for feel. NOTE: bow charging is a custom
+# input path — the generic bot AI can't draw a bow without a per-hero hook (stretch goal).
+bot:
+  strategy_type: DEFENSIVE
+ai:
+  min_target_duration: 40 # FILL — ticks a target is kept before re-evaluating
+  switch_threshold: 3.0 # FILL — how much closer a new target must be to switch
+  search_radius: 100 # FILL — blocks scanned for targets
+  speed_modifier: 1.3 # FILL - x the hero's own pace, now with CORRECT math (sqrt-inverted Citizens squaring): 1.0 = walk parity, 1.3 = always-sprinting
+  input_delay: 2 # FILL — ticks between bot "inputs"
+# Bot movement kit (shared by RECOVER and EVADE): input slots tried lowest-priority-number
+# first; delay_after_ticks is the commit window before the NEXT action.
+movement:
+  actions:
+  - action: drop # Death's Grasp - one clean impulse along the aim (bots stay disabled until the bow hook)
+    priority: 1
+    delay_after_ticks: 10 # FILL
+  - action: jump
+    priority: 2
+    delay_after_ticks: 8 # FILL
+strategy:
+  preferred_distance: 15.0 # FILL — distance the bot tries to hold
+  chase_range: 40 # FILL — max distance it will chase
+  can_double_jump: true
+  panic_distance: 4.0 # FILL - EVADE trigger: a MELEE/HYBRID enemy inside this range makes the bot flee (0 = never)
+  far_distance: 60 # FILL — beyond this counts as "far" (estimated: primary Arrow has no explicit range/lifetime key)
+  ult_min_target_hp_percent: 0.25  # don't ult a target already below this HP fraction
+  ult_min_self_hp_percent: 0.30    # don't ult below this own-HP fraction unless on last life
+  ability_ranges:
+    primary: 35.0 # FILL
+    secondary: 30.0 # FILL
+    smash: 25.0 # FILL
+
+# Unlock economy (B25)
+unlock:
+  default-unlocked: false
+  token-cost: 1
+  smash-level-requirement: 0

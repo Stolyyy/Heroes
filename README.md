@@ -1,46 +1,82 @@
-# Smash Heroes Minecraft Plugin
+# Heroes
 
-A custom Minecraft minigame plugin inspired by Hypixel's **Smash Heroes**. Choose from a wide roster of unique heroes, each with their own abilities and playstyles, and battle it out in fast-paced, arena-style combat!
+A Smash Heroes–style arena PvP minigame for PaperMC. Players pick a hero with its own primary, secondary, ultimate and passive abilities, then knock each other off the map in fast matches.
 
----
+Not affiliated with Hypixel or Mojang.
+
+## Status
+
+Open beta, version `4.0.1b`. Expect rough edges; bugs and balance feedback go in [Issues](../../issues).
 
 ## Features
 
-- **24+ Unique Heroes** – Each with primary, secondary, ultimate, and passive abilities.
-- **Custom Abilities** – Includes projectiles, dashes, hitscans, buffs, and more.
-- **Team and Free-for-All Modes**
-- **Interactive GUIs** for hero selection, party management, and more.
-- **Bot Support** for single-player or practice modes.
-- **Dynamic Maps** and party system.
+- **20 heroes**, each defined by a YML file in `src/main/resources/heroes/` plus ability classes built on shared templates (projectile, hitscan, cone, dash, shockwave).
+- **Queues and custom games**: 1v1, 2v2, and custom lobbies with per-team and per-player settings.
+- **Game mode presets**: Boss, Team Deathmatch, Evolution, Series, Nuzlocke and Ironman.
+- **Bots** with per-hero AI tuning, usable in custom games and `/practice`.
+- **Progression**: per-hero levels, Elo, stats and leaderboards.
+- **Parties**, spectating, map-skip votes and an admin map editor.
 
----
+## Requirements
 
-## Getting Started
+| | |
+|---|---|
+| Server | Paper 1.21.11 |
+| Java | 21 |
+| Optional plugins | [Citizens](https://citizensnpcs.co/) (lobby NPCs, bots, practice dummies), [LuckPerms](https://luckperms.net/) |
 
-### Prerequisites
+Maps are not bundled. Each map is a YML in the plugin's `maps/` folder that points at a template world on the server; see `src/main/resources/maps/example-map.yml`.
 
-- **Minecraft Server:** PaperMC 1.20+ (recommended for best performance)
-- **Java:** Version 17 or higher
-- **Build Tool:** Maven or Gradle
+## Building
 
-### Installation
+```bash
+./gradlew build        # Linux / macOS
+gradlew.bat build      # Windows
+```
 
-1. Download the latest plugin JAR from the [releases](#) (TODO: add release link).
-2. Place the JAR into your server’s `plugins` folder.
-3. Restart your Minecraft server.
+Gradle downloads JDK 21 if it is missing. The plugin jar lands in `build/libs/`.
 
----
+To drop the jar straight into a test server instead, create a `local.properties` in the repo root (it is gitignored):
 
-## Usage
+```properties
+deployDir=C:\\path\\to\\server\\plugins
+```
 
-- **/heroes** – Open the hero selection menu.
-- **/party** – Create or manage parties.
-- **/spectate** – Watch ongoing games.
-- **/lobby** – Return to the main lobby.
+Restart the server after every build. Replacing the jar under a running server causes `NoClassDefFoundError`.
 
-You can configure maps, announcers, and more via the included GUIs.
+## Commands
 
----
+| Command | What it does |
+|---|---|
+| `/join`, `/queue`, `/play` | Queue for a mode or join a preset |
+| `/hero` | Pick a hero |
+| `/party`, `/pc` | Party management and party chat |
+| `/spectate`, `/autospectate` | Watch games |
+| `/practice` | Solo practice arena |
+| `/stats`, `/leaderboard` | Stats and rankings |
+| `/lobby`, `/stuck` | Return to the lobby, or unstick yourself |
+| `/skipmap` | Vote to skip the current map |
 
-## Project Structure
+Admin commands: `/mapadmin`, `/mappool`, `/balance`, `/forceready`, `/forceend`, `/unlock`, `/token`, `/restart`.
 
+## Repository layout
+
+```
+src/main/java/me/stolyy/heroes/
+├── hero/         Hero core, stats, mechanics, minions
+├── ability/      Ability templates and per-hero kits (ability/kit/<hero>/)
+├── control/      Player and bot controllers, bot AI and strategies
+├── game/         Match lifecycle, queues, maps, mode rules, settings
+├── physics/      Hitboxes, damage and knockback, stun, homing
+├── progression/  Stats, Elo, hero levels
+├── vfx/          Cosmetics, sound and particle effects, GUIs, scoreboards
+├── npc/          Citizens integration behind a service interface
+├── command/      Admin and player commands
+└── listener/     Bukkit event handlers
+src/main/resources/   Default configs: hero YMLs, game modes, messages, bots
+resourcepack/         Item model selector JSONs
+tools/                Helper scripts for config and match-log analysis
+docs/                 Development rules and deployment notes
+```
+
+Coding rules are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).

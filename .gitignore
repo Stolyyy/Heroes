@@ -1,1 +1,16 @@
 .worktrees/
+.legacy/
+src/main/java/me/stolyy/legacy/
+local.properties
+build/
+.gradle/
+.idea/
+.vscode/
+*.args
+papersrc/
+.claude/settings.local.json
+.claude/worktrees/
+notes/
+out/
+target/
+planning/

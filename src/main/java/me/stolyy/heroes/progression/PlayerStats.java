@@ -1,0 +1,219 @@
+package me.stolyy.heroes.progression;
+
+import me.stolyy.heroes.util.GameConfigManager;
+import me.stolyy.heroes.game.GameMode;
+
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+public class PlayerStats {
+    private final UUID playerId;
+    private String lastKnownName;
+    private long lastSeen;
+    private String selectedHero;
+
+    private final Map<GameMode, Integer> elo;
+    private final Map<GameMode, ModeStats> modeStats;
+    private final Set<String> equippedCharms;
+
+    // Unlock economy (B23/B25) + per-hero skin choice (keyed by lowercase hero name).
+    private int tokenBalance;
+    private final Set<String> unlockedHeroes = new HashSet<>();
+    private final Map<String, String> selectedSkins = new HashMap<>();
+
+    // Global hero level/XP pool (mode-agnostic) — keyed by lowercase hero name.
+    private final Map<String, HeroLevel> heroLevels = new HashMap<>();
+
+    // Read by the async chat renderer, hence volatile.
+    private volatile boolean seasonChampion;
+
+    private transient GameMode currentMode;
+    private transient String currentHero;
+
+    public PlayerStats(UUID playerId) {
+        this.playerId = playerId;
+        this.elo = new EnumMap<>(GameMode.class);
+        this.modeStats = new EnumMap<>(GameMode.class);
+        this.equippedCharms = new HashSet<>();
+
+        int startingElo = GameConfigManager.getStartingElo();
+        elo.put(GameMode.ONE_V_ONE, startingElo);
+        elo.put(GameMode.TWO_V_TWO, startingElo);
+
+        // New-player seed; deserialization overwrites these for existing players.
+        unlockedHeroes.addAll(ProgressionConfig.getStartingHeroes());
+        tokenBalance = ProgressionConfig.getStartingTokens();
+    }
+
+    public ModeStats getModeStats(GameMode mode) {
+        return modeStats.computeIfAbsent(mode, k -> new ModeStats());
+    }
+
+    public HeroProgress getHeroStats(GameMode mode, String heroName) {
+        return getModeStats(mode).getHeroStats(heroName);
+    }
+
+    /** The hero's GLOBAL level/XP pool — every mode's XP lands here. */
+    public HeroLevel getHeroLevel(String heroName) {
+        return heroLevels.computeIfAbsent(heroName.toLowerCase(), k -> new HeroLevel());
+    }
+
+    public Map<String, HeroLevel> heroLevels() { return heroLevels; }
+
+    public AbilityStats getAbilityStats(GameMode mode, String heroName, String abilityName) {
+        return getHeroStats(mode, heroName).getAbilityStats(abilityName);
+    }
+
+    public int totalWins() {
+        return modeStats.values().stream().mapToInt(ModeStats::totalWins).sum();
+    }
+
+    public int totalLosses() {
+        return modeStats.values().stream().mapToInt(ModeStats::totalLosses).sum();
+    }
+
+    public int totalDeaths() {
+        return modeStats.values().stream().mapToInt(ModeStats::totalDeaths).sum();
+    }
+
+    public int totalKills() {
+        return modeStats.values().stream().mapToInt(ModeStats::totalKills).sum();
+    }
+
+    public double totalDamage() {
+        return modeStats.values().stream().mapToDouble(ModeStats::totalDamage).sum();
+    }
+
+    public double totalVoidDamage() {
+        return modeStats.values().stream().mapToDouble(ModeStats::totalVoidDamage).sum();
+    }
+
+    /** Smash Level = sum of every hero's global level. Pure computation. */
+    public int smashLevel() {
+        return heroLevels.values().stream()
+                .mapToInt(HeroLevel::level)
+                .sum();
+    }
+
+    public boolean isSeasonChampion() { return seasonChampion; }
+    public void setSeasonChampion(boolean seasonChampion) { this.seasonChampion = seasonChampion; }
+
+    public int getTokenBalance() { return tokenBalance; }
+    public void setTokenBalance(int tokenBalance) { this.tokenBalance = tokenBalance; }
+    public void addTokens(int n) { tokenBalance += n; }
+
+    /** Spends {@code n} tokens; false (and no change) if the balance is short. */
+    public boolean spendTokens(int n) {
+        if (tokenBalance < n) return false;
+        tokenBalance -= n;
+        return true;
+    }
+
+    public boolean spendToken() { return spendTokens(1); }
+
+    public boolean isHeroUnlocked(String heroName) { return unlockedHeroes.contains(heroName.toLowerCase()); }
+    public void unlockHero(String heroName) { unlockedHeroes.add(heroName.toLowerCase()); }
+    public Set<String> getUnlockedHeroes() { return unlockedHeroes; }
+    public void setUnlockedHeroes(Set<String> heroes) {
+        unlockedHeroes.clear();
+        heroes.forEach(name -> unlockedHeroes.add(name.toLowerCase()));
+    }
+
+    /** The player's chosen skin for a hero; 'default' when none chosen. */
+    public String getSkinForHero(String heroName) {
+        return selectedSkins.getOrDefault(heroName.toLowerCase(), "default");
+    }
+
+    public void setSkinForHero(String heroName, String skinId) {
+        selectedSkins.put(heroName.toLowerCase(), skinId);
+    }
+
+    public Map<String, String> selectedSkins() { return selectedSkins; }
+
+    public int getElo(GameMode mode) {
+        return elo.getOrDefault(mode, GameConfigManager.getStartingElo());
+    }
+
+    public void setElo(GameMode mode, int value) {
+        if (mode.hasElo()) {
+            elo.put(mode, value);
+        }
+    }
+
+    /** The single rating floor in the codebase — EloCalculator deliberately does not apply one. */
+    public void addElo(GameMode mode, int change) {
+        if (mode.hasElo()) {
+            int current = getElo(mode);
+            setElo(mode, Math.max(GameConfigManager.getMinElo(), current + change));
+        }
+    }
+
+    public void setCurrentContext(GameMode mode, String heroName) {
+        this.currentMode = mode;
+        this.currentHero = heroName;
+    }
+
+    /**
+     * Every damage/kill row is filed under the ability that CAUSED it, passed in by the caller.
+     * These used to read a sticky {@code lastAbilityUsed} field that only the named damage sites
+     * wrote: the unnamed sites filed under whatever was named last ("Jab", usually), and the field
+     * was never cleared on a hero swap, so ability names leaked ACROSS heroes. A null name means
+     * the caller had nothing to attribute, and the row is simply not written.
+     */
+    public void recordKill(String abilityName) {
+        if (currentMode != null && currentHero != null && abilityName != null) {
+            getAbilityStats(currentMode, currentHero, abilityName).addKill();
+        }
+    }
+
+    public void recordDamage(String abilityName, double amount) {
+        if (currentMode != null && currentHero != null && abilityName != null) {
+            getAbilityStats(currentMode, currentHero, abilityName).addDamage(amount);
+        }
+    }
+
+    public void recordVoidDamage(String abilityName, double amount) {
+        if (currentMode != null && currentHero != null && abilityName != null) {
+            getAbilityStats(currentMode, currentHero, abilityName).addVoidDamage(amount);
+        }
+    }
+
+    public void recordDeath() {
+        if (currentMode != null && currentHero != null) {
+            getHeroStats(currentMode, currentHero).addDeath();
+        }
+    }
+
+    public void recordWin() {
+        if (currentMode != null && currentHero != null) {
+            getHeroStats(currentMode, currentHero).addWin();
+        }
+    }
+
+    public void recordLoss() {
+        if (currentMode != null && currentHero != null) {
+            getHeroStats(currentMode, currentHero).addLoss();
+        }
+    }
+
+    public UUID playerId() { return playerId; }
+    public String lastKnownName() { return lastKnownName; }
+    public void setLastKnownName(String name) { this.lastKnownName = name; }
+    public long lastSeen() { return lastSeen; }
+    public void setLastSeen(long time) { this.lastSeen = time; }
+    public String selectedHero() { return selectedHero; }
+    public void setSelectedHero(String heroName) { this.selectedHero = heroName; }
+    public Map<GameMode, Integer> elo() { return elo; }
+    public Map<GameMode, ModeStats> modeStats() { return modeStats; }
+    public GameMode currentMode() { return currentMode; }
+    public String currentHero() { return currentHero; }
+    public Set<String> equippedCharms() { return equippedCharms; }
+    public void setEquippedCharms(Set<String> charms) {
+        equippedCharms.clear();
+        equippedCharms.addAll(charms);
+    }
+}

@@ -1,0 +1,188 @@
+name: Bulk
+hurt_sound:
+  sound: bulk.pain
+  scope: PLAYER
+  cooldown: 0.5 # seconds between hurt sounds
+  min_damage: 0 # only for hits dealing at least this much damage
+  chance: 1.0 # 0-1 probability the sound plays
+stats:
+  type: MELEE
+  weight: 4.5
+
+combat:
+  jab_damage: 5.0
+
+energy:
+  starting_energy: 100
+  max_energy: 100
+  energy_per_tick: 0.5
+  can_increase_energy: true
+
+abilities:
+  primary:
+    type: bulkcar
+    name: Bulk Car
+    cooldown: 5.5
+    damage: 8.0
+    knockback: 2.5
+    radius: 1.5
+    range: 50.0
+    speed: 1.8
+    gravity: 0.08
+    kb_type: HIT_LOCATION
+    aoe:
+      kb_type: HIT_LOCATION   # blast kb radiates from the hit point (default: player positions)
+      damage: 8.0
+      knockback: 2.5
+      radius: 2.5
+      # Blast ignores line of sight. Independent of the projectile's own pierces_walls, which
+      # only decides whether the shot stops on the wall.
+      pierces_walls: false
+      # Aoe reads these directly off the aoe section — the old visuals: wrapper meant neither ever played.
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      center_sound:
+        sound: bulk.car.impact
+        volume: 3.0
+    visuals:
+      projectile_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: bulk
+          texture: car
+      fire_sound:
+        sound: bulk.active
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      explosion_debris:
+        count: 10
+        speed: 0.17
+        duration: 20
+        items:
+        - material: RED_SANDSTONE
+          ratio: 1.0
+        - material: GLASS
+          ratio: 0.5
+  
+  secondary:
+    type: bulkdash
+    name: Bulk Dash
+    cooldown: 5.5
+    damage: 8
+    knockback: 2.5
+    radius: 1.5
+    speed: 3.5
+    duration: 6
+    visuals:
+      activation_sound:
+        sound: bulk.charge
+        volume: 3.0
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+  
+  smash:
+    type: bulksmash
+    name: Bulk Smash
+    cooldown: 110
+    damage: 10.0
+    knockback: 2.5
+    radius: 1.0
+    smash_count: 4
+    launch_delay_ticks: 10
+    launch_horizontal_strength: 2.0
+    launch_vertical_strength: 2.0
+    descent_delay_ticks: 20
+    descent_horizontal_strength: 2.0
+    descent_vertical_strength: 2.0
+    secondary_cooldown_multiplier: 0.6
+    shockwave:
+      damage: 10.0
+      knockback: 2.0
+      radius: 5.0
+      height: 2.5
+      pierces_walls: true
+      show_block_wave: true
+      visuals:
+        activation_sound:
+          sound: bulk.passive
+          scope: GLOBAL # ult announcement - audible map-wide (sound-scope rework)
+        hit_sound:
+          sound: entity.experience_orb.pickup
+          scope: PLAYER
+    visuals:
+      activation_sound:
+        sound: bulk.crystal
+        scope: GLOBAL # ult announcement - audible map-wide (sound-scope rework)
+        volume: 5.0
+      launch_sound: {}
+      descent_sound: {}
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+  
+  passives:
+  - type: bulkslam
+    name: Bulk Slam
+    energy_cost: 65
+    radius: 3.5
+    height: 2.0
+    damage: 5.0
+    knockback: 1.5
+    show_block_wave: true
+    visuals:
+      activation_sound:
+        sound: bulk.passive
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+
+skins:
+  default:
+    armor:
+      chest: 53,119,73
+      legs: 49,22,81
+      boots: 53,119,73
+  masterskin:
+    armor:
+      chest: 138,165,147
+      legs: 49,22,81
+      boots: 138,165,147
+
+# Unlock economy (B25): starting-roster hero
+unlock:
+  default-unlocked: true
+
+# Bot config (B28.7) - placeholder values; tune for feel. strategy_type archetype suggested
+# from stats.type; ai.* read by BaseBotAI, strategy.* by the Strategy classes.
+bot:
+  strategy_type: AGGRESSIVE
+ai:
+  min_target_duration: 40 # FILL - ticks a target is kept before re-evaluating
+  switch_threshold: 3.0 # FILL - how much closer a new target must be to switch
+  search_radius: 100 # FILL - blocks scanned for targets
+  speed_modifier: 1.3 # FILL - x the hero's own pace, now with CORRECT math (sqrt-inverted Citizens squaring): 1.0 = walk parity, 1.3 = always-sprinting
+  input_delay: 2 # FILL - ticks between bot "inputs"
+# Bot movement kit (shared by RECOVER and EVADE): input slots tried lowest-priority-number
+# first; delay_after_ticks is the commit window before the NEXT action.
+movement:
+  actions:
+  - action: secondary # Bulk Dash, ~21 blocks along aim - longest plain dash in the roster
+    priority: 2
+    delay_after_ticks: 10 # FILL
+  - action: jump
+    priority: 1
+    delay_after_ticks: 8 # FILL
+strategy:
+  preferred_distance: 2.5 # FILL - distance the bot tries to hold
+  chase_range: 30 # FILL - max distance it will chase
+  can_double_jump: true
+  far_distance: 12 # FILL - beyond this counts as "far"
+  ult_min_target_hp_percent: 0.25  # don't ult a target already below this HP fraction
+  ult_min_self_hp_percent: 0.30    # don't ult below this own-HP fraction unless on last life
+  ability_ranges:
+    primary: 25.0 # FILL - use primary within this range
+    secondary: 16.0 # FILL
+    smash: 20.0 # FILL

@@ -1,6 +1,14 @@
 name: Heroes
-version: '1.0'
+version: '${version}'
 main: me.stolyy.heroes.Heroes
-api-version: '1.21.5'
-commands:
-  setcharacter:
+api-version: '1.21.10'
+dependencies:
+  server:
+    Citizens:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    LuckPerms:
+      load: BEFORE
+      required: false
+      join-classpath: true

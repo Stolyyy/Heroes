@@ -1,0 +1,18 @@
+# Template-level defaults. Every value here applies to all heroes unless the hero's own yml sets the
+# same key on the ability; default.yml stays hero-specific (stats, mobility, jab). Units are in the
+# key name or the comment.
+ability:
+  windup: 0.0              # seconds between a successful cast and the ability performing
+  ult_charge_ms:           # SMASH cooldown removed per hit, by hero type and hit kind
+    melee_jab: 3000
+    hybrid_jab: 1000
+    ranged_ability: 2000
+    hybrid_ability: 1000
+    melee_ability: 0
+    ranged_jab: 0
+dash:
+  exit_velocity_factor: 0.0   # fraction of the dash velocity kept when it ends (0 = dead stop)
+minion:
+  grants_charge: 0.0       # fraction of on-hit resource gain a hit on this minion grants
+                           # (ult charge is scaled; whole-number gains such as ability charges or
+                           # ammo are granted with this probability)

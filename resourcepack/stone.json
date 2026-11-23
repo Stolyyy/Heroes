@@ -1,0 +1,264 @@
+{
+  "model": {
+    "type": "select",
+    "property": "custom_model_data",
+    "fallback": {
+      "type": "model",
+      "model": "block/stone"
+    },
+    "cases": [
+      {
+        "when": "bulk_car_default",
+        "model": {
+          "type": "model",
+          "model": "block/bulkcar"
+        }
+      },
+      {
+        "when": "bulk_car_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/bulkcar"
+        }
+      },
+      {
+        "when": "cakemonster_cake_default",
+        "model": {
+          "type": "model",
+          "model": "block/cake"
+        }
+      },
+      {
+        "when": "botmon_botarang_default",
+        "model": {
+          "type": "model",
+          "model": "block/botarang"
+        }
+      },
+      {
+        "when": "botmon_botarang_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/botarang"
+        }
+      },
+      {
+        "when": "botmon_botmobile_default",
+        "model": {
+          "type": "model",
+          "model": "block/botmobile"
+        }
+      },
+      {
+        "when": "botmon_botmobile_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/botmobile"
+        }
+      },
+      {
+        "when": "botmon_botbomb_default",
+        "model": {
+          "type": "model",
+          "model": "block/botbomb"
+        }
+      },
+      {
+        "when": "botmon_grapple_default",
+        "model": {
+          "type": "model",
+          "model": "block/grapple"
+        }
+      },
+      {
+        "when": "marauder_lightning_default",
+        "model": {
+          "type": "model",
+          "model": "block/lightning"
+        }
+      },
+      {
+        "when": "marauder_lightning_skinplacehold",
+        "model": {
+          "type": "model",
+          "model": "block/lightning"
+        }
+      },
+      {
+        "when": "tinman_laser_default",
+        "model": {
+          "type": "model",
+          "model": "block/tinblast"
+        }
+      },
+      {
+        "when": "tinman_punch_default",
+        "model": {
+          "type": "model",
+          "model": "block/tinpunch"
+        }
+      },
+      {
+        "when": "tinman_laser_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/tinblast"
+        }
+      },
+      {
+        "when": "tinman_punch_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/tinpunch"
+        }
+      },
+      {
+        "when": "spooderman_web_default",
+        "model": {
+          "type": "model",
+          "model": "block/web"
+        }
+      },
+      {
+        "when": "spooderman_web_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/web"
+        }
+      },
+      {
+        "when": "pug_mini_default",
+        "model": {
+          "type": "model",
+          "model": "block/pugmini"
+        }
+      },
+      {
+        "when": "pug_mini_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/pugmini"
+        }
+      },
+      {
+        "when": "skullfire_grenade_default",
+        "model": {
+          "type": "model",
+          "model": "block/grenade"
+        }
+      },
+      {
+        "when": "skullfire_grenade_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/grenade"
+        }
+      },
+      {
+        "when": "karakot_ki_default",
+        "model": {
+          "type": "model",
+          "model": "block/ki"
+        }
+      },
+      {
+        "when": "karakot_ki_ult",
+        "model": {
+          "type": "model",
+          "model": "block/kiult"
+        }
+      },
+      {
+        "when": "karakot_kame_default",
+        "model": {
+          "type": "model",
+          "model": "block/kame"
+        }
+      },
+      {
+        "when": "karakot_kametrail_default",
+        "model": {
+          "type": "model",
+          "model": "block/kametrail"
+        }
+      },
+      {
+        "when": "shoop_laser_default",
+        "model": {
+          "type": "model",
+          "model": "block/laser"
+        }
+      },
+      {
+        "when": "shoop_laser_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/laser"
+        }
+      },
+      {
+        "when": "shoop_rtl_default",
+        "model": {
+          "type": "model",
+          "model": "block/rtl"
+        }
+      },
+      {
+        "when": "shoop_ult_default",
+        "model": {
+          "type": "model",
+          "model": "block/shoopult"
+        }
+      },
+      {
+        "when": "mario_projectile_default",
+        "model": {
+          "type": "model",
+          "model": "block/mario"
+        }
+      },
+      {
+        "when": "cluck_satchel_default",
+        "model": {
+          "type": "model",
+          "model": "block/egg"
+        }
+      },
+      {
+        "when": "cluck_rocket_default",
+        "model": {
+          "type": "model",
+          "model": "block/rocket"
+        }
+      },
+      {
+        "when": "marauder_sabre_default",
+        "model": {
+          "type": "model",
+          "model": "item/lightsaber"
+        }
+      },
+      {
+        "when": "marauder_sabre_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/unstablesabre"
+        }
+      },
+      {
+        "when": "sgt_shield_default",
+        "model": {
+          "type": "model",
+          "model": "item/sgtshield"
+        }
+      },
+      {
+        "when": "blud_boomerang_default",
+        "model": {
+          "type": "model",
+          "model": "item/bludclub"
+        }
+      }
+    ]
+  }
+}

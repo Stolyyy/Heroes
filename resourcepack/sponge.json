@@ -1,0 +1,586 @@
+{
+  "model": {
+    "type": "select",
+    "property": "custom_model_data",
+    "fallback": {
+      "type": "model",
+      "model": "block/sponge"
+    },
+    "cases": [
+      {
+        "when": "bulk_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/bulkhead"
+        }
+      },
+      {
+        "when": "bulk_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/abominationhead"
+        }
+      },
+      {
+        "when": "cakemonster_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/cakehead"
+        }
+      },
+      {
+        "when": "cakemonster_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/cakemshead"
+        }
+      },
+      {
+        "when": "botmon_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/botmonhead"
+        }
+      },
+      {
+        "when": "botmon_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/botmonmshead"
+        }
+      },
+      {
+        "when": "marauder_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/marauderhead"
+        }
+      },
+      {
+        "when": "marauder_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/maraudermshead"
+        }
+      },
+      {
+        "when": "tinman_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/tinmanhead"
+        }
+      },
+      {
+        "when": "tinman_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/tinmanmshead"
+        }
+      },
+      {
+        "when": "spooderman_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/spoodermanhead"
+        }
+      },
+      {
+        "when": "spooderman_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/vanoomhead"
+        }
+      },
+      {
+        "when": "cryomancer_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/cryomancerhead"
+        }
+      },
+      {
+        "when": "cryomancer_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/cryomancermshead"
+        }
+      },
+      {
+        "when": "pug_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/pughead"
+        }
+      },
+      {
+        "when": "pug_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/pugmshead"
+        }
+      },
+      {
+        "when": "skullfire_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/skullfirehead"
+        }
+      },
+      {
+        "when": "skullfire_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/skullfiremshead"
+        }
+      },
+      {
+        "when": "karakot_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/karakothead"
+        }
+      },
+      {
+        "when": "karakot_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/karakotmshead"
+        }
+      },
+      {
+        "when": "voidcrawler_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/voidcrawlerhead"
+        }
+      },
+      {
+        "when": "voidcrawler_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/voidcrawlermshead"
+        }
+      },
+      {
+        "when": "shoop_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/shoophead"
+        }
+      },
+      {
+        "when": "shoop_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/shoopmshead"
+        }
+      },
+      {
+        "when": "mario_head_cape",
+        "model": {
+          "type": "model",
+          "model": "block/mario"
+        }
+      },
+      {
+        "when": "mario_head_fire",
+        "model": {
+          "type": "model",
+          "model": "block/mariofire"
+        }
+      },
+      {
+        "when": "mario_head_ice",
+        "model": {
+          "type": "model",
+          "model": "block/marioice"
+        }
+      },
+      {
+        "when": "mario_head_metal",
+        "model": {
+          "type": "model",
+          "model": "block/mariometal"
+        }
+      },
+      {
+        "when": "cluck_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/cluck"
+        }
+      },
+      {
+        "when": "mario_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/buck"
+        }
+      },
+      {
+        "when": "cluck_head_soldier",
+        "model": {
+          "type": "model",
+          "model": "block/soldier"
+        }
+      },
+      {
+        "when": "cluck_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/cluckms"
+        }
+      },
+      {
+        "when": "pochita_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/pochitahead"
+        }
+      },
+      {
+        "when": "pochita_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/pochitamshead"
+        }
+      },
+      {
+        "when": "punishgers_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/punishgershead"
+        }
+      },
+      {
+        "when": "punishgers_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/punishgersmshead"
+        }
+      },
+      {
+        "when": "spooderman_spooderbuddy_default",
+        "model": {
+          "type": "model",
+          "model": "block/spooderbuddy"
+        }
+      },
+      {
+        "when": "spooderman_spooderbuddy_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/vanoombuddy"
+        }
+      },
+      {
+        "when": "gui_heroes_botmon",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/botmon"
+        }
+      },
+      {
+        "when": "gui_heroes_bug",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/bug"
+        }
+      },
+      {
+        "when": "gui_heroes_bulk",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/bulk"
+        }
+      },
+      {
+        "when": "gui_heroes_cakemonster",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/cakemonster"
+        }
+      },
+      {
+        "when": "gui_heroes_cryomancer",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/cryomancer"
+        }
+      },
+      {
+        "when": "gui_heroes_karakot",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/karakot"
+        }
+      },
+      {
+        "when": "gui_heroes_marauder",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/marauder"
+        }
+      },
+      {
+        "when": "gui_heroes_pug",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/pug"
+        }
+      },
+      {
+        "when": "gui_heroes_railgunner",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/railgunner"
+        }
+      },
+      {
+        "when": "gui_heroes_shoop",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/shoop"
+        }
+      },
+      {
+        "when": "gui_heroes_skullfire",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/skullfire"
+        }
+      },
+      {
+        "when": "gui_heroes_spooderman",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/spooderman"
+        }
+      },
+      {
+        "when": "gui_heroes_tinman",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/tinman"
+        }
+      },
+      {
+        "when": "gui_heroes_voidcrawler",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/voidcrawler"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_botmon",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_bug",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_bulk",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_cakemonster",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_cryomancer",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_karakot",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_marauder",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_pug",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_railgunner",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_shoop",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_skullfire",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_spooderman",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_tinman",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_voidcrawler",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "sgt_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/sgthead"
+        }
+      },
+      {
+        "when": "sgt_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/sgtmshead"
+        }
+      },
+      {
+        "when": "greenhood_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/greenhoodhead"
+        }
+      },
+      {
+        "when": "greenhood_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/greenhoodmshead"
+        }
+      },
+      {
+        "when": "blud_head_default",
+        "model": {
+          "type": "model",
+          "model": "block/bludhead"
+        }
+      },
+      {
+        "when": "blud_head_masterskin",
+        "model": {
+          "type": "model",
+          "model": "block/bludmshead"
+        }
+      },
+      {
+        "when": "gui_heroes_pochita",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/pochita"
+        }
+      },
+      {
+        "when": "gui_heroes_punishgers",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/punishgers"
+        }
+      },
+      {
+        "when": "gui_heroes_sgt",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/sgt"
+        }
+      },
+      {
+        "when": "gui_heroes_greenhood",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/greenhood"
+        }
+      },
+      {
+        "when": "gui_heroes_blud",
+        "model": {
+          "type": "model",
+          "model": "item/gui/heroes/blud"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_pochita",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_punishgers",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_sgt",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_greenhood",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      },
+      {
+        "when": "gui_heroes_eliminated_blud",
+        "model": {
+          "type": "model",
+          "model": "item/gui/hero_eliminated"
+        }
+      }
+    ]
+  }
+}

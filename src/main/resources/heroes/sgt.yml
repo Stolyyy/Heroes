@@ -1,0 +1,206 @@
+name: Sgt
+hurt_sound:
+  sound: sgtshield.pain
+  scope: PLAYER
+  cooldown: 0.5 # seconds between hurt sounds
+  min_damage: 0 # only for hits dealing at least this much damage
+  chance: 1.0 # 0-1 probability the sound plays
+
+stats:
+  type: MELEE
+  weight: 4.0
+
+energy:
+  starting_energy: 100
+  max_energy: 100
+  energy_per_tick: 0.35
+  can_increase_energy: true
+
+abilities:
+  primary:
+    type: shieldbash
+    name: Shield Bash
+    description: Wind up, then lunge shield-first. A parry makes it instant.
+    cooldown: 2.0
+    # FILL — was delay_ticks, tuned as the CHARGED telegraph. Now that the windup is on the
+    # BASE bash (empowered lunges instantly) every uncharged bash is this much slower, so the
+    # value wants retuning rather than reuse.
+    windup_ticks: 2
+    empowered_windup_ticks: 0 # 0 = the parry-charged lunge fires on the click
+    empowered_speed_multiplier: 1.25
+    speed: 3.0
+    duration: 3
+    damage: 6.0
+    knockback: 2.0
+    radius: 1.75
+    visuals:
+      windup_sound:
+        sound: item.shield.block
+      activation_sound:
+        sound: entity.iron_golem.attack
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      trail_visual:
+        type: PARTICLE
+        particle: CLOUD
+      dash_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: sgt
+          texture: dash
+  
+  secondary:
+    type: ricochet
+    name: Ricochet
+    description: A seeking shield that bounces between enemies.
+    cooldown: 6.0
+    damage: 7.0 # FILL
+    knockback: 2.5 # FILL
+    range: 20 # FILL
+    speed: 2.5 # FILL — raised with the range so the return leg doesn't drag
+    radius: 1.5
+    gravity: 0.0
+    seek_radius: 4.0 # FILL
+    large_seek_radius: 6.0 # FILL
+    arming_distance: 4.0 # no target seeking until it has flown this far — FILL/tune
+    empowered_range_multiplier: 1.25 # parry-charged throw; captured per flight at cast time
+    pierces_players: true
+    visuals:
+      fire_sound:
+        sound: item.trident.throw
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      wall_sound:
+        sound: item.shield.block
+      projectile_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: sgt
+          texture: shield
+      trail_visual:
+        type: PARTICLE
+        particle: CRIT
+  
+  smash:
+    type: shieldofjustice
+    name: Shield Of Justice
+    description: An unavoidable shockwave of justice.
+    cooldown: 2.0 # inter-use gate only — charges come from the STOCK regen below
+    damage: 5.0 # FILL
+    knockback: 6.0 # FILL — knockback is what scores kills, and radius 50 hits the whole map
+    radius: 50 # no line-of-sight gating: this reaches every enemy, through walls
+    windup_ticks: 10 # 500ms self-telegraph; a parry-charged cast fires instantly instead
+    ammo:
+      mode: STOCK
+      max: 2
+      regen: 45.0
+    visuals:
+      windup_sound:
+        sound: sgtshield.crystal
+        scope: GLOBAL # ult announcement - audible map-wide (sound-scope rework)
+        volume: 5.0
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      blast_visual:
+        type: PARTICLE
+        shape: RING
+        particle: EXPLOSION
+        points: 24
+        radius: 5.0
+  
+  passives:
+  - type: parry
+    name: Parry
+    description: Block everything for an instant; a successful parry empowers your
+      next ability.
+    activation: SNEAK
+    cooldown: 0.0
+    active_duration: 0.65
+    energy_cost: 40
+    energy_refund: 20
+    parry_window_ms: 250
+    success_invuln_ms: 250
+    # Victim-side multipliers the window (and the post-success grace) forces onto damage and
+    # knockback TAKEN. 0 = total block. Block detection does NOT depend on these being 0 —
+    # Interactions fires the taken-triggers on every hit — so both are safe to raise. But at 0
+    # the damage write is skipped entirely, which is the only reason a parried hit at 0 HP
+    # cannot kill; above 0 it can.
+    parry_damage_taken_multiplier: 0 # FILL
+    parry_knockback_taken_multiplier: 0 # FILL
+    buff_damage_dealt_multiplier: 1.2
+    buff_knockback_dealt_multiplier: 1.2
+    buff_duration: 2.0
+    charged_message: <gold>⛨ Parry charged — next ability empowered</gold>
+    visuals:
+      activation_sound:
+        sound: minecraft:item.armor.equip_netherite
+        pitch: 1.4
+      success_sound:
+        sound: minecraft:block.anvil.land
+        volume: 1.2
+        pitch: minecraft:block.anvil.land
+        scope: PLAYER
+      miss_sound:
+        sound: block.note_block.bass
+        volume: 0.6
+        pitch: 0.6
+        scope: PLAYER
+      success_title:
+        title: <gold>⛨
+        subtitle: <yellow>Next ability empowered
+        fade_in_ticks: 0
+        stay_ticks: 20
+        fade_out_ticks: 10
+
+skins:
+  default:
+    armor:
+      chest: 60,90,160
+      legs: 120,120,130
+      boots: 60,90,160
+  masterskin:
+    armor:
+      chest: 60,90,160
+      legs: 120,120,130
+      boots: 60,90,160
+
+# Bot config (B28.4) — placeholder values; tune for feel. Parry is reactive — bots won't
+# parry well without a custom per-hero AI hook (stretch goal, see B28.7 note).
+bot:
+  strategy_type: AGGRESSIVE
+ai:
+  min_target_duration: 40 # FILL — ticks a target is kept before re-evaluating
+  switch_threshold: 3.0 # FILL — how much closer a new target must be to switch
+  search_radius: 100 # FILL — blocks scanned for targets
+  speed_modifier: 1.3 # FILL - x the hero's own pace, now with CORRECT math (sqrt-inverted Citizens squaring): 1.0 = walk parity, 1.3 = always-sprinting
+  input_delay: 2 # FILL — ticks between bot "inputs"
+# Bot movement kit (shared by RECOVER and EVADE): input slots tried lowest-priority-number
+# first; delay_after_ticks is the commit window before the NEXT action.
+movement:
+  actions:
+  - action: primary # Shield Bash, ~9 blocks (2-tick windup)
+    priority: 2
+    delay_after_ticks: 10 # FILL
+  - action: jump
+    priority: 1
+    delay_after_ticks: 8 # FILL
+strategy:
+  preferred_distance: 3.5 # FILL — distance the bot tries to hold
+  chase_range: 30 # FILL — max distance it will chase
+  can_double_jump: true
+  far_distance: 16 # FILL — beyond this counts as "far"
+  ult_min_target_hp_percent: 0.25  # don't ult a target already below this HP fraction
+  ult_min_self_hp_percent: 0.30    # don't ult below this own-HP fraction unless on last life
+  ability_ranges:
+    primary: 8.0 # FILL — use primary within this range
+    secondary: 12.0 # FILL
+    smash: 30.0 # FILL
+
+# Unlock economy (B25)
+unlock:
+  default-unlocked: false
+  token-cost: 1
+  smash-level-requirement: 0

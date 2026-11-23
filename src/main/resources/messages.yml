@@ -1,0 +1,270 @@
+# Prefix for all game messages
+prefix: "&8[&6Heroes&8] "
+
+# Join/Leave Messages
+join:
+  spectating: "&aYou are now spectating &e{player}&a's game."
+  cannot-spectate: "&cThat player is not in an active game."
+  party-required: "&cYou must be in a party to start a custom game."
+  party-too-large: "&cYour party is too large for this mode (max {max} players)."
+  party-wrong-size-2v2: "&cYou must be in a party of 2 to join 2v2."
+  no-party-1v1: "&cYou cannot join 1v1 while in a party."
+
+# Game State Messages
+game:
+  eliminated: "&cYou have been eliminated!"
+  respawning: "&eRespawning in &c{seconds} &eseconds..."
+  countdown: "&eGame starting in &c{seconds}&e..."
+  started: "&aThe game has started!"
+
+# Game End Messages
+end:
+  stats:
+    # Header line; hover shows team + XP per hero. {hero} {duration} (m:ss)
+    header: "&6&lYour game &8- &e{hero} &7played for &f{duration}"
+    header-team: "&7Team: &f{team}"
+    header-xp: "&7{hero}: &a+{xp} XP"
+    # {kills} {deaths}
+    kills-deaths: "&7Kills: &a{kills} &8| &7Deaths: &c{deaths}"
+    # Hover lines: first void damage, then the top 3 abilities by damage.
+    damage-dealt: "&7Damage dealt: &c{damage} &8(hover)"
+    dealt-void: "&7Void damage: &5{void_damage} &8(on top of the total)"
+    # {rank} {ability} {damage} {share} (percent of total damage dealt)
+    dealt-ability: "&7{rank}. &f{ability} &c{damage} &8({share}%)"
+    damage-taken: "&7Damage taken: &c{damage} &8(hover)"
+    taken-void: "&7Void damage taken: &5{void_damage}"
+  victory:
+    title: "&6&lVICTORY"
+    subtitle: "&e{team} &awins!"
+    chat:
+      - "&8&m─────────────────────────────────"
+      - "&6&lGAME OVER"
+      - ""
+      - "&aWinner: &e{team} &7- &f{team_players}"
+      - ""
+      - "&7Top Players:"
+      - "&e1. &f{top1_name} &7- &a{top1_kills} kills"
+      - "&e2. &f{top2_name} &7- &a{top2_kills} kills"
+      - "&e3. &f{top3_name} &7- &a{top3_kills} kills"
+      - ""
+      - "&8&m─────────────────────────────────"
+
+  defeat:
+    title: "&c&lDEFEAT"
+    subtitle: "&e{team} &cwins!"
+
+  draw:
+    title: "&e&lDRAW"
+    subtitle: "&7No winner this time!"
+    chat:
+      - "&8&m─────────────────────────────────"
+      - "&e&lDRAW"
+      - "&7The game ended in a tie!"
+      - "&8&m─────────────────────────────────"
+
+# ELO Messages
+elo:
+  gain: "&aELO: &e{old} &7-> &a{new} &7(&a+{change}&7)"
+  loss: "&cELO: &e{old} &7-> &c{new} &7(&c{change}&7)"
+
+# Scoreboard Layout
+scoreboard:
+  title: "&6&lHEROES"
+  show-player-entries: false
+  lines:
+    waiting:
+      - "&7{date}"
+      - ""
+      - "&fMap: &a{map}"
+      - "&fMode: &a{mode}"
+      - ""
+      - "&fPlayers: &a{players}/{max}"
+      - ""
+      - "&eHEROES 4!!!"
+
+    playing:
+      - "&7{date}"
+      - ""
+      - "&fTime: &a{time}"
+      - ""
+      - "{team_section}"
+      - ""
+      - "&fKills: &a{kills}"
+      - "&fDeaths: &c{deaths}"
+      - ""
+      - "&eHEROES 4!!!"
+
+    team-entry: "{team_color}{team_name}: &f{lives}"
+    player-entry: " {team_color}* &f{player}: &a{lives}"
+
+# Queue Messages
+queue:
+  title: "&e{mode} &7({count}/{max})"
+  subtitle: "&7Queue time: &f{time}"
+  joined: "&aYou joined the {mode} queue!"
+  left: "&cYou left the queue."
+  match-found: "&aMatch found! Starting game..."
+  already-queued: "&cYou are already in queue for {mode}!"
+  cannot-queue-in-game: "&cYou cannot queue while in a game!"
+  cannot-queue-in-party: "&cYou cannot queue for 1v1 while in a party. Use &f/party leave&c first."
+  no-party-1v1: "&cYou cannot join 1v1 while in a party."
+  leader-only: "&cOnly the party leader can queue."
+  left-mode: "&cYou left the {mode} queue."
+  not-in-queue: "&cYou are not in the {mode} queue."
+  party-wrong-size-2v2: "&cYour party is too large for 2v2 (2 players max). Use &f/party leave&c or start a custom game."
+  afk-warning: "&eStill there? &7You'll leave the queue in &c{seconds}s &7unless you move."
+  afk-warning-title: "&c&lAFK?"
+  afk-warning-subtitle: "&eLeaving queue in &c{seconds}s &e- move to stay"
+  afk-removed: "&cRemoved from the queue after {seconds}s without input. &7Use &f/join &7when you're back."
+  afk-party-removed: "&c{player} went AFK, so your party left the queue."
+
+  # Auto-queue (/autoqueue <1v1|2v2|stop>). The countdown title is shown to the whole party, so
+  # each subtitle has a -party twin worded for the members who did not arm it.
+  auto:
+    enabled: "&aAuto-queue on for &e{mode}&a. Use &f/autoqueue stop &ato cancel."
+    disabled: "&cAuto-queue off."
+    not-active: "&cAuto-queue is not running."
+    status: "&aAuto-queue is on for &e{mode}&a. Use &f/autoqueue stop &ato cancel."
+    stopped-error: "&cAuto-queue stopped — could not join the {mode} queue."
+    stopped-afk: "&cAuto-queue stopped — you went AFK. &7Use &f/autoqueue <mode> &7to re-arm."
+    title: "&aQueueing in &e{seconds}"
+    subtitle: "&7{mode} &8| &f/autoqueue stop"
+    subtitle-party: "&7{mode} &8| &7queued by &f{player}"
+    paused-title: "&eAuto-queue paused"
+    paused-subtitle: "&7Close your menu to resume"
+    paused-subtitle-party: "&7Waiting on a menu in your party"
+
+  # Clickable line sent on returning to the lobby after a ranked game. The labels live here; the
+  # click and hover are attached in Java, because '&' codes cannot carry either.
+  requeue:
+    prompt: "&7Want another?"
+    join-button: "&a&l[JOIN {mode}]"
+    join-hover: "&7Click to queue for &f{mode}&7."
+    auto-button: "&e[AUTO-QUEUE]"
+    auto-hover: "&7Click to requeue for &f{mode}&7 automatically after every game."
+    auto-active: "&7Auto-queueing for &f{mode}&7..."
+    cancel-button: "&c&l[CANCEL]"
+    cancel-hover: "&7Click to stop auto-queue."
+
+# Error Messages
+error:
+  map-not-found: "&cMap configuration not found for '{map}'."
+  invalid-property: "&cUnknown property '{property}'."
+  invalid-index: "&cInvalid index '{index}'. Maximum is {max}."
+  invalid-material: "&cInvalid material name '{material}'."
+  invalid-gamemode: "&cInvalid gamemode '{mode}'."
+  no-maps-available: "&cNo maps available for this game mode."
+
+# Chat primer sent one second after a player lands in the lobby. first-join goes to accounts the
+# server has never seen (hasPlayedBefore), every-join to everyone else. {player} is their name.
+# Either list may be emptied to send nothing. Lines use & colour codes like the rest of this file.
+onboarding:
+  first-join:
+    - "&8&m─────────────────────────────────"
+    - "&6&lWelcome to Smash Heroes, &e{player}&6&l!"
+    - "&7Open beta: expect bugs, and tell us about them."
+    - ""
+    - "&e&lHOW TO PLAY"
+    - "&7Pick a hero and knock the other team off the map."
+    - "&7Damage makes you &cfly further&7. At 0 HP you are not dead, just easy to launch."
+    - ""
+    - "&e&lCONTROLS"
+    - "&fLeft click &7- jab (melee hit)"
+    - "&fRight click &7- fire your primary (hotbar slot 1)"
+    - "&fSlots 2 / 3 &7- secondary / ultimate"
+    - "&fJump in mid-air &7- double jump"
+    - "&fQ &7- reload or your hero's passive"
+    - "&fSneak / F &7- hero-specific extras (check the hero's item lore)"
+    - ""
+    - "&e&lCOMMANDS"
+    - "&f/hero &7- pick a hero      &f/practice &7- hit dummies and learn a kit"
+    - "&f/join 1v1 &7or &f/join 2v2 &7- ranked queue   &f/party invite <name> &7- play with friends"
+    - "&f/join custom &7- private game with your party"
+    - "&f/stats &7- your stats      &f/lb &7- leaderboards      &f/l &7- back to lobby"
+    - "&f/stuck &7- if you ever get stuck"
+    - ""
+    - "&7Walk up to the &6Lobby Menu &7NPC or the queue NPCs to do all of this with clicks."
+    - "&8&m─────────────────────────────────"
+  every-join:
+    - "&6Welcome back, &e{player}&6. &7/join 1v1 &8| &7/join 2v2 &8| &7/practice &8| &7/stats"
+
+# ============================================================================
+# 2) messages.yml
+# ============================================================================
+restart:
+  # Rejection for /join, /autoqueue and any other join while a restart is pending.
+  queue-closed: "&cThe server is restarting soon, so queues and new games are closed."
+
+  # Sent (chat + title) to everyone who was queued or had auto-queue armed when the drain began.
+  queue-dropped: "&eThe server is restarting soon. You were removed from the queue."
+  queue-dropped-title: "&eQueue closed"
+  queue-dropped-subtitle: "&7The server is restarting soon"
+
+  # Chat to every player when a drain starts. {seconds} = drain-cap-seconds.
+  drain-announce: "&6&lRESTART &eThe server will restart once ranked matches finish (at most {seconds}s). Queues are closed."
+
+  # Chat to every player inside a custom game when a drain starts. {seconds} = drain-cap-seconds.
+  custom-game-warning: "&cThis custom game will be ended when the restart begins, in at most {seconds}s."
+
+  # Final countdown, shown at 30/10/5/4/3/2/1 seconds (and at the start). {seconds} = seconds left.
+  countdown: "&6&lRESTART &eThe server restarts in &f{seconds}s&e."
+  countdown-title: "&6&lRESTARTING"
+  countdown-subtitle: "&eServer restarts in &f{seconds}s"
+
+  # Feedback to whoever ran the command.
+  admin-drain-started: "&aDrain started: queues closed, waiting for ranked matches."
+  admin-now-started: "&aRestart countdown started."
+  admin-already: "&cA restart is already in progress."
+
+tablist:
+  # Suffix after the player name for anyone in a live game. Placeholders until resource-pack font
+  # glyphs replace them.
+  glyph:
+    1v1: "⚔"
+    2v2: "⚔⚔"
+    custom: "✦"
+
+# ===== messages.yml =====
+autospectate:
+  # Refreshed every 20 ticks while armed and in the lobby
+  actionbar: "&7Currently autospectating: &f{player}"
+
+custom-gui:
+  # Hotbar given to the host after closing the custom game GUI with Escape (WAITING only)
+  hotbar:
+    reopen:
+      name: "&6Reopen Game Setup"
+      lore:
+        - "&7Right-click to reopen the setup menu"
+    start:
+      name: "&aStart Game"
+      lore:
+        - "&7Right-click to start the game"
+    cancel:
+      name: "&cCancel Game"
+      lore:
+        - "&7Right-click to cancel and return to the lobby"
+
+party:
+  ready:
+    not-in-party: "&cYou are not in a party."
+    not-leader: "&cOnly the party leader can do that."
+    no-active-check: "&cThere is no active ready check."
+    already-voted: "&eYou have already answered this ready check."
+    started: "&aReady check sent for &e{mode}&a. &7(/party ready force to join anyway, /party ready cancel to stop)"
+    prompt: "&e{leader} wants to join &6{mode}&e. Ready?"
+    yes-button: "&a[Yes]"
+    no-button: "&c[No]"
+    accepted: "&a{player} is ready. &7Waiting on: &f{pending}"
+    declined: "&c{player} is not ready. Ready check cancelled."
+    all-ready: "&aEveryone is ready! Joining..."
+    forced: "&eThe leader forced the join."
+    cancelled: "&eReady check cancelled."
+    expired: "&cThe ready check expired."
+
+# ===== game-config.yml =====
+poll:
+  # /skipmap closes itself after this many seconds if the leader never runs /skipmap end
+  timeout-seconds: 60
+
+# ===== messages.yml =====

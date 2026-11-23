@@ -1,0 +1,281 @@
+name: Pug
+
+stats:
+  type: MELEE
+  weight: 2.5
+
+combat:
+  jab_damage: 5.0
+
+energy:
+  starting_energy: 100
+  max_energy: 100
+  energy_per_tick: 0.5
+  can_increase_energy: true
+
+abilities:
+  primary:
+    type: pugdash
+    name: Bash
+    cooldown: 2.0
+    damage: 6.0
+    knockback: 2.0
+    radius: 1.5
+    speed: 3.3
+    duration: 3
+    visuals:
+      activation_sound:
+        sound: entity.wolf.ambient
+      hit_sound:
+        sound: melee.punch.meleehit
+      dash_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: pug
+          texture: bite
+  
+  secondary:
+    type: pugbork
+    name: Sonic Bork
+    cooldown: 5.0
+    active_duration: 0.20   # 5-tick linger; second visual pulse timed by visuals.replay_delay_ticks
+    damage: 8
+    knockback: 5.0
+    radius: 2.5
+    min_radius: 0.75   # FILL - cone starts this wide at the caster (frustum) instead of a point
+    range: 6.7
+    min_knockback: 1.5
+    pierces_walls: true
+    visuals:
+      activation_sound:
+        sound: entity.wolf.ambient
+        volume: 3.0
+        pitch: 0.0
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      # Second visual pulse this many ticks after the cast (0 = off, absent = linger midpoint).
+      # NOTE particles live ~6 ticks client-side — keep this past that so the pulses read as two
+      # distinct borks instead of stacking into one over-dense cone.
+      replay_delay_ticks: 8 # FILL
+      cone_visual:
+        type: PARTICLE
+        particle: NOTE
+        shape: ORIENTED_RING
+        points: 18
+  
+  smash:
+    type: pugintruders
+    name: Intruders!
+    cooldown: 100.0
+    active_duration: 11.0
+    visuals:
+      activation_sound:
+        sound: pug.intruders.activation
+        scope: GLOBAL # ult announcement - audible map-wide (sound-scope rework)
+        volume: 5.0
+    basher:
+      name: Basher
+      invincible: true  # FILL - true = untargetable (Game.canTarget); false = killable
+      skin:
+        head:
+          hero: pug
+          texture: basher
+          skin: default
+        body:
+          hero: pug
+          texture: basher
+          skin: default
+          scale: 1.4      # FILL - display scale; 2.5 puts this model at ~1.8 blocks (player height)
+          anchor_y: 0.6   # FILL - vertical lift so the feet touch the ground (offsets ride height)
+          model_yaw: 0    # FILL - degrees; set 180 if the model faces backwards in testing
+      stats:
+        type: MELEE
+        weight: 1.5
+        health: 25
+        speed: 0.6
+        scale: 0.6
+      mobility:
+        max_jumps: 1
+        x_strength: 0.65
+        y_strength: 0.65
+      combat:
+        jab_damage: 4
+        jab_range: 3
+        jab_cooldown: 700
+      energy:
+        starting_energy: 100
+        max_energy: 100
+        energy_per_tick: 1
+        can_increase_energy: false
+      ai:
+        min_target_duration: 60
+        switch_threshold: 5
+        search_radius: 50
+        speed_modifier: 0.6 # = its stats.speed - preserves the pace that already read right (see corrected sqrt math)
+        input_delay: 4 # TICKS (was 200 from the pre-conversion ms era = a 10-second reaction time)
+      strategy:
+        preferred_distance: 2
+        chase_range: 50
+        can_double_jump: true
+        far_distance: 40
+        ability_ranges:
+          primary: 7.0
+      abilities:
+        primary:
+          type: bash
+          name: BASH
+          cooldown: 2.0
+          damage: 5
+          knockback: 2.5
+          radius: 1.0
+          speed: 3.5
+          duration: 3
+          visuals:
+            activation_sound:
+              sound: entity.wolf.ambient
+              pitch: 2.0
+        passives:
+        - type: tether
+          name: Tether
+          tether_distance: 30.0
+    princess:
+      name: PRINCESS
+      invincible: true  # FILL - true = untargetable (Game.canTarget); false = killable
+      skin:
+        head:
+          hero: pug
+          texture: princess
+          skin: default
+        body:
+          hero: pug
+          texture: princess
+          skin: default
+          scale: 1.3      # FILL - display scale; 2.5 puts this model at ~1.8 blocks (player height)
+          anchor_y: 0.5   # FILL - vertical lift so the feet touch the ground (offsets ride height)
+          model_yaw: 0    # FILL - degrees; set 180 if the model faces backwards in testing
+      stats:
+        type: RANGED
+        weight: 1.0
+        health: 25
+        speed: 0.4
+        scale: 0.5
+      mobility:
+        max_jumps: 1
+        x_strength: 0.5
+        y_strength: 0.5
+      combat:
+        jab_damage: 1
+        jab_range: 2
+        jab_cooldown: 600
+      energy:
+        starting_energy: 0
+        max_energy: 0
+        energy_per_tick: 0
+        can_increase_energy: false
+      ai:
+        min_target_duration: 40
+        switch_threshold: 2
+        search_radius: 45
+        speed_modifier: 0.4 # = its stats.speed - preserves the pace that already read right (see corrected sqrt math)
+        input_delay: 7 # TICKS (was 350 from the pre-conversion ms era = a 17.5-second reaction time
+                       # that froze ALL her combat between casts — the real "princess never sings")
+      strategy:
+        preferred_distance: 15
+        chase_range: 40
+        can_double_jump: true
+        ability_ranges:
+          primary: 16
+      abilities:
+        primary:
+          type: sing
+          name: Sing
+          cooldown: 2.5
+          damage: 6
+          knockback: 3.5
+          radius: 0.5
+          range: 16
+          pierces_players: true
+          pierces_walls: true
+          visuals:
+            fire_sound:
+              sound: entity.wolf.ambient
+              volume: 1.0
+              pitch: 2.0
+            trail_visual:
+              type: PARTICLE
+              particle: NOTE
+        passives:
+        - type: tether
+          name: Tether
+          tether_distance: 35.0
+  
+  passives:
+  - type: pugpounce
+    name: Pounce
+    description: null
+    activation: SNEAK
+    energy_cost: 30
+    charging_regen: -1.25
+    damage_per_energy: 0.05
+    # Launch strength of an uncharged pounce — released the same tick it starts. energy_cost is
+    # already spent by then, so this is literally what a tap gives you.
+    base_strength: 1.1
+    # Added per point of energy drained DURING the hold, on top of the upfront energy_cost.
+    # A full drain from 100 energy is 70 charge energy = +2.1, so 3.5 total.
+    strength_per_energy: 0.05
+    buff_duration_ms: 1250
+    activation_sound:
+      sound: entity.wolf.growl
+    fire_sound:
+      sound: melee.punch.meleemiss
+
+skins:
+  default:
+    armor:
+      chest: 190,141,89
+      legs: 190,141,89
+      boots: 190,141,89
+  masterskin:
+    armor:
+      chest: 190,141,89
+      legs: 190,141,89
+      boots: 190,141,89
+
+# Unlock economy (B25)
+unlock:
+  default-unlocked: false
+  token-cost: 1
+  smash-level-requirement: 0
+
+# Bot config (B28.7) - placeholder values; tune for feel. strategy_type archetype suggested
+# from stats.type; ai.* read by BaseBotAI, strategy.* by the Strategy classes.
+bot:
+  strategy_type: AGGRESSIVE
+ai:
+  min_target_duration: 40 # FILL - ticks a target is kept before re-evaluating
+  switch_threshold: 3.0 # FILL - how much closer a new target must be to switch
+  search_radius: 100 # FILL - blocks scanned for targets
+  speed_modifier: 1.3 # FILL - x the hero's own pace, now with CORRECT math (sqrt-inverted Citizens squaring): 1.0 = walk parity, 1.3 = always-sprinting
+  input_delay: 2 # FILL - ticks between bot "inputs"
+# Bot movement kit (shared by RECOVER and EVADE): input slots tried lowest-priority-number
+# commit window before the NEXT recovery action (so a pounce can't cancel the jump it follows).
+movement:
+  actions:
+  - action: sneak # Pounce — bots never hold sneak, so it releases instantly as the uncharged pounce
+    priority: 1
+    delay_after_ticks: 7 # FILL
+  - action: jump
+    priority: 2
+    delay_after_ticks: 8 # FILL
+strategy:
+  preferred_distance: 2.5 # FILL - distance the bot tries to hold
+  chase_range: 30 # FILL - max distance it will chase
+  can_double_jump: true
+  far_distance: 15 # FILL - beyond this counts as "far"
+  ult_min_target_hp_percent: 0.25  # don't ult a target already below this HP fraction
+  ult_min_self_hp_percent: 0.30    # don't ult below this own-HP fraction unless on last life
+  ability_ranges:
+    primary: 7.5 # FILL - use primary within this range
+    secondary: 6.5 # FILL
+    smash: 12.5 # FILL

@@ -1,8 +1,13 @@
 name: build
+
 on:
   push:
     branches: [master]
   pull_request:
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,4 +22,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: Heroes-jar
-          path: build/libs/Heroes-*.jar
+          path: |
+            build/libs/Heroes-*.jar
+            !build/libs/Heroes-*-plain.jar

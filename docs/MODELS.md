@@ -1,11 +1,11 @@
 # MODELS.md — Custom Model Data Manifest
 
-Hand-off document for texture work, regenerated 2026-07-11 against the **current** code and
-the **live** configs (`C:\Users\willi\OneDrive\Desktop\Heroes Server\plugins\Heroes\` — the
-live ymls are authoritative at runtime; `src\main\resources\heroes\` may lag behind them).
+Hand-off document for texture work (last regenerated 2026-07-11 against live server configs —
+at runtime `plugins/Heroes/` is authoritative because `saveResource(false)` never overwrites
+existing files; `src/main/resources/heroes/` holds fresh-install defaults).
 
 **Key convention:** `ItemBuilder.modelData(hero, texture, skin)` → string key
-`<hero>_<texture>_<skin>`, lowercased (spaces are NOT stripped — see the Sgt Shield bug).
+`<hero>_<texture>_<skin>`, lowercased (`HeroConfig.assetKey` strips spaces from display names).
 `ItemBuilder.applyModelData(item, rawKey)` is the raw-key variant (map icons).
 The `resourcepack/*.json` files are item-model *select* definitions keyed on these strings —
 one file per **base material** (`stick.json` → `minecraft:stick`, etc.). A key only renders
@@ -239,7 +239,7 @@ Only sponge/stick/stone selector files exist. Every key below on any other mater
 | **CYAN_CONCRETE** | **gui_gamemode_series** (NEW) |
 | PURPLE_CONCRETE | gui_gamemode_nuzlocke |
 | ORANGE_CONCRETE | gui_gamemode_ironman |
-| PAPER | gui_settings_lives (AbstractPlayerSettingsGUI), gui_charms_* (see below) |
+| PAPER | gui_settings_lives (PlayerRows), gui_charms_* (see below) |
 | **GOLDEN_APPLE** | **gui_settings_health** (NEW — replaces the removed gui_settings_prestige_on/off) |
 | COAL | gui_settings_ultimate_off |
 | GOLDEN_SWORD / STONE_SWORD | gui_settings_friendly_on / _off |
@@ -251,9 +251,9 @@ Only sponge/stick/stone selector files exist. Every key below on any other mater
 | RED_BED | gui_series_leave (HeroSelectGUI, series mode) |
 | NAME_TAG | gui_player_reset_hero (HeroSelectGUI override mode) |
 | HOPPER | gui_maps_filter (GameMapGUI) |
-| IRON_SWORD | gui_lobby_1v1, gui_lobby_2v2 (AnnouncerGUI) |
-| PLAYER_HEAD | gui_lobby_hero_select (AnnouncerGUI); also BotSettingsGUI's `<hero>_head_default` display (section 2 note) |
-| REDSTONE | gui_lobby_settings (AnnouncerGUI) |
+| IRON_SWORD | gui_lobby_1v1, gui_lobby_2v2 (LobbyMenuGUI) |
+| PLAYER_HEAD | gui_lobby_hero_select (LobbyMenuGUI); also BotSettingsGUI's `<hero>_head_default` display (section 2 note) |
+| REDSTONE | gui_lobby_settings (LobbyMenuGUI) |
 | LIGHT_GRAY_CONCRETE | gui_charms_notch_used (BugCharmsGUI) |
 | WHITE_CONCRETE | gui_charms_notch_free (BugCharmsGUI) |
 

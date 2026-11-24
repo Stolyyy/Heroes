@@ -1,0 +1,13 @@
+# Normalize text line endings across Windows/macOS/Linux
+* text=auto
+
+# Keep shell scripts LF and Windows batch scripts CRLF
+gradlew text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+
+# Binary files
+*.jar binary
+*.png binary
+*.ogg binary
+*.zip binary

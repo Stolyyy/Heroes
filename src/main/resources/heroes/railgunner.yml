@@ -35,6 +35,7 @@ abilities:
     # Vertical distance from the victim's eye location that still counts as a headshot.
     # hit_loc comes off the victim's AABB grown by `radius`, so this is looser than it reads.
     headshot_tolerance: 0.25 # FILL — tune once the headshot sound makes false positives audible
+    headshot_damage_multiplier: 1.5
     visuals:
       fire_sound:
         sound: generalcluck.bazookafire
@@ -163,12 +164,6 @@ abilities:
         type: PARTICLE
         shape: POINT
         particle: CLOUD
-  
-  passives:
-  - type: headhunter
-    name: null
-    description: null
-    damage_dealt_multiplier: 1.5
 
 skins:
   default:

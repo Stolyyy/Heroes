@@ -168,85 +168,6 @@ abilities:
   - type: bugcharms
     name: Charms
     base_soul_per_hit: 17
-    sprintmaster:
-      speed_mult: 1.2
-      step_height_add: 0.4
-    steady_body:
-      weight_mult: 2.25
-    quick_slash:
-      cd_mult: 0.75
-    strength:
-      damage_mult: 1.5
-    mark_of_pride:
-      range_mult: 1.2
-    dashmaster:
-      cd_mult: 0.8
-    sharp_shadow:
-      damage_mult: 1.2
-      speed_mult: 1.2
-    soul_twister:
-      cost_reduction: 5.0
-    shaman_stone:
-      damage_mult: 1.1
-      kb_mult: 1.1
-      radius_add: 0.25
-    kingsoul:
-      regen_per_second: 2.75
-    soul_eater:
-      multiplier: 1.5
-    grubsong:
-      soul_per_damage: 0.75
-    nail_master:
-      soul_per_hit: 11
-    heavy_blow:
-      kb_dealt_mult: 1.5
-    weaversong:
-      count: 2
-      respawn_delay: 10.0
-      minion:
-        name: Weaverling
-        invincible: false  # FILL - false = killable; true = untargetable (Game.canTarget)
-        skin:
-          head:
-            hero: spooderman
-            texture: spooderbuddy
-            skin: default
-        stats:
-          type: MELEE
-          weight: 0.5
-          health: 10.0
-          speed: 0.375
-          scale: 0.75
-        mobility:
-          max_jumps: 0
-          x_strength: 0.0
-          y_strength: 0.0
-        combat:
-          jab_range: 3.0
-          jab_cooldown: 1000
-          jab_damage: 3.0
-        ai:
-          min_target_duration: 60
-          switch_threshold: 5.0
-          search_radius: 30
-          speed_modifier: 0.25 # = its stats.speed - preserves the pace that already read right (see corrected sqrt math)
-          input_delay: 0
-          climb_height_threshold: 2.0
-          stuck_move_threshold: 0.5
-          stuck_check_interval: 10
-          stuck_counter_threshold: 2
-        strategy:
-          preferred_distance: 1.0
-          chase_range: 30
-          can_double_jump: false
-        abilities:
-          passives:
-          - type: spooderbuddyclimb
-            name: Climb
-            climb_speed: 0.4
-          - type: tether
-            name: Tether
-            tether_distance: 30.0
 
 skins:
   default:
@@ -262,36 +183,152 @@ skins:
 
 charms:
   notches: 9
-  dashmaster_cost: 2
-  dashmaster_description: Faster Dash Cooldown
-  grubsong_cost: 2
-  grubsong_description: Get soul when hit
-  heavy_blow_cost: 1
-  heavy_blow_description: Increases knockback on jabs and the dash
-  kingsoul_cost: 4
-  kingsoul_description: Passively gain soul every second
-  mark_of_pride_cost: 3
-  mark_of_pride_description: Increase jab length
-  nail_master_cost: 1
-  nail_master_description: Get soul when you land your primary
-  quick_slash_cost: 3
-  quick_slash_description: Reduce jab cooldown
-  shaman_stone_cost: 3
-  shaman_stone_description: Increase secondary radius, damage, and knockback
-  sharp_shadow_cost: 2
-  sharp_shadow_description: Faster and stronger primary dash
-  soul_eater_cost: 3
-  soul_eater_description: More soul on jab hit
-  soul_twister_cost: 2
-  soul_twister_description: Less soul per secondary cast
-  sprintmaster_cost: 1
-  sprintmaster_description: Faster movement speed and 1 step height
-  steady_body_cost: 2
-  steady_body_description: More weight
-  strength_cost: 3
-  strength_description: More jab damage
-  weaversong_cost: 2
-  weaversong_description: Two permanent spooder buddy minions
+  dashmaster:
+    cost: 2
+    description: Faster Dash Cooldown
+    modifiers:
+    - target: PRIMARY_COOLDOWN
+      mult: 0.8
+  grubsong:
+    cost: 2
+    description: Get soul when hit
+    soul:
+      trigger: ON_DAMAGE_TAKEN
+      value: 0.75
+  heavy_blow:
+    cost: 1
+    description: Increases knockback on jabs and the dash
+    modifiers:
+    - target: JAB_KNOCKBACK
+      mult: 1.5
+    - target: PRIMARY_KNOCKBACK
+      mult: 1.5
+  kingsoul:
+    cost: 4
+    description: Passively gain soul every second
+    modifiers:
+    - target: ENERGY_REGEN_PER_SECOND
+      add: 2.75
+  mark_of_pride:
+    cost: 3
+    description: Increase jab length
+    modifiers:
+    - target: JAB_RANGE
+      mult: 1.2
+  nail_master:
+    cost: 1
+    description: Get soul when you land your primary
+    soul:
+      trigger: ON_PRIMARY_HIT
+      value: 11
+  quick_slash:
+    cost: 3
+    description: Reduce jab cooldown
+    modifiers:
+    - target: JAB_COOLDOWN
+      mult: 0.75
+  shaman_stone:
+    cost: 3
+    description: Increase secondary radius, damage, and knockback
+    modifiers:
+    - target: SECONDARY_DAMAGE
+      mult: 1.1
+    - target: SECONDARY_KNOCKBACK
+      mult: 1.1
+    - target: SECONDARY_RADIUS
+      add: 0.25
+  sharp_shadow:
+    cost: 2
+    description: Faster and stronger primary dash
+    modifiers:
+    - target: PRIMARY_DAMAGE
+      mult: 1.2
+    - target: PRIMARY_DASH_SPEED
+      mult: 1.2
+  soul_eater:
+    cost: 3
+    description: More soul on jab hit
+    soul:
+      trigger: JAB_MULTIPLIER
+      value: 1.5
+  soul_twister:
+    cost: 2
+    description: Less soul per secondary cast
+    modifiers:
+    - target: SECONDARY_ENERGY_COST
+      add: -5
+  sprintmaster:
+    cost: 1
+    description: Faster movement speed and 1 step height
+    modifiers:
+    - target: SPEED
+      mult: 1.2
+    - target: STEP_HEIGHT
+      add: 0.4
+  steady_body:
+    cost: 2
+    description: More weight
+    modifiers:
+    - target: WEIGHT
+      mult: 2.25
+  strength:
+    cost: 3
+    description: More jab damage
+    modifiers:
+    - target: JAB_DAMAGE
+      mult: 1.5
+  weaversong:
+    cost: 2
+    description: Two permanent spooder buddy minions
+    count: 2
+    respawn_delay: 10.0
+    minion:
+      name: Weaverling
+      invincible: false  # FILL - false = killable; true = untargetable (Game.canTarget)
+      skin:
+        head:
+          hero: spooderman
+          texture: spooderbuddy
+          skin: default
+      stats:
+        type: MELEE
+        weight: 0.5
+        health: 10.0
+        speed: 0.375
+        scale: 0.75
+      mobility:
+        max_jumps: 0
+        x_strength: 0.0
+        y_strength: 0.0
+      combat:
+        jab_range: 3.0
+        jab_cooldown_ms: 1000
+        jab_damage: 3.0
+      bot:
+        strategy_type: AGGRESSIVE
+      ai:
+        min_target_duration: 60
+        switch_threshold: 5.0
+        search_radius: 30
+        speed_modifier: 0.25 # = its stats.speed - preserves the pace that already read right (see corrected sqrt math)
+        input_delay: 0
+        climb_height_threshold: 2.0
+        stuck_move_threshold: 0.5
+        stuck_check_interval: 10
+        stuck_counter_threshold: 2
+      strategy:
+        preferred_distance: 1.0
+        chase_range: 30
+        can_double_jump: false
+      abilities:
+        passives:
+        - type: spooderbuddyclimb
+          name: Climb
+          climb_speed: 0.4
+          climb_cost: 0
+        - type: tether
+          name: Tether
+          tether_distance: 30.0
 
 # Unlock economy (B25)
 unlock:

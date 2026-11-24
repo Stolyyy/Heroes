@@ -21,8 +21,7 @@ energy:
 
 mobility:
   type: skullmobility
-  jumpCap: 5
-  skull_sound: {}
+  jump_cap: 5
   skull_visual:
     type: PARTICLE
     shape: RING
@@ -43,7 +42,7 @@ abilities:
     range: 100
     pierces_players: false
     shots_while_sneaking: 3
-    sneak_shot_delay: 0.15
+    burst_delay_ms: 150
     min_damage: 2
     dropoff_distance: 30
     ammo:

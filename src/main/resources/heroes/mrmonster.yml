@@ -23,6 +23,7 @@ abilities:
     name: Rampage
     description: Lunge twice — the second lunge follows your aim. Sneak for a single lunge.
     cooldown: 4.0 # FILL — starts AFTER the sequence ends, not at cast
+    cooldown_starts: RESOLVE
     delay_ticks: 2 # FILL — pause between the dashes (this is the re-aim window)
     hitbox_grace_ticks: 3 # FILL — lingering hitbox after EACH dash (also a full stop between them)
     dash1:

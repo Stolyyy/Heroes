@@ -94,7 +94,7 @@ abilities:
         trail_visual:
           type: PARTICLE
           particle: DUST
-          color: DARK_PURPLE
+          color: PURPLE
       "5":
         fire_sound:
           sound: shoopdawhoop.chargedbeam.big
@@ -125,17 +125,19 @@ abilities:
     type: shoopsmash
     name: IMA FARMER IN MALAYSIA
     cooldown: 110
-    active_duration: 4
+    windup: 1.0
+    active_duration: 3.0
     damage: 8
     knockback: 2.0
     radius: 2.0
     range: 100
     pierces_players: true
-    windup_ticks: 20
-    # Per-victim re-hit lockout, in TICKS. The beam fires for 60 ticks (active_duration 4s minus
-    # the 20-tick windup), so this sets damage-per-cast against the 100 HP bar:
+    burst_until_inactive: true
+    burst_delay_ms: 50
+    # Per-victim re-hit lockout, in TICKS. The beam fires for 60 ticks (3.0s active_duration
+    # starting after the 1.0s windup), so this sets damage-per-cast against the 100 HP bar:
     #   3 ticks = 20 hits = 160 dmg | 5 = 12 = 96 | 10 = 6 = 48 | 20 = 3 = 24
-    hit_delay_ticks: 20  # FILL
+    hit_interval_ticks: 20  # FILL
     start_offset: 1.0  # FILL — beam starts this many blocks in front (model filled the screen)
     visuals:
       activation_sound:
@@ -166,6 +168,7 @@ abilities:
     name: null
     description: null
     activation: SNEAK
+    cooldown_starts: RESOLVE
     energy_cost: 60
     range: 100
     radius: 2.0
@@ -173,7 +176,7 @@ abilities:
     knockback: 5.0
     speed: 2.0
     pierces_players: true
-    reactivation_window: 150
+    reactivation_window_ms: 150
     energy_per_block: 1
     visuals:
       fire_sound:

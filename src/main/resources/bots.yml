@@ -1,44 +1,53 @@
 # Global bot configuration. Per-hero tuning stays in each hero's yml (ai / strategy /
-# recovery sections); this file carries the cross-hero knobs.
+# recovery sections); this file carries cross-hero tunables.
 
-task_check_interval: 5 # FILL — ticks between routine task-condition sweeps (recovery entry/exit
-                       # is checked every tick regardless; its expensive void scan is gated on
-                       # airborne-and-falling, so grounded bots pay ~nothing)
-task_commit_ticks: 10 # FILL — hysteresis before a lower-priority task can take over (reserved)
-
-# Heroes bots never roll and can't be picked for them in the GUI.
+# Heroes bots never roll and cannot be picked for them in the GUI.
 disabled_heroes:
 - greenhood
-- blud # bow flow is player-packet-driven; bots can't draw (roadmap: bot bow hook)
+- blud # bow flow is player-packet-driven; bots cannot draw
 
 recovery:
-  target_height_offset: 2.5 # FILL — blocks ABOVE the nearest stage point the bot aims for, so it
-                            # lands ON the point instead of clipping the ledge lip
+  # Blocks above the nearest sampled stage point the bot aims for so it lands cleanly on stage.
+  target_height_offset: 2.5
 
 movement:
-  action_recheck_ticks: 2 # FILL — cadence of the movement-action selection loop (RECOVER + EVADE) between delays
+  # Cadence in ticks between movement-action reassessments during RECOVER and EVADE.
+  action_recheck_ticks: 2
 
 prevention:
-  jump_veto: true # veto chase/retreat jumps whose projected landing is over the void
-  reach_margin: 2.0 # FILL — a chase jump is still allowed when the target is within jump reach
-                    # plus this many blocks (jumping ACROSS a gap onto their platform is fine)
+  jump_veto: true
+  # Extra reach beyond jump trajectory allowed when jumping across a gap onto a target's platform.
+  reach_margin: 2.0
 
-# Difficulty tiers 1-5, cycled per bot in the bot settings GUI (left-click +1, right-click -1;
-# new bots start at 3). input_delay is in TICKS between a bot deciding and acting, aim locked at
-# decision time. The selected tier overrides the hero yml's ai.input_delay for that bot.
+navigation:
+  reissue_distance: 2.0
+  ring_slack: 3.0
+  backpedal_slack: 1.5
+  ring_hold_distance: 2.0
+  reissue_min_ticks: 10
+  velocity_quiet_speed: 0.3
+  jump_cooldown_ticks: 8
+  chase_jump_height_threshold: 1.5
+
+evade:
+  exit_multiplier: 1.3
+  flee_min_blocks: 8.0
+  flee_max_blocks: 14.0
+  flee_candidates: 6
+  flee_spread_degrees: 60.0
+  aim_distance: 8.0
+  aim_height_offset: 1.5
+
+# Difficulty tiers 1-5 cycled per bot in BotSettingsGUI (new bots start at 3).
+# input_delay is in ticks between deciding and acting, overriding ai.input_delay.
 difficulty:
   "1":
-    input_delay: 8 # FILL
+    input_delay: 8
   "2":
-    input_delay: 6 # FILL
+    input_delay: 6
   "3":
-    input_delay: 4 # FILL
+    input_delay: 4
   "4":
-    input_delay: 2 # FILL
+    input_delay: 2
   "5":
-    input_delay: 0 # FILL
-
-# NOTE on bot speed: navigation runs at MOVEMENT_SPEED attribute x ai.speed_modifier (per hero).
-# Observed in testing (pug minions): ~0.4 effective feels close to real player pace — for a
-# 0.2-speed hero that means speed_modifier ~2.0. The theoretical sprint-parity 1.3 reads slow in
-# practice (players sprint-JUMP, bots path-walk). Tune per hero; research further.
+    input_delay: 0

@@ -144,9 +144,6 @@ practice-arenas:
       - {x: 10.5, y: 14, z: 581.5}
       - {x: -10.5, y: 14, z: 581.5}
 
-# 7.13: lobby hero NPC tags (per-viewer text above each hero NPC). Top-level `lobby:` section
-# of game-config.yml (read via Configs.require*).
-
 custom-gui:
   utility-column: 8
 
@@ -169,17 +166,13 @@ discord:
   error-dedupe-minutes: 10   # same exception + top frame is posted at most once per this window
   error-max-per-hour: 20
 
-# ============================================================================
-# 1) game-config.yml  (read with Configs.require*)
-# ============================================================================
 restart:
   # Seconds of the final countdown before Bukkit.shutdown(); titles at 30/10/5/4/3/2/1.
   announce-seconds: 30
-  # /restart drain: longest wait for ranked (1v1/2v2) matches to finish before the rest are cut.
+  # /heroesrestart drain: longest wait for ranked (1v1/2v2) matches to finish before the rest are cut.
   drain-cap-seconds: 180
 
-# 7.13: lobby hero NPC tags (per-viewer text above each hero NPC). Top-level `lobby:` section
-# of game-config.yml (read via Configs.require*).
+# Lobby hero NPC tags (per-viewer text above each hero NPC).
 lobby:
   npc:
     # Height of the tag above the NPC's feet (blocks). Was 2.4; +0.3 to make room for the
@@ -189,9 +182,6 @@ lobby:
     # level requirement lines are appended below it by the code.
     locked-text: "&c&lLOCKED"
 
-# ===== game-config.yml =====
 poll:
   # /skipmap closes itself after this many seconds if the leader never runs /skipmap end
   timeout-seconds: 60
-
-# ===== messages.yml =====

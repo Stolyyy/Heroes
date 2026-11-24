@@ -117,8 +117,6 @@ abilities:
         sound: bulk.crystal
         scope: GLOBAL # ult announcement - audible map-wide (sound-scope rework)
         volume: 5.0
-      launch_sound: {}
-      descent_sound: {}
       hit_sound:
         sound: entity.experience_orb.pickup
         scope: PLAYER

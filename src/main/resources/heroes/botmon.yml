@@ -47,7 +47,7 @@ abilities:
     range: 100
     speed: 2.25
     burst_count: 3
-    burst_delay: 250
+    burst_delay_ms: 250
     visuals:
       fire_sound:
         sound: melee.punch.meleemiss
@@ -69,9 +69,11 @@ abilities:
     name: bot claw!
     cooldown: 8.0
     grapple_range: 50
+    max_grapple_range: 50.0
     grapple_speed: 0.8
     arrival_threshold: 3.0
     y_boost_on_end: 0.85
+    loop_sound_interval: 1000
     bomb_count: 5
     bomb_start_delay_ticks: 4
     bomb_interval_ticks: 3
@@ -116,8 +118,6 @@ abilities:
           # ITEM_DISPLAY visual, not just this one.
           model_back_offset: 0.0
     visuals:
-      start_sound:
-        scope: PLAYER
       # One persistent display, re-anchored and re-stretched every grapple tick. Like every
       # oriented display, the model must point along the plugin's forward convention
       # (AbstractDisplayBuilder.MODEL_FORWARD, currently local +Z) — that is the axis scaled by
@@ -148,10 +148,9 @@ abilities:
     damage: 8.0
     knockback: 2.5
     radius: 2.0
-    windup_ticks: 20
+    windup: 1.0
     move_speed: 0.8
     hit_grace_period_ms: 500
-    wall_check_radius: 2.0
     knockback_multiplier: 0.2
     knockback_threshold: 3.0
     damage_taken_mult: 0.7          # FILL - damage taken multiplier while riding

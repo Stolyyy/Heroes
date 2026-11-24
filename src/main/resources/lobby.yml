@@ -1,5 +1,14 @@
 # Lobby Configuration
-# NPCs, leaderboard display, and sidebar settings
+# Lobby spawn, NPCs, leaderboard display, and sidebar settings
+
+lobby:
+  spawn:
+    world: world
+    x: 0.5
+    y: 0.0
+    z: 500.5
+    yaw: 0.0
+    pitch: 0.0
 
 # NPC Configuration
 # Each NPC has: name (with color codes), location, armor, and hero mapping

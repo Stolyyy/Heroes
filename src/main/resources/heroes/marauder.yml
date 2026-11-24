@@ -120,6 +120,8 @@ abilities:
     range: 30
     speed: 1.5
     pierces_players: true
+    returns: true
+    spin_deg_per_tick: 34.4
     kb_type: HIT_LOCATION
     visuals:
       fire_sound:

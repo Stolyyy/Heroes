@@ -25,8 +25,8 @@ abilities:
     # FILL — was delay_ticks, tuned as the CHARGED telegraph. Now that the windup is on the
     # BASE bash (empowered lunges instantly) every uncharged bash is this much slower, so the
     # value wants retuning rather than reuse.
-    windup_ticks: 2
-    empowered_windup_ticks: 0 # 0 = the parry-charged lunge fires on the click
+    windup: 0.1
+    empowered_windup: 0.0 # 0 = the parry-charged lunge fires on the click
     empowered_speed_multiplier: 1.25
     speed: 3.0
     duration: 3
@@ -66,6 +66,7 @@ abilities:
     arming_distance: 4.0 # no target seeking until it has flown this far — FILL/tune
     empowered_range_multiplier: 1.25 # parry-charged throw; captured per flight at cast time
     pierces_players: true
+    returns: true
     visuals:
       fire_sound:
         sound: item.trident.throw
@@ -91,7 +92,7 @@ abilities:
     damage: 5.0 # FILL
     knockback: 6.0 # FILL — knockback is what scores kills, and radius 50 hits the whole map
     radius: 50 # no line-of-sight gating: this reaches every enemy, through walls
-    windup_ticks: 10 # 500ms self-telegraph; a parry-charged cast fires instantly instead
+    windup: 0.5 # 500ms self-telegraph; a parry-charged cast fires instantly instead
     ammo:
       mode: STOCK
       max: 2
@@ -141,7 +142,7 @@ abilities:
       success_sound:
         sound: minecraft:block.anvil.land
         volume: 1.2
-        pitch: minecraft:block.anvil.land
+        pitch: 1.0
         scope: PLAYER
       miss_sound:
         sound: block.note_block.bass

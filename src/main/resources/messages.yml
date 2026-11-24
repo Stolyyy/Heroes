@@ -13,6 +13,9 @@ join:
 # Game State Messages
 game:
   eliminated: "&cYou have been eliminated!"
+  out-of-bounds: "&cYou went out of bounds!"
+  force-ended: "&cGame force-ended by an admin."
+  random-hero-assigned: "&eNo hero selected — you're playing {hero}."
   respawning: "&eRespawning in &c{seconds} &eseconds..."
   countdown: "&eGame starting in &c{seconds}&e..."
   started: "&aThe game has started!"
@@ -67,35 +70,35 @@ elo:
   gain: "&aELO: &e{old} &7-> &a{new} &7(&a+{change}&7)"
   loss: "&cELO: &e{old} &7-> &c{new} &7(&c{change}&7)"
 
-# Scoreboard Layout
+# Scoreboards & In-Game Visuals (MiniMessage)
 scoreboard:
-  title: "&6&lHEROES"
-  show-player-entries: false
-  lines:
-    waiting:
-      - "&7{date}"
-      - ""
-      - "&fMap: &a{map}"
-      - "&fMode: &a{mode}"
-      - ""
-      - "&fPlayers: &a{players}/{max}"
-      - ""
-      - "&eHEROES 4!!!"
-
-    playing:
-      - "&7{date}"
-      - ""
-      - "&fTime: &a{time}"
-      - ""
-      - "{team_section}"
-      - ""
-      - "&fKills: &a{kills}"
-      - "&fDeaths: &c{deaths}"
-      - ""
-      - "&eHEROES 4!!!"
-
-    team-entry: "{team_color}{team_name}: &f{lives}"
-    player-entry: " {team_color}* &f{player}: &a{lives}"
+  lobby:
+    title: "<gold><bold>SMASH HEROES"
+    below-name-symbol: "<gold>✫"
+    smash-level: "<gold>Smash Level: <white>{value}"
+    1v1-elo: "<yellow><bold>1v1 ELO: </bold><white>{value}"
+    1v1-wins: "<green>1v1 Wins: <white>{value}"
+    1v1-kills: "<green>1v1 Kills: <white>{value}"
+    2v2-elo: "<yellow><bold>2v2 ELO: </bold><white>{value}"
+    2v2-wins: "<green>2v2 Wins: <white>{value}"
+    2v2-kills: "<green>2v2 Kills: <white>{value}"
+    hero: "<aqua>Hero: <white>{value}"
+    hero-none: "None"
+    tokens: "<aqua>Tokens: <white>{value}"
+  game:
+    title: "<gold>SMASH HEROES 4"
+    tab-header: "<gold>SMASH HEROES 4"
+    health-symbol: "❤"
+    countdown-go: "<green>GO!"
+    countdown-started: "<white>Match Started"
+    victory-title: "<gold>VICTORY!"
+    defeat-title: "<red>DEFEAT"
+    respawn-countdown: "<red>Respawning in <white>{seconds}"
+    respawn-done-title: "<yellow>Welcome Back!"
+    respawn-done-subtitle: "<green>Go!"
+    time-line: "<yellow>Time: {time}"
+    spectators-header: "<gray>Spectators"
+    spectator-entry: "<dark_gray>- {player}"
 
 # Queue Messages
 queue:
@@ -188,9 +191,7 @@ onboarding:
   every-join:
     - "&6Welcome back, &e{player}&6. &7/join 1v1 &8| &7/join 2v2 &8| &7/practice &8| &7/stats"
 
-# ============================================================================
-# 2) messages.yml
-# ============================================================================
+# Restart Messages
 restart:
   # Rejection for /join, /autoqueue and any other join while a restart is pending.
   queue-closed: "&cThe server is restarting soon, so queues and new games are closed."
@@ -224,7 +225,7 @@ tablist:
     2v2: "⚔⚔"
     custom: "✦"
 
-# ===== messages.yml =====
+# Auto-Spectate Messages
 autospectate:
   # Refreshed every 20 ticks while armed and in the lobby
   actionbar: "&7Currently autospectating: &f{player}"
@@ -262,9 +263,573 @@ party:
     cancelled: "&eReady check cancelled."
     expired: "&cThe ready check expired."
 
-# ===== game-config.yml =====
+# Map Skip Poll (/skipmap)
 poll:
-  # /skipmap closes itself after this many seconds if the leader never runs /skipmap end
-  timeout-seconds: 60
+  skipmap:
+    started: "&e{leader} &7started a map-skip poll!"
+    ended: "&7The map-skip poll has ended."
+    timed-out: "&7The map-skip poll timed out."
+    not-leader: "&cOnly the custom game leader can start or end a map-skip poll."
+    already-running: "&cA map-skip poll is already running."
+    no-poll: "&cThere is no active map-skip poll."
+    not-participant: "&cYou are not in this poll's game."
+    none: "None"
+    skip-button: "&a&l[SKIP]"
+    keep-button: "&c&l[KEEP]"
+    tally:
+      - "&6&lMap Skip Poll &7({skip_count}/{total} - {percent}%)"
+      - "&aSkip: &f{skip}"
+      - "&cKeep: &f{keep}"
+      - "&7Pending: &f{pending}"
 
-# ===== messages.yml =====
+# Chat Input Prompts (MiniMessage)
+prompt:
+  int-hint: "<gray>Type a number in chat, or 'cancel' to go back."
+  double-hint: "<gray>Type a number in chat, or 'cancel' to go back."
+  text-hint: "<gray>Type your answer in chat, or 'cancel' to go back."
+  cancelled: "<gray>Cancelled."
+  not-a-number: "<red>'{input}' is not a number — try again, or type 'cancel'."
+  clamped: "<gray>Clamped to {value} (allowed: {min}-{max})."
+
+# Lobby Displays & NPCs (MiniMessage)
+visual:
+  npc:
+    level-tag: "<gold>✫ <white>{level}/{cap}"
+  board:
+    elo-value: "<yellow> - {value}"
+    elo-label: "<gold>Leaderboard: {mode}"
+    level-value: "<yellow> - Lv. {value}"
+    level-label: "<gold>Level Leaderboard: {view}"
+    level-overall: "Overall"
+
+# GUIs (MiniMessage)
+gui:
+  common:
+    token-singular: "token"
+    token-plural: "tokens"
+    all: "All"
+    unknown-player: "Unknown"
+  nav:
+    back: "<white>Back"
+    close: "<red>Close"
+    prev-page: "<white>Previous Page"
+    next-page: "<white>Next Page"
+
+  settings:
+    player:
+      team-title: "{team} Team Settings"
+      player-title: "Player Settings: {player}"
+      lives:
+        name: "<gold>{value} Lives"
+        lore:
+          - "<gray>Left-click: cycle"
+          - "<gray>Right-click: enter amount"
+        prompt: "Enter the number of lives ({min}-{max}):"
+      health:
+        name: "<gold>Starting Health: {value}"
+        lore:
+          - "<gray>Left-click: cycle"
+          - "<gray>Right-click: enter amount (0-1000)"
+        prompt: "Enter the starting health ({min}-{max}):"
+      ultimates:
+        "on": "<green>Ultimates: Enabled"
+        on-lore: []
+        "off": "<red>Ultimates: Disabled"
+        off-lore: []
+      friendly-fire:
+        "on": "<green>Friendly Fire: Enabled"
+        on-lore: []
+        "off": "<red>Friendly Fire: Disabled"
+        off-lore: []
+      random-heroes:
+        "on": "<green>Random Heroes: Enabled"
+        on-lore: []
+        "off": "<red>Random Heroes: Disabled"
+        off-lore: []
+      hero-display:
+        override-name: "<green>{hero} (override)"
+        random-name: "<light_purple>Random"
+        selected-name: "<gold>{hero}"
+        none-selected: "<gold>None selected"
+        lore:
+          - "<gray>Hero this game"
+      change-hero:
+        name: "<green>Change Hero"
+        lore:
+          - "<gray>Left-click: pick an override hero"
+          - "<gray>Right-click: reset to their selection"
+
+    game:
+      title: "Game Settings"
+      crystals:
+        "on": "<green>Smash Crystals: Enabled ({interval}s)"
+        "off": "<red>Smash Crystals: Disabled"
+        lore:
+          - "<gray>Left-click: toggle"
+          - "<gray>Right-click: set spawn interval"
+        prompt: "Enter the crystal spawn interval in seconds ({min}-{max}):"
+      walls:
+        "on": "<green>Kill Walls: Enabled"
+        on-lore: []
+        "off": "<red>Kill Walls: Disabled"
+        off-lore: []
+      timer:
+        name: "<gold>Match Timer: {value}"
+        lore:
+          - "<gray>Left-click: cycle presets"
+          - "<gray>Right-click: enter seconds"
+        prompt: "Enter the match timer in seconds ({min}-{max}):"
+
+    ironman:
+      title: "Ironman Settings"
+      stocks:
+        name: "<gold>Stocks Per Round: {value}"
+        lore:
+          - "<gray>Left-click: cycle"
+          - "<gray>Right-click: enter amount"
+        prompt: "Enter stocks per round ({min}-{max}):"
+      team-scope:
+        "on": "<green>Win Scope: Whole Team"
+        on-lore:
+          - "<gray>Every member of a team must"
+          - "<gray>clear their heroes to win."
+        "off": "<red>Win Scope: First Player"
+        off-lore:
+          - "<gray>First player to clear wins the"
+          - "<gray>series for their team."
+      heroes:
+        name: "<gold>Heroes To Clear: {value}"
+        lore:
+          - "<gray>Win a round with this many"
+          - "<gray>heroes to win the series"
+          - "<dark_gray>Left-click: cycle | Right-click: enter"
+        prompt: "Enter the number of heroes to clear ({min}-{max}):"
+
+    nuzlocke:
+      title: "Nuzlocke Settings"
+      team-scope:
+        "on": "<green>Team Exhaustion: Enabled"
+        on-lore:
+          - "<gray>One player out of heroes puts"
+          - "<gray>their whole team out."
+        "off": "<red>Team Exhaustion: Disabled"
+        off-lore:
+          - "<gray>Players drop out individually."
+      stocks:
+        name: "<gold>Stocks Per Round: {value}"
+        lore:
+          - "<gray>Left-click: cycle"
+          - "<gray>Right-click: enter amount"
+        prompt: "Enter stocks per round ({min}-{max}):"
+      hp-carryover:
+        "on": "<green>HP Carry-Over: Enabled"
+        on-lore:
+          - "<gray>Surviving heroes keep their HP"
+          - "<gray>into the next round"
+        "off": "<red>HP Carry-Over: Disabled"
+        off-lore: []
+      lock-in:
+        "on": "<green>Lock-In: Enabled"
+        on-lore:
+          - "<gray>You keep playing your hero"
+          - "<gray>until it dies"
+        "off": "<red>Lock-In: Disabled"
+        off-lore: []
+      heroes:
+        name: "<gold>Heroes To Eliminate: {value}"
+        lore:
+          - "<gray>Lose this many heroes and"
+          - "<gray>you're out of the series"
+          - "<dark_gray>Left-click: cycle | Right-click: enter"
+        prompt: "Enter the number of heroes to eliminate ({min}-{max}):"
+
+    tdm:
+      title: "Team Deathmatch Settings"
+      kill-limit:
+        name: "<gold>Kill Limit: {value}"
+        lore:
+          - "<gray>Left-click: cycle"
+          - "<gray>Right-click: enter amount"
+        prompt: "Enter the kill limit ({min}-{max}):"
+      start-hp:
+        name: "<gold>Start HP: {value}"
+        lore:
+          - "<gray>Left-click: cycle"
+          - "<gray>Right-click: enter amount"
+        prompt: "Enter the starting HP ({min}-{max}):"
+      hero-repick:
+        "on": "<green>Hero Re-Pick on Respawn: Enabled"
+        on-lore: []
+        "off": "<red>Hero Re-Pick on Respawn: Disabled"
+        off-lore: []
+      ult-carryover:
+        "on": "<green>Ult Charge Carryover: Enabled"
+        on-lore:
+          - "<gray>Smash charge % carries across hero swaps"
+        "off": "<red>Ult Charge Carryover: Disabled"
+        off-lore:
+          - "<gray>Each new hero starts its ult from zero"
+
+    evolution:
+      title: "Evolution Settings"
+      team-advance:
+        "on": "<green>Team Advance: Enabled"
+        on-lore:
+          - "<gray>A kill advances every teammate"
+        "off": "<red>Team Advance: Disabled"
+        off-lore:
+          - "<gray>Only the killer advances"
+      kill-limit:
+        name: "<gold>Kill Limit: {value}"
+        lore:
+          - "<gray>0 = off"
+          - "<gray>Left-click: cycle"
+          - "<gray>Right-click: enter amount"
+        prompt: "Enter the kill limit ({min}-{max}, 0 = off):"
+      win-all:
+        "on": "<green>Win: Whole Team Evolved"
+        on-lore:
+          - "<gray>Every teammate must finish their order"
+        "off": "<red>Win: First Player Evolved"
+        off-lore:
+          - "<gray>First finished player wins it for the team"
+      start-hp:
+        name: "<gold>Start HP: {value}"
+        lore:
+          - "<gray>Left-click: cycle"
+          - "<gray>Right-click: enter amount"
+        prompt: "Enter the starting HP ({min}-{max}):"
+      shared-order:
+        "on": "<green>Shared Hero Order: Enabled"
+        on-lore:
+          - "<gray>Everyone gets the same shuffled order"
+        "off": "<red>Shared Hero Order: Disabled"
+        off-lore:
+          - "<gray>Each player gets their own shuffled order"
+      ult-carryover:
+        "on": "<green>Ult Charge Carryover: Enabled"
+        on-lore:
+          - "<gray>Smash charge % carries across hero swaps"
+        "off": "<red>Ult Charge Carryover: Disabled"
+        off-lore:
+          - "<gray>Each new hero starts its ult from zero"
+
+    series:
+      title: "Series Settings"
+      best-of:
+        name: "<gold>Best of: {value} (first to {wins})"
+        lore:
+          - "<gray>Left-click: cycle 3/5/7"
+          - "<gray>Right-click: enter amount"
+        prompt: "Enter the series length ({min}-{max}, odd recommended):"
+      repick:
+        "on": "<green>Hero Re-Pick Between Rounds: Enabled"
+        on-lore: []
+        "off": "<red>Hero Re-Pick Between Rounds: Disabled"
+        off-lore: []
+
+    boss:
+      title: "Boss Mode Settings"
+      head-boss-lore:
+        - "<red>THE BOSS"
+      head-pick-lore:
+        - "<gray>Click to make boss"
+      hp-per-life:
+        name: "<gold>Boss HP Per Life: {value}"
+        lore:
+          - "<gray>Starting/max HP the boss respawns"
+          - "<gray>with on every one of its lives"
+          - "<gray>Left-click: cycle"
+          - "<gray>Right-click: enter amount"
+        prompt: "Enter the boss HP per life ({min}-{max}):"
+      non-boss-lives:
+        name: "<gold>Non-Boss Lives: {value}"
+        lore:
+          - "<gray>Left-click: cycle"
+          - "<gray>Right-click: enter amount"
+        prompt: "Enter the non-boss lives ({min}-{max}):"
+      non-boss-hp:
+        name: "<gold>Non-Boss HP: {value}"
+        lore:
+          - "<gray>Left-click: cycle"
+          - "<gray>Right-click: enter amount"
+        prompt: "Enter the non-boss HP ({min}-{max}):"
+      lives-per-enemy:
+        name: "<gold>Boss Lives Per Enemy: {value}"
+        lore:
+          - "<gray>{summary}"
+          - "<gray>Decimals allowed - rounded to the nearest"
+          - "<gray>whole life, ties up, minimum 1"
+          - "<gray>Left-click: cycle"
+          - "<gray>Right-click: enter amount"
+        prompt: "Enter the boss lives per enemy ({min}-{max}, decimals allowed):"
+        summary-unpicked: "Pick a boss to see the total"
+        summary-picked: "Boss gets {lives} lives vs {enemies} enemies"
+      random-boss:
+        name: "<green>Random Boss"
+        lore:
+          - "<gray>Picks a random participant as the boss"
+          - "<gray>{current}"
+          - "<gray>Click: roll"
+        current-none: "No boss picked yet"
+        current-player: "Current: {name}"
+        current-bot: "Current: [BOT] {name}"
+        current-unknown: "Current: unknown"
+
+  custom:
+    title: "Custom Game Setup"
+    next-page-lore:
+      - "<gray>{count} more spectators"
+    add-bot-name: "<green>Add Bot"
+    add-bot-lore:
+      - "<gray>Adds a random-hero bot"
+      - "<gray>to the smallest team."
+    balance-name: "<aqua>Auto Balance: {shape}"
+    balance-lore:
+      - "<gray>{preview}"
+      - "<dark_gray>Balanced by elo (avg 1v1/2v2)"
+      - "<yellow>Left-click: apply"
+      - "<yellow>Right-click: change mode"
+    balance-shapes:
+      ffa: "Free-for-all"
+      two-teams: "Two Teams"
+      teams-of-two: "Teams of 2"
+    balance-preview:
+      empty: "No players yet"
+      ffa-all: "{total} players -> {total} solo teams"
+      ffa-overflow: "{total} players -> {teams} solo teams + {spectators} spectating"
+      two-teams: "{total} players -> {left}v{right}"
+      teams-of-two: "{total} players -> {shape}"
+      teams-of-two-overflow: "{total} players -> {shape} + {spectators} spectating"
+    gamemode-name: "<gold>Game Mode: {mode}"
+    gamemode-lore:
+      - "<gray>Click to change!"
+    settings-name: "<white>Game Settings"
+    map-name: "<gold>Map: {map}"
+    map-none: "None"
+    map-lore:
+      - "<aqua>Pool: {pool}"
+      - "<gray>Left-click: choose map"
+      - "<gray>Right-click: random map from pool"
+      - "<gray>Shift+right-click: change pool"
+    pool-auto: "Auto ({pool})"
+    pool:
+      1v1-only: "1v1 Only"
+      2v2-only: "2v2 Only"
+      1v1-and-2v2: "1v1 AND 2v2"
+      1v1-or-2v2: "1v1 OR 2v2"
+      all: "All Maps"
+      auto-1v1: "1v1"
+      auto-2v2: "2v2"
+      auto-both: "1v1 & 2v2"
+    start-name: "<white>Start Game!"
+    cancel-name: "<white>Cancel"
+    team-header-name: "<white>{team} Team"
+    team-rotating-lore: "<gray>{count} members - rotating"
+    team-move-lore: "<yellow>Click to move selected player here"
+    empty-slot: "Empty Slot"
+    bot-head-name: "<gray>[BOT] {name}"
+    bot-head-lore:
+      - "<aqua>{hero}"
+    errors:
+      series-no-bots: "<red>Series modes don't support bots yet — remove them first."
+      cannot-start: "<red>Cannot Start! Check Team sizes."
+      no-other-maps: "<red>No other maps in this pool."
+      bot-limit: "<red>This game has reached the bot limit."
+      no-npc-service: "<red>Bot support requires an NPC plugin (Citizens)."
+      bot-add-failed: "<red>Could not add the bot to the game."
+    map-changed: "<green>Map changed to: {map}"
+
+  map:
+    title: "Map Selection"
+    prev-page: "<gray>Previous Page"
+    next-page: "<gray>Next Page"
+    cancel: "<red>Cancel"
+    random-name: "<gold>Select Random Map"
+    random-lore:
+      - "<gray>Picks from: <aqua>{filter}"
+      - ""
+      - "<yellow>Click to pick a random map."
+    confirm-name: "<green>Confirm Selection: {map}"
+    confirm-none: "<red>Select a map first!"
+    filter-name: "<gold>Filter: {filter}"
+    filter-lore:
+      - ""
+      - "<yellow>Left-click to cycle forward"
+      - "<yellow>Right-click to cycle backward"
+    card-name: "<gold>{map}"
+    card-lore:
+      - "<gray>Supported Modes: <white>{modes}"
+      - ""
+      - "<yellow>Click to select this map"
+    no-maps: "<red>No maps available with current filter."
+    random-selected: "<aqua>Selected random map: {map}"
+    changed: "<green>Map changed to: {map}"
+
+  gamemode:
+    title: "Select Game Mode"
+    selected-lore: "<green>SELECTED"
+    map-changed-for-pool: "<aqua>Map changed to {map} (from the {mode} map pool)"
+    lore:
+      default:
+        - "<gray>Classic: last team standing"
+      boss:
+        - "<gray>One boss vs everyone"
+        - "<gray>Boss: {boss_lives} lives per enemy @ {boss_hp} HP"
+        - "<gray>Others: {other_lives} life @ {other_hp} HP"
+      tdm:
+        - "<gray>No eliminations"
+        - "<gray>First to {kill_limit} kills"
+        - "<gray>Start HP: {start_hp}"
+        - "<gray>Hero re-pick on respawn"
+      evolution:
+        - "<gray>Kills advance you through a hero order"
+        - "<gray>Kill on your FINAL hero to win"
+        - "<gray>Start HP: {start_hp}"
+      series:
+        - "<gray>Best-of-{best_of} series of classic rounds"
+        - "<gray>Maps rotate every round"
+        - "<gray>Optional hero re-pick between rounds"
+      nuzlocke:
+        - "<gray>Series: a hero that dies is gone"
+        - "<gray>{stocks} stock per round"
+        - "<gray>HP carries over between rounds"
+        - "<gray>Run out of heroes and you're out"
+      ironman:
+        - "<gray>Series: winning a round CLEARS your hero"
+        - "<gray>{stocks} stock per round"
+        - "<gray>Clear every hero to win the series"
+
+  hero:
+    level-max: "<aqua>Level {level} — MAX"
+    level-progress: "<aqua>Level {level} — {xp}/{required} XP ({pct}%)"
+    cost-locked: "<red>Locked — Cost: {cost} {unit}"
+    cost-purchase: "<red>Locked — click to purchase ({cost} {unit})"
+    cost-npc: "<red>Cost: {cost} {unit}"
+    level-required: "<red>Requires Smash Level: {level}"
+    selectable-name: "<gold>{hero}"
+    select-hint: "<yellow>Click to select!"
+    info-hint: "<gray>Right-click for info & skins"
+    locked-name: "<gray>{hero}"
+    locked-hints:
+      - "<yellow>Click to unlock!"
+      - "<gray>Right-click for info & skins"
+    eliminated-name: "<dark_gray>{hero}"
+    eliminated-lore: "<red>Eliminated"
+    unlock-level-required: "<red>Requires Smash Level {required} (you're at {current})."
+    unlock-insufficient-tokens: "<red>Not enough tokens — need {cost}, you have {balance}."
+    unlock-success: "<gold>Spent {cost} {unit} to unlock {hero}! Balance: {balance}"
+
+  hero-select:
+    title-lobby: "Select Your Hero"
+    title-next-game: "Hero for Next Game"
+    title-override: "Hero Override: {target}"
+    title-bot: "Hero: {bot}"
+    title-respawn: "Pick Your Next Hero"
+    title-series: "Round {round} — Pick Your Hero"
+    leave-series-name: "<red>Leave Series"
+    leave-series-lore:
+      - "<gray>Drops you from the series;"
+      - "<gray>the others play on."
+    reset-name: "<yellow>Reset to Selected Hero"
+    reset-lore:
+      - "<gray>Clears the override"
+
+  hero-info:
+    head-stats-kd: "<white>Kills: {kills}  Deaths: {deaths}"
+    head-stats-wl: "<white>Wins: {wins}  Losses: {losses}"
+    head-stats-custom: "<white>Custom games played: {count}"
+    head-select-hint: "<yellow>Click to select!"
+    passive-name: "<gold>{name}"
+    passive-label: "<dark_gray>Passive"
+    active-name: "<gold>{name}"
+    primary-label: "<dark_gray>Primary"
+    secondary-label: "<dark_gray>Secondary"
+    smash-label: "<dark_gray>Ultimate"
+    cosmetics-name: "<light_purple>Cosmetics"
+    cosmetics-lore:
+      - "<gray>Pick this hero's skin"
+
+  skins:
+    title: "{hero} Skins"
+    item-name-owned: "<gold>{skin}"
+    item-name-locked: "<gray>{skin}"
+    master-name: "Master Skin"
+    selected-lore: "<green>Selected"
+    select-lore: "<yellow>Click to select"
+    locked-lore: "<red>Unlocks at hero level {level}"
+    changed: "<green>{hero} skin set to {skin}."
+
+  bot:
+    title: "Bot: {bot}"
+    change-hero-name: "<green>Change Hero"
+    change-hero-lore:
+      - "<gray>Opens the hero picker"
+    remove-name: "<red>Remove Bot"
+    difficulty-name: "<yellow>Difficulty: {tier} <gray>{bar}"
+    difficulty-lore:
+      - "<gray>Left-click +1, right-click -1"
+      - "<dark_gray>Higher = faster reactions (bots.yml tiers)"
+    hero-display-name: "<gold>{hero}"
+    hero-display-lore:
+      - "<gray>Current Hero"
+      - "<dark_gray>Click 'Change Hero' to pick"
+
+  charms:
+    title: "Charm Selection"
+    save-and-exit: "<red>Save and Exit"
+    reset-name: "<yellow>Reset Charms"
+    reset-lore:
+      - "<gray>Unequip all charms"
+    notch-used: "<gray>Used Notch"
+    notch-free: "<white>Free Notch"
+    charm-name: "<gold>{charm}"
+    charm-lore:
+      - "<gray>{description}"
+      - "<aqua>Cost: {cost} notches"
+    equipped-header: "<aqua>Equipped:"
+
+  spectate:
+    title: "Spectate Games"
+    item-name: "<gold>{mode} Game{starting}"
+    starting-suffix: " (Starting...)"
+    team-header: "{team} Team:"
+    player-entry: "<white>  {player} <gray>({elo})"
+    spectators-header: "<gray>Spectators:"
+    spectator-entry: "<dark_gray>  {player}"
+    click-lore: "<yellow>Click to spectate!"
+
+  lobby-menu:
+    title: "Lobby Menu"
+    coming-soon: "<yellow>Coming Soon!"
+    1v1-name: "<gold>1v1 Queue"
+    1v1-lore:
+      - "<gray>Battle another player in a"
+      - "<gray>1 versus 1 ranked match!"
+      - ""
+      - "<yellow>Click to join queue!"
+    2v2-name: "<gold>2v2 Queue"
+    2v2-lore:
+      - "<gray>Team up with a friend and"
+      - "<gray>fight another duo!"
+      - ""
+      - "<gray>Solo or party of 2!"
+      - "<yellow>Click to join queue!"
+    custom-name: "<gold>Custom Game"
+    custom-lore:
+      - "<gray>Create a custom game with"
+      - "<gray>your party members!"
+      - ""
+      - "<red>Requires a party!"
+      - "<yellow>Click to create!"
+    hero-select-name: "<gold>Select Hero"
+    hero-select-lore:
+      - "<gray>Choose your hero for"
+      - "<gray>upcoming battles!"
+      - ""
+      - "<yellow>Click to select!"
+    settings-name: "<gold>Settings"
+    settings-lore:
+      - "<gray>Configure your preferences"
+      - ""
+      - "<yellow>Click to open!"

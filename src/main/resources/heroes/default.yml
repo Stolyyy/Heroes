@@ -28,6 +28,7 @@ stats:
   scale: 1.0
 
 mobility:
+  type: STANDARD
   max_jumps: 2
   x_strength: 0.9
   y_strength: 0.85
@@ -47,7 +48,7 @@ combat:
   jab_range: 5.0 # length of the jab box from the eye (was vanilla-reach 6.0)
   jab_radius: 0.5 # half-extent of the box cross-section (0.5 = 1x1 profile)
   jab_pierce: false # false = closest target only, true = hit everyone in the box
-  jab_cooldown: 500
+  jab_cooldown_ms: 500
   jab_damage: 5.0
   jab_knockback: 1.5
   swing_sound:

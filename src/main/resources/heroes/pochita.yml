@@ -6,7 +6,7 @@ stats:
 
 combat:
   jab_damage: 5.0
-  jab_cooldown: 400
+  jab_cooldown_ms: 400
 
 energy:
   starting_energy: 100
@@ -103,6 +103,7 @@ abilities:
     description: Fire a chain and reel yourself in.
     activation: SNEAK
     cooldown: 2.5                   # paid ON HIT (wall or player), not on cast
+    cooldown_starts: RESOLVE
     miss_cooldown: 1.0              # FILL - whiffs only cost this much
     speed: 9.0                      # FILL - chain projectile speed (fast but dodgeable)
     range: 50

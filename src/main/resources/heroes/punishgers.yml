@@ -60,7 +60,7 @@ abilities:
       radius: 0.6
       speed: 6
       pellet_count: 8
-      max_angle: 12.5 # degrees off aim, uniform 0..max (was spread: 0.25)
+      spread_deg: 12.5 # degrees off aim, uniform 0..max (was spread: 0.25)
       # Pellets are visual only; one cone hit per shot, scaled by how far along the aim the target stands (length)
       # and how far off the aim line it is (accuracy). Mults are linear: *_min_mult at 0, *_max_mult at full range / cone edge.
       min_radius: 0.6   # cone width at the muzzle
@@ -124,6 +124,7 @@ abilities:
             hero: punishgers
             texture: molotov
         area_visual:
+          type: PARTICLE
           particle: FLAME
         # One ping per burn tick, per victim — up to 25 in a 5s zone, so it sits well under the
         # other hit indicators and takes the low pitch of the pair.
@@ -173,6 +174,7 @@ abilities:
             hero: punishgers
             texture: stun_grenade
         area_visual:
+          type: PARTICLE
           particle: END_ROD
         # One ping per victim on detonation, so it can sit near full volume; the high pitch is what
         # separates it from the molotov's burn ping by ear.

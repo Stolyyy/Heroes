@@ -30,7 +30,7 @@ abilities:
     radius: 1.0
     range: 75
     speed: 2.0
-    max_angle: 1
+    spread_deg: 1
     ammo:
       mode: CLIP
       max: 12
@@ -51,6 +51,7 @@ abilities:
     type: rocketpunch
     name: Rocket Punch
     charges: 5
+    charge_on_primary_hit: true
     damage: 12.0
     knockback: 3.0
     radius: 1.0
@@ -99,31 +100,33 @@ abilities:
     max_missiles: 12 # hard cap on missiles launched per activation, regardless of enemy count
     launch_height: 40
     speed: 1.2
-    aoe_radius: 1.5
-    damage: 9
-    knockback: 2.0
+    radius: 0.5
+    range: 240.0
     max_ticks: 200
-    spawn_delay_ticks: 5
+    burst_delay_ms: 250
+    aoe:
+      radius: 1.5
+      damage: 9.0
+      knockback: 2.0
+      pierces_walls: true
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      center_sound:
+        sound: skullfire.explodegrenade
+      center_visual:
+        type: PARTICLE
+        particle: EXPLOSION
     visuals:
       activation_sound:
         sound: tinman.crystal
         scope: GLOBAL # ult announcement - audible map-wide (sound-scope rework)
         volume: 5.0
-      missile_model:
+      projectile_visual:
         type: ITEM_DISPLAY
         model:
           hero: tinman
           texture: punch
-      trail_visual:
-        type: PARTICLE
-      hit_sound:
-        sound: entity.experience_orb.pickup
-        scope: PLAYER
-      explosion_sound:
-        sound: skullfire.explodegrenade
-      explosion_visual:
-        type: PARTICLE
-        particle: EXPLOSION
   
   passives:
   - type: overload

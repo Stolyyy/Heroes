@@ -167,13 +167,16 @@ display_example:
 #                   actual pitch = pitch ± (pitch_variation / 2)
 #                   e.g. pitch: 1.0  pitch_variation: 0.4  →  plays between 0.8 and 1.2
 #
+#  (Defaults for omitted visual/sound keys live in templates.yml.)
+#
 #  scope:
-#    GLOBAL  — plays at the location for everyone nearby  (default)
-#    PLAYER  — plays only for the player who triggered it (client-side only, no positional)
+#    PLAYER  — plays only for the player who triggered it (personal cues)
+#    LOCAL   — plays at the location with vanilla distance attenuation  (default)
+#    GLOBAL  — heard map-wide by every player in the world (ult announcements)
 
 sound_example:
   sound: "entity.player.attack.sweep"   # sound key — vanilla or resource-pack  (required, no default)
   volume: 1.0                           # loudness / range  (default: 1.0)
   pitch: 1.1                            # playback pitch (0.5 low – 2.0 high)  (default: 1.0)
   pitch_variation: 0.2                  # ± random pitch each play  (default: 0.0 = always same pitch)
-  scope: GLOBAL                         # GLOBAL = heard by all nearby | PLAYER = caster only  (default: GLOBAL)
+  scope: LOCAL                          # LOCAL = distance-attenuated | GLOBAL = map-wide | PLAYER = caster only

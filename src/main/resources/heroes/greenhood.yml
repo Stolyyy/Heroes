@@ -24,34 +24,18 @@ abilities:
     cooldown: 0.0
     knockback: 2.5
     speed_max: 4.25 # launch speed = max(min_force, vanilla draw force) * speed_max * force_multiplier
-    hit_radius: 1.75 # FILL — swept-box side length for NORMAL + modifier arrows (barrage has its own)
+    hit_radius: 1.75 # FILL — swept-box side length for NORMAL + modifier arrows
     normal:
       min_damage: 3.0
       max_damage: 7
-      # Per-arrow force (R7): min_force floors vanilla's QUADRATIC draw force (tap bottoms out
+      # Per-arrow force: min_force floors vanilla's QUADRATIC draw force (tap bottoms out
       # at 0.1075 — an arrow that nosedives in a couple of blocks); force_multiplier scales the
       # resulting velocity for THIS arrow type only. Velocity only — damage reads linear charge.
       min_force: 0.5 # FILL
       force_multiplier: 1.0 # FILL
       overcharge_damage_multiplier: 1.5
       max_overcharge_ticks: 40
-    barrage: # unused by Green Hood since R7 (kept for the crossbow hero — Arrow requires the keys)
-      damage: 2.0
-      knockback: 2.25
-      min_force: 0.5 # FILL
-      force_multiplier: 1.0 # FILL
-      shot_interval_ticks: 2 # FILL — ticks between sequential barrage arrows
-      base_arrows: 2
-      ticks_per_extra_arrow: 8
-      max_arrows: 7
-      max_angle: 2.5 # degrees off aim, uniform 0..max (was spread: 0.05)
-      hit_radius: 1.75 # FILL — swept-box side length for barrage arrows
     visuals:
-      # fire_sound plays ONLY for queued barrage shots: vanilla's arrow-shoot sound fires on
-      # every bow release even with the shoot event cancelled (it sits after the shoot call in
-      # BowItem.releaseUsing), so a custom sound on the release path doubled it.
-      fire_sound:
-        sound: entity.arrow.shoot
       hit_sound:
         sound: entity.arrow.hit_player
         scope: PLAYER
@@ -202,14 +186,17 @@ abilities:
     description: Q — hurl yourself forward; anyone you strike is flung back the way you came.
     activation: DROP
     cooldown: 7.0 # FILL
-    launch_strength: 1.8 # FILL — single pounce-style impulse; gravity owns the arc from there
-                         # (no per-tick thrust, no hard stop; pug's uncharged pounce is 1.1)
-    hitbox_ticks: 10 # FILL — how long the swept hitbox rides the flight after launch
+    speed: 1.8 # FILL — single pounce-style impulse; gravity owns the arc from there
+    duration: 0
+    exit_velocity_factor: 1.0
+    hitbox_grace_ticks: 10 # FILL — how long the swept hitbox rides the flight after launch
     radius: 1.5 # FILL — swept-box half-extent around the flight path
     damage: 5.0 # FILL
     knockback: 3.0 # FILL — victim launch strength, along your REVERSED travel direction
-    lift_knockback: 0.5 # FILL — additive upward component so the fling doesn't spike them into the floor
+    kb_reverse: true
+    vertical_knockback: 0.5 # FILL — additive upward component so the fling doesn't spike them into the floor
     visuals:
+      trail_spacing: 1
       activation_sound:
         sound: entity.ender_dragon.flap
       hit_sound:

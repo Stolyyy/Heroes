@@ -46,6 +46,7 @@ abilities:
       radius: 0.6
       gravity: 0.0
       pierces_players: true
+      returns: true
       visuals:
         fire_sound:
           sound: item.trident.throw

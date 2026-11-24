@@ -28,7 +28,9 @@ abilities:
     radius: 1.0
     range: 100
     speed: 1.9
-    max_angle: 7
+    spread_deg: 7
+    burst_count: 2
+    spread_alternate: true
     aoe:
       damage: 4.0
       knockback: 1.0
@@ -59,6 +61,7 @@ abilities:
     type: kamedo
     name: Kame Do
     charges: 3
+    charge_on_primary_hit: true
     damage: 12.0
     knockback: 2.3
     radius: 1.5
@@ -133,8 +136,6 @@ abilities:
         particle: POOF
         points: 16
         radius: 1.0
-      end_visual:
-        type: null
       activation_sound:
         sound: goku.teleport
 

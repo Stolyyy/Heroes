@@ -1,42 +1,37 @@
 package me.stolyy.heroes.ability.kit.shoop;
 
-import me.stolyy.heroes.vfx.effect.AbstractDisplayBuilder;
-import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.Projectile;
-import me.stolyy.heroes.game.GameManager;
+import me.stolyy.heroes.hero.Hero;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
+import me.stolyy.heroes.vfx.effect.RideDisplay;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ItemDisplay;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
 
 public class ShoopRTL extends Projectile {
     private boolean isRiding = false;
     private long lastToggle = 0;
     private final int reactivationWindow;
     private final float energyPerBlock;
-    private ProjectileInstance currentProjectile;
+    private RideableInstance currentProjectile;
     private Location lastEnergyLoc;
 
     public ShoopRTL(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        this.reactivationWindow = config.getInt("reactivation_window");
-        this.energyPerBlock = (float) config.getDouble("energy_per_block");
+        this.reactivationWindow = Configs.requireInt(this.config, "reactivation_window_ms");
+        this.energyPerBlock = (float) Configs.requireDouble(this.config, "energy_per_block");
     }
 
     @Override
-    public boolean execute(Hero hero) {
-        if (isRiding) {
-            if (System.currentTimeMillis() - lastToggle > reactivationWindow) {
-                dismount(hero);
-            }
-            return false;
-        }
+    protected boolean canRecast(Hero hero) {
+        return isRiding;
+    }
 
-        if (super.execute(hero)) {
-            isRiding = true;
-            lastToggle = System.currentTimeMillis();
+    @Override
+    protected boolean tryRecast(Hero hero) {
+        if (System.currentTimeMillis() - lastToggle > reactivationWindow) {
+            dismount(hero);
             return true;
         }
         return false;
@@ -44,36 +39,31 @@ public class ShoopRTL extends Projectile {
 
     @Override
     public void perform(Hero hero) {
+        isRiding = true;
+        lastToggle = System.currentTimeMillis();
+        this.lastEnergyLoc = hero.getController().getEyeLocation().clone();
         super.perform(hero);
-        LivingEntity player = hero.getController().getEntity();
-        Location start = player.getEyeLocation();
+    }
 
-        fireSound.play(start);
-        RideableInstance rideable = new RideableInstance(hero, start);
-        activeProjectiles.add(rideable);
+    @Override
+    protected ProjectileInstance createInstance(Hero hero, Location start, ShotParams shot) {
+        RideableInstance rideable = new RideableInstance(hero, start, shot);
         this.currentProjectile = rideable;
-        this.lastEnergyLoc = start.clone();
+        return rideable;
+    }
 
-        if (rideable.display != null) {
-            rideable.display.addPassenger(player);
+    @Override
+    protected void onInstanceEnded(Hero hero, ProjectileInstance instance) {
+        if (instance == currentProjectile) {
+            dismount(hero);
         }
     }
 
     @Override
-    protected void onTick(Hero hero) {
-        if (isRiding) {
-            LivingEntity rider = hero.getController().getEntity();
-            if (rider == null || rider.isDead()
-                    || (rider instanceof Player p && GameManager.isRespawning(p))) {
-                dismount(hero);
-            }
-        }
+    protected void onProjectileTick(Hero hero) {
+        if (!isRiding) return;
 
-        super.onTick(hero);
-
-        if (!isRiding || currentProjectile == null) return;
-
-        if (currentProjectile.expired()) {
+        if (currentProjectile == null || currentProjectile.expired() || currentProjectile.isRiderGone()) {
             dismount(hero);
             return;
         }
@@ -93,46 +83,58 @@ public class ShoopRTL extends Projectile {
     private void dismount(Hero hero) {
         if (!isRiding) return;
         isRiding = false;
-        if (currentProjectile instanceof RideableInstance rideable && rideable.display != null) {
-            LivingEntity rider = hero.getController().getEntity();
-            if (rider != null) rider.leaveVehicle();
-        }
         if (currentProjectile != null) {
             currentProjectile.cleanup();
+            currentProjectile = null;
         }
-        currentProjectile = null;
-        cooldown.start(activeDuration);
+        resolveCooldown(hero);
+    }
+
+    @Override
+    public void onDeath(Hero hero) {
+        super.onDeath(hero);
+        dismount(hero);
+    }
+
+    @Override
+    public void onOwnerLost(Hero hero) {
+        super.onOwnerLost(hero);
+        dismount(hero);
     }
 
     private class RideableInstance extends ProjectileInstance {
-        private ItemDisplay display;
+        private RideDisplay ride;
 
-        public RideableInstance(Hero hero, Location start) {
-            super(hero, start);
-            this.display = projVisual.spawnDisplay(start, hero.getSkin().getId());
-            if (display != null) {
-                display.setInterpolationDelay(0);
-                display.setTeleportDuration(1);
-            }
+        RideableInstance(Hero hero, Location start, ShotParams shot) {
+            super(hero, start, shot);
+            ItemDisplay spawned = projVisual.spawnDisplay(start, hero.getSkin().getId());
+            this.ride = spawned != null ? RideDisplay.mount(hero, spawned) : null;
+        }
+
+        boolean isRiderGone() {
+            if (ride != null) return ride.isRiderGone(hero);
+            return hero.getController() == null || hero.getController().getEntity() == null
+                    || hero.getController().getEntity().isDead() || hero.isRespawning();
         }
 
         @Override
         protected void displayVisuals(Location prevLoc) {
-            if (display != null) {
-                display.teleport(AbstractDisplayBuilder.canonical(currentLoc));
+            if (ride != null) {
+                ride.moveTo(currentLoc);
             }
             trailTickCounter++;
             if (trailTickCounter >= trailSpacing) {
                 trailTickCounter = 0;
-                trailVisual.play(currentLoc, velocity, hero.getSkin().getId());
+                emitTrail(currentLoc);
             }
         }
 
         @Override
         public void cleanup() {
-            if (display != null) {
-                display.remove();
-                display = null;
+            if (expired) return;
+            if (ride != null) {
+                ride.dismountAndRemove(hero);
+                ride = null;
             }
             super.cleanup();
         }

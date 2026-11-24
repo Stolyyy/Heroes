@@ -1,23 +1,22 @@
 package me.stolyy.heroes.command.general;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.command.HeroesCommand;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.jetbrains.annotations.NotNull;
 
-public class VersionCommand extends Command {
+import java.util.List;
+
+public class VersionCommand extends HeroesCommand {
 
     public VersionCommand() {
-        super("version");
-        this.setDescription("Shows the running Heroes build");
-        this.setUsage("/version");
+        super("heroesversion", "Shows the running Heroes build",
+                "/heroesversion", List.of("hver"), null, false);
     }
 
     @Override
-    public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
+    protected void execute(CommandSender sender, String[] args) {
         sender.sendMessage(Component.text("Heroes " + Heroes.version(), NamedTextColor.GOLD));
-        return true;
     }
 }

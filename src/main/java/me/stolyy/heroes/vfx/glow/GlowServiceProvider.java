@@ -12,15 +12,21 @@ public class GlowServiceProvider {
 
     private static GlowService instance;
 
-    public static GlowService get() {
+    public static void initialize() {
         if (instance == null) {
             instance = createService();
+        }
+    }
+
+    public static GlowService get() {
+        if (instance == null) {
+            throw new IllegalStateException("GlowServiceProvider is not initialized (or has already shut down)");
         }
         return instance;
     }
 
     public static boolean isAvailable() {
-        return get().isAvailable();
+        return instance != null && instance.isAvailable();
     }
 
     private static GlowService createService() {
@@ -45,7 +51,8 @@ public class GlowServiceProvider {
     }
 
     /**
-     * Stops the backend and forgets it. The next {@link #get()} rebuilds from config.
+     * Stops the backend and forgets it. {@link #isAvailable()} returns false afterwards and
+     * {@link #get()} throws until {@link #initialize()} is called again.
      */
     public static void shutdown() {
         if (instance == null) return;

@@ -4,8 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Per-MODE hero record: wins/losses/deaths and per-ability stats. Hero level/XP moved
- * to the mode-agnostic {@link HeroLevel} (one global pool per hero).
+ * Per-mode hero record: wins, losses, deaths, and per-ability stats. Mode-agnostic level and XP
+ * live on {@link HeroLevel}.
  */
 public class HeroProgress {
     private int wins;

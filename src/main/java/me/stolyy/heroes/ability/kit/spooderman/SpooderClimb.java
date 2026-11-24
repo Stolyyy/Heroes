@@ -2,12 +2,10 @@ package me.stolyy.heroes.ability.kit.spooderman;
 
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.BaseAbility;
+import me.stolyy.heroes.physics.WallDetection;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
-import org.bukkit.Location;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
 public class SpooderClimb extends BaseAbility {
@@ -16,8 +14,8 @@ public class SpooderClimb extends BaseAbility {
 
     public SpooderClimb(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        this.climbSpeed = config.getDouble("climb_speed", 0.4);
-        this.climbCost = config.getInt("climb_cost", 2);
+        this.climbSpeed = Configs.requireDouble(this.config, "climb_speed");
+        this.climbCost = Configs.requireInt(this.config, "climb_cost");
     }
 
     @Override
@@ -26,32 +24,29 @@ public class SpooderClimb extends BaseAbility {
 
     @Override
     protected void onTick(Hero hero) {
-        LivingEntity entity = hero.getController().getEntity();
-        boolean onGround = entity.isOnGround();
+        if (hero.getController() == null || hero.getController().getEntity() == null) return;
+        if (climbCost > 0) {
+            if (hero.getController().isOnGround()) {
+                hero.getEnergy().unblockRegen(this);
+            } else {
+                hero.getEnergy().blockRegen(this);
+            }
+        }
 
-        hero.getEnergy().setCanRegen(onGround);
-
-        if (hero.getController().isSneaking() && isNearWall(entity.getLocation())) {
-            if (hero.getEnergy().tryConsume(hero.getController(), climbCost)) {
-                Vector velocity = entity.getVelocity();
+        if (hero.getController().isSneaking()
+                && WallDetection.isAdjacentToSolidWall(hero.getController().getLocation())) {
+            if (climbCost <= 0 || hero.getEnergy().tryConsume(hero.getController(), climbCost)) {
+                Vector velocity = hero.getController().getVelocity();
                 velocity.setY(climbSpeed);
-
-                entity.setVelocity(velocity);
-
-                entity.setFallDistance(0);
+                hero.getController().setVelocity(velocity);
+                hero.getController().setFallDistance(0);
             }
         }
     }
 
-    private boolean isNearWall(Location loc) {
-        Block b = loc.getBlock();
-        return isSolid(b.getRelative(BlockFace.NORTH)) ||
-               isSolid(b.getRelative(BlockFace.SOUTH)) ||
-               isSolid(b.getRelative(BlockFace.EAST)) ||
-               isSolid(b.getRelative(BlockFace.WEST));
-    }
-    
-    private boolean isSolid(Block b) {
-        return b != null && b.getType().isSolid();
+    @Override
+    public void onDeath(Hero hero) {
+        super.onDeath(hero);
+        hero.getEnergy().unblockRegen(this);
     }
 }

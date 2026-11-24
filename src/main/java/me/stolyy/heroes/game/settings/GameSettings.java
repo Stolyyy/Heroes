@@ -1,10 +1,10 @@
 package me.stolyy.heroes.game.settings;
 
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.util.GameConfigManager;
 import me.stolyy.heroes.game.map.GameMap;
 import org.bukkit.util.BoundingBox;
 
-//Overall: crystals, map,
 public class GameSettings {
     private final GameMap map;
     private BoundingBox boundaries;
@@ -17,9 +17,9 @@ public class GameSettings {
         this.map = map;
         boundaries = map.boundaries().clone();
 
-        this.timer = GameConfigManager.getInt("defaults.game.timer", 420);
-        this.killWalls = GameConfigManager.getBoolean("defaults.game.kill-walls");
-        this.smashCrystals = GameConfigManager.getBoolean("defaults.game.smash-crystals");
+        this.timer = Configs.requireInt(GameConfigManager.getGameConfig(), "defaults.game.timer");
+        this.killWalls = Configs.requireBoolean(GameConfigManager.getGameConfig(), "defaults.game.kill-walls");
+        this.smashCrystals = Configs.requireBoolean(GameConfigManager.getGameConfig(), "defaults.game.smash-crystals");
         if (killWalls) {
             boundaries = map.boundaries().clone().expand(-3);
         }

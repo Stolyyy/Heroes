@@ -3,18 +3,16 @@ package me.stolyy.heroes.ability.kit.greenhood;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.BaseAbility;
 import me.stolyy.heroes.physics.Hitbox;
-import me.stolyy.heroes.physics.Interactions;
 import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.vfx.effect.SoundEffect;
 import me.stolyy.heroes.vfx.effect.VisualEffect;
+import me.stolyy.heroes.vfx.ui.visual.ProgressBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 import java.util.HashMap;
@@ -50,9 +48,6 @@ public class SkyfallVolley extends BaseAbility {
     private int drawTicks = -1;
     private final Map<UUID, Long> drawHitTimestamps = new HashMap<>();
 
-    private double storedDamageTakenMultiplier = 1.0;
-    private double storedKnockbackTakenMultiplier = 1.0;
-
     public SkyfallVolley(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
         this.shots = Configs.requireInt(this.config, "shots");
@@ -70,11 +65,11 @@ public class SkyfallVolley extends BaseAbility {
         this.beamSpacing = Configs.requireDouble(this.config, "visuals.beam_spacing");
         this.beamVisualStartOffset = Configs.requireDouble(this.config, "visuals.beam_visual_start_offset");
 
-        this.activationSound = new SoundEffect(this.config.getConfigurationSection("visuals.activation_sound"));
-        this.burstSound = new SoundEffect(this.config.getConfigurationSection("visuals.burst_sound"));
-        this.chargeLostSound = new SoundEffect(this.config.getConfigurationSection("visuals.charge_lost_sound"));
-        this.drawVisual = new VisualEffect(this.config.getConfigurationSection("visuals.draw_visual"));
-        this.burstVisual = new VisualEffect(this.config.getConfigurationSection("visuals.burst_visual"));
+        this.activationSound = new SoundEffect(Configs.requireSection(this.config, "visuals.activation_sound"));
+        this.burstSound = new SoundEffect(Configs.requireSection(this.config, "visuals.burst_sound"));
+        this.chargeLostSound = new SoundEffect(Configs.requireSection(this.config, "visuals.charge_lost_sound"));
+        this.drawVisual = new VisualEffect(Configs.requireSection(this.config, "visuals.draw_visual"));
+        this.burstVisual = new VisualEffect(Configs.requireSection(this.config, "visuals.burst_visual"));
     }
 
     public boolean isChanneling() {
@@ -82,9 +77,8 @@ public class SkyfallVolley extends BaseAbility {
     }
 
     @Override
-    public boolean canExecute(Hero hero) {
-        if (channeling) return false;
-        return super.canExecute(hero);
+    protected boolean canUse(Hero hero) {
+        return !channeling;
     }
 
     @Override
@@ -96,10 +90,8 @@ public class SkyfallVolley extends BaseAbility {
         drawTicks = -1;
         drawHitTimestamps.clear();
 
-        storedDamageTakenMultiplier = hero.getAttributes().getDamageMultiplier();
-        storedKnockbackTakenMultiplier = hero.getAttributes().getKnockbackMultiplier();
-        hero.getAttributes().setDamageMultiplier(0);
-        hero.getAttributes().setKnockbackMultiplier(0);
+        hero.getAttributes().addDamageTakenMultiplier(this, 0.0);
+        hero.getAttributes().addKnockbackTakenMultiplier(this, 0.0);
 
         activationSound.play(hero.getController().getLocation(), hero.getController());
     }
@@ -107,22 +99,19 @@ public class SkyfallVolley extends BaseAbility {
     @Override
     protected void onTick(Hero hero) {
         if (!channeling) return;
-        LivingEntity self = hero.getController().getEntity();
-        if (self == null) {
+        if (hero.getController() == null || hero.getController().getEntity() == null) {
             endChannel(hero);
             return;
         }
 
         if (liftTicksLeft > 0) {
             liftTicksLeft--;
-            self.setVelocity(new Vector(0, liftSpeed, 0));
+            hero.getController().setVelocity(new Vector(0, liftSpeed, 0));
         } else {
-            self.setVelocity(new Vector(0, 0, 0));
+            hero.getController().setVelocity(new Vector(0, 0, 0));
         }
 
-        boolean drawingNow = self instanceof Player p
-                && p.isHandRaised()
-                && p.getInventory().getItemInMainHand().getType() == Material.BOW;
+        boolean drawingNow = hero.getController().isDrawingBow();
 
         if (drawTicks < 0) {
             if (drawingNow) {
@@ -147,7 +136,7 @@ public class SkyfallVolley extends BaseAbility {
         drawTicks++;
         Location eye = hero.getController().getEyeLocation();
         Vector direction = eye.getDirection();
-        paintBeam(eye, direction);
+        paintBeam(hero, eye, direction);
         sweepDrawBeam(hero, eye, direction);
         sendDrawBar(hero);
 
@@ -156,11 +145,9 @@ public class SkyfallVolley extends BaseAbility {
         }
     }
 
-    private void paintBeam(Location eye, Vector direction) {
-        for (double d = beamSpacing; d <= range; d += beamSpacing) {
-            if (d < beamVisualStartOffset) continue;
-            drawVisual.play(eye.clone().add(direction.clone().multiply(d)));
-        }
+    private void paintBeam(Hero hero, Location eye, Vector direction) {
+        drawVisual.playAlong(eye, direction, range, beamSpacing, hero.getSkin().getId(),
+                Math.max(beamSpacing, beamVisualStartOffset));
     }
 
     private void sweepDrawBeam(Hero hero, Location eye, Vector direction) {
@@ -168,47 +155,29 @@ public class SkyfallVolley extends BaseAbility {
         Hitbox.cylinder(eye, direction, beamRadius, range)
                 .exclude(self)
                 .excludeTeammates(self)
-                .onHit(victim -> {
-                    long now = System.currentTimeMillis();
-                    Long last = drawHitTimestamps.get(victim.getUniqueId());
-                    if (last != null && now - last < drawHitIntervalMs) return;
-                    drawHitTimestamps.put(victim.getUniqueId(), now);
-                    hero.triggerAbilityHit(this, victim);
-                    Interactions.on(self, victim)
-                            .abilityName(getName())
-                            .damage(drawDamage)
-                            .execute();
-                })
+                .shareHitHistory(drawHitTimestamps, drawHitIntervalMs)
+                .onHit(victim -> hit(hero, victim).damage(drawDamage).execute())
                 .check();
     }
 
     private void sendDrawBar(Hero hero) {
         double fraction = Math.min(1.0, drawTicks / (double) drawTimeTicks);
-        int bars = (int) Math.round(fraction * 10);
-        String fill = "█".repeat(bars) + "░".repeat(10 - bars);
-        hero.getController().sendActionBar(Component.text("Skyfall ", NamedTextColor.AQUA)
-                .append(Component.text(fill, fraction >= 1.0 ? NamedTextColor.RED : NamedTextColor.YELLOW)));
+        hero.getController().sendActionBar(ProgressBar.actionBar("Skyfall", NamedTextColor.AQUA, fraction));
     }
 
     private void fireBurst(Hero hero, Location eye, Vector direction) {
         LivingEntity self = hero.getController().getEntity();
         burstSound.play(eye, hero.getController());
-        for (double d = beamSpacing; d <= range; d += beamSpacing) {
-            if (d < beamVisualStartOffset) continue;
-            burstVisual.play(eye.clone().add(direction.clone().multiply(d)));
-        }
+        burstVisual.playAlong(eye, direction, range, beamSpacing, hero.getSkin().getId(),
+                Math.max(beamSpacing, beamVisualStartOffset));
         Hitbox.cylinder(eye, direction, burstRadius, range)
                 .exclude(self)
                 .excludeTeammates(self)
-                .onHit(victim -> {
-                    hero.triggerAbilityHit(this, victim);
-                    Interactions.on(self, victim)
-                            .abilityName(getName())
-                            .damage(burstDamage)
-                            .knockback(burstKnockback)
-                            .direction(direction)
-                            .execute();
-                })
+                .onHit(victim -> hit(hero, victim)
+                        .damage(burstDamage)
+                        .knockback(burstKnockback)
+                        .direction(direction)
+                        .execute())
                 .check();
 
         drawTicks = -1;
@@ -235,8 +204,8 @@ public class SkyfallVolley extends BaseAbility {
         channeling = false;
         drawTicks = -1;
         drawHitTimestamps.clear();
-        hero.getAttributes().setDamageMultiplier(storedDamageTakenMultiplier);
-        hero.getAttributes().setKnockbackMultiplier(storedKnockbackTakenMultiplier);
+        hero.getAttributes().removeDamageTakenModifier(this);
+        hero.getAttributes().removeKnockbackTakenModifier(this);
     }
 
     @Override

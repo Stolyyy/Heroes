@@ -1,10 +1,10 @@
 package me.stolyy.heroes.ability.kit.punishgers;
 
+import me.stolyy.heroes.ability.AbilityType;
 import me.stolyy.heroes.hero.Hero;
-import me.stolyy.heroes.ability.template.BaseAbility;
+import me.stolyy.heroes.ability.template.CompositeAbility;
 import me.stolyy.heroes.ability.template.Projectile;
 import me.stolyy.heroes.physics.Hitbox;
-import me.stolyy.heroes.physics.Interactions;
 import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.hero.HeroManager;
@@ -16,11 +16,17 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class PunishgersSecondary extends BaseAbility {
+public class PunishgersSecondary extends CompositeAbility {
+    @FunctionalInterface
+    private interface GrenadeLanding {
+        void onLand(Hero hero, Location loc, @Nullable LivingEntity directVictim);
+    }
+
     private final GrenadeProjectile molotov;
     private final GrenadeProjectile stunGrenade;
 
@@ -41,22 +47,19 @@ public class PunishgersSecondary extends BaseAbility {
 
     private final List<DotZone> dotZones = new ArrayList<>();
 
-    private PunishgersSwap swap;
     private PunishgersWeapon weapon;
 
     public PunishgersSecondary(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
         ConfigurationSection molotovConfig = Configs.requireSection(this.config, "molotov");
         ConfigurationSection stunConfig = Configs.requireSection(this.config, "stun");
-        this.molotov = new GrenadeProjectile(molotovConfig, skin, true);
-        this.stunGrenade = new GrenadeProjectile(stunConfig, skin, false);
 
         this.dotDamage = Configs.requireDouble(molotovConfig, "dot_damage");
         this.dotRadius = Configs.requireDouble(molotovConfig, "dot_radius");
         this.dotDurationTicks = (int) (Configs.requireDouble(molotovConfig, "dot_duration") * 20);
         this.dotHitIntervalTicks = Configs.requireInt(molotovConfig, "dot_hit_interval");
         this.molotovArea = new AreaDisc(molotovConfig);
-        this.dotHitSound = new SoundEffect(molotovConfig.getConfigurationSection("visuals.dot_hit_sound"));
+        this.dotHitSound = new SoundEffect(Configs.requireSection(molotovConfig, "visuals.dot_hit_sound"));
 
         this.stunRadius = Configs.requireDouble(stunConfig, "effect_radius");
         this.levitationAmplifier = Configs.requireInt(stunConfig, "levitation_amplitude");
@@ -68,62 +71,42 @@ public class PunishgersSecondary extends BaseAbility {
             default -> throw new IllegalStateException("disorient_effect must be NAUSEA or BLINDNESS");
         };
         this.stunArea = new AreaDisc(stunConfig);
-        this.stunHitSound = new SoundEffect(stunConfig.getConfigurationSection("visuals.effect_hit_sound"));
+        this.stunHitSound = new SoundEffect(Configs.requireSection(stunConfig, "visuals.effect_hit_sound"));
+
+        this.molotov = addChild(new GrenadeProjectile(molotovConfig, skin,
+                (h, loc, victim) -> dotZones.add(new DotZone(h, loc.clone(), dotDurationTicks))));
+        this.stunGrenade = addChild(new GrenadeProjectile(stunConfig, skin, this::detonateStun));
     }
 
     @Override
     public void initialize(Hero hero) {
-        this.swap = PunishgersSwap.find(hero);
-        this.weapon = (PunishgersWeapon) hero.getPrimaryAbility();
+        this.weapon = hero.findAbility(PunishgersWeapon.class).orElse(null);
     }
 
     @Override
-    public boolean canExecute(Hero hero) {
-        if (weapon.isSwapping()) return false;
-        return super.canExecute(hero);
+    protected boolean canUse(Hero hero) {
+        return weapon == null || !weapon.isSwapping();
     }
 
     @Override
     public void perform(Hero hero) {
-        boolean shotgunMode = swap != null && swap.getMode() == PunishgersSwap.WeaponMode.SHOTGUN;
+        boolean shotgunMode = weapon != null && weapon.isShotgun();
         (shotgunMode ? stunGrenade : molotov).perform(hero);
     }
 
-    private void onGrenadeLand(Hero hero, Location location, boolean isMolotov) {
-        if (isMolotov) {
-            dotZones.add(new DotZone(hero, location.clone(), dotDurationTicks));
-        } else {
-            detonateStun(hero, location);
+    @Override
+    protected void onCompositeTick(Hero hero) {
+        for (DotZone zone : new ArrayList<>(dotZones)) {
+            if (zone.tick()) dotZones.remove(zone);
         }
     }
 
     @Override
-    protected void onTick(Hero hero) {
-        molotov.tick(hero);
-        stunGrenade.tick(hero);
-        dotZones.removeIf(DotZone::tick);
-    }
-
-    @Override
-    public boolean isIndependent() {
-        return true;
-    }
-
-    @Override
-    public void onOwnerLost(Hero hero) {
-        molotov.onOwnerLost(hero);
-        stunGrenade.onOwnerLost(hero);
+    protected void onCompositeOwnerLost(Hero hero) {
         dotZones.clear();
     }
 
-    @Override
-    public void onDeath(Hero hero) {
-        super.onDeath(hero);
-        molotov.onDeath(hero);
-        stunGrenade.onDeath(hero);
-    }
-
-    private void detonateStun(Hero owner, Location center) {
+    private void detonateStun(Hero owner, Location center, @Nullable LivingEntity directHitVictim) {
         stunArea.play(center, stunRadius);
         LivingEntity self = owner.getController().getEntity();
         Hitbox.sphere(center, stunRadius)
@@ -131,7 +114,7 @@ public class PunishgersSecondary extends BaseAbility {
                 .excludeTeammates(self)
                 .onHit(victim -> {
                     stunHitSound.play(victim.getEyeLocation(), owner.getController());
-                    owner.triggerAbilityHit(this, victim);
+                    if (!victim.equals(directHitVictim)) owner.triggerAbilityHit(this, victim);
                     victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,
                             (int) (levitationMs / 50), levitationAmplifier, false, false, false));
                     victim.addPotionEffect(new PotionEffect(disorientEffect,
@@ -163,31 +146,21 @@ public class PunishgersSecondary extends BaseAbility {
     }
 
     private class GrenadeProjectile extends Projectile {
-        private final boolean isMolotov;
+        private final GrenadeLanding landing;
 
-        GrenadeProjectile(ConfigurationSection config, HeroSkin skin, boolean isMolotov) {
-            super(config, skin);
-            this.isMolotov = isMolotov;
+        GrenadeProjectile(ConfigurationSection config, HeroSkin skin, GrenadeLanding landing) {
+            super(config, skin, AbilityType.SECONDARY);
+            this.landing = landing;
         }
 
         @Override
-        public void onHitWall(Hero hero, Location location) {
-            super.onHitWall(hero, location);
-            onGrenadeLand(hero, location, isMolotov);
-        }
-
-        @Override
-        public void onExpire(Hero hero, Location location) {
-            super.onExpire(hero, location);
-            onGrenadeLand(hero, location, isMolotov);
-        }
-
-        @Override
-        public void onHit(Hero attacker, LivingEntity victim, Location hitLoc) {
-            hitSound.play(victim.getEyeLocation(), attacker.getController());
+        protected void applyInteraction(Hero attacker, LivingEntity victim, Location hitLoc) {
             attacker.triggerAbilityHit(this, victim);
-            detonateAoe(attacker, hitLoc, null);
-            onGrenadeLand(attacker, victim.getLocation(), isMolotov);
+        }
+
+        @Override
+        protected void onImpact(Hero hero, Location location, @Nullable LivingEntity victim, ImpactCause cause) {
+            landing.onLand(hero, victim != null ? victim.getLocation() : location, victim);
         }
     }
 
@@ -208,8 +181,7 @@ public class PunishgersSecondary extends BaseAbility {
                     .trackHits(dotHitIntervalTicks * 50L)
                     .onHit(victim -> {
                         dotHitSound.play(victim.getEyeLocation(), owner.getController());
-                        owner.triggerAbilityHit(PunishgersSecondary.this, victim);
-                        Interactions.on(self, victim).abilityName(PunishgersSecondary.this.getName()).damage(dotDamage).execute();
+                        PunishgersSecondary.this.hit(owner, victim).damage(dotDamage).execute();
                     });
         }
 

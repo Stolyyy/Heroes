@@ -2,6 +2,7 @@ package me.stolyy.heroes.ability.kit.cryomancer;
 
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.Projectile;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
@@ -14,7 +15,7 @@ public class CryomancerFrostbolt extends Projectile {
 
     public CryomancerFrostbolt(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        slownessDuration = config.getInt("slowness_duration");
+        slownessDuration = Configs.requireInt(this.config, "slowness_duration");
     }
 
     @Override

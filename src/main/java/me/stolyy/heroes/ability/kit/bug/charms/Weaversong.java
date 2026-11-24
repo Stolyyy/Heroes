@@ -4,6 +4,7 @@ import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroBuilder;
 import me.stolyy.heroes.ability.kit.minions.spooderbuddy.SpooderBuddyAI;
 import me.stolyy.heroes.hero.minion.MinionHero;
+import me.stolyy.heroes.util.Configs;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.LivingEntity;
@@ -20,17 +21,21 @@ public class Weaversong extends Charm {
 
     private final List<MinionHero> minions = new ArrayList<>();
     private final List<Long> respawnTimers = new ArrayList<>();
+    private boolean pendingSpawnAfterRespawn = false;
 
     public Weaversong(ConfigurationSection config) {
-        this.count = config != null ? config.getInt("count", 2) : 2;
-        double delaySeconds = config != null ? config.getDouble("respawn_delay", 10.0) : 10.0;
+        this.count = Configs.requireInt(config, "count");
+        double delaySeconds = Configs.requireDouble(config, "respawn_delay");
         this.respawnDelayMs = (long) (delaySeconds * 1000);
-        this.minionConfig = config != null ? config.getConfigurationSection("minion") : null;
+        this.minionConfig = Configs.requireSection(config, "minion");
     }
 
     @Override
     protected void onActivate(Hero hero) {
-        if (minionConfig == null) return;
+        if (hero.isRespawning() || hero.isEliminated()) {
+            pendingSpawnAfterRespawn = true;
+            return;
+        }
         for (int i = 0; i < count; i++) {
             spawnOne(hero);
         }
@@ -38,6 +43,25 @@ public class Weaversong extends Charm {
 
     @Override
     protected void onDeactivate(Hero hero) {
+        despawnAll();
+        pendingSpawnAfterRespawn = false;
+    }
+
+    @Override
+    public void onDeath(Hero hero) {
+        if (hero.isEliminated()) {
+            despawnAll();
+            pendingSpawnAfterRespawn = false;
+        }
+    }
+
+    @Override
+    public void onOwnerLost(Hero hero) {
+        despawnAll();
+        pendingSpawnAfterRespawn = false;
+    }
+
+    private void despawnAll() {
         for (MinionHero minion : minions) {
             minion.despawn();
         }
@@ -47,6 +71,8 @@ public class Weaversong extends Charm {
 
     @Override
     public void tick(Hero hero) {
+        if (hero.isEliminated()) return;
+
         Iterator<MinionHero> it = minions.iterator();
         while (it.hasNext()) {
             MinionHero minion = it.next();
@@ -56,6 +82,16 @@ public class Weaversong extends Charm {
                 it.remove();
                 respawnTimers.add(System.currentTimeMillis() + respawnDelayMs);
             }
+        }
+
+        if (hero.isRespawning()) return;
+
+        if (pendingSpawnAfterRespawn) {
+            pendingSpawnAfterRespawn = false;
+            for (int i = 0; i < count; i++) {
+                spawnOne(hero);
+            }
+            return;
         }
 
         long now = System.currentTimeMillis();
@@ -69,7 +105,6 @@ public class Weaversong extends Charm {
     }
 
     private void spawnOne(Hero hero) {
-        if (minionConfig == null) return;
         MinionHero minion = HeroBuilder.buildMinion(minionConfig, hero);
 
         Location spawnLoc = hero.getController().getLocation().clone();

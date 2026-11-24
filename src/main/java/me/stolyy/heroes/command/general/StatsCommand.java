@@ -1,5 +1,7 @@
 package me.stolyy.heroes.command.general;
 
+import me.stolyy.heroes.command.HeroesCommand;
+import me.stolyy.heroes.command.TabComplete;
 import me.stolyy.heroes.game.GameMode;
 import me.stolyy.heroes.hero.HeroConfig;
 import me.stolyy.heroes.progression.AbilityStats;
@@ -10,19 +12,14 @@ import me.stolyy.heroes.progression.PlayerStats;
 import me.stolyy.heroes.progression.PlayerStatsManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * {@code /stats <player> [hero] [gamemode] [ability]} — progression rundowns at every depth of
@@ -31,56 +28,64 @@ import java.util.Map;
  * {@code /stats X karakot 1v1} and orders with the ability last work naturally. Ability names
  * with spaces are typed with underscores ({@code blazing_deagle}).
  */
-public class StatsCommand extends Command {
+public class StatsCommand extends HeroesCommand {
+
+    private record Filters(GameMode mode, String hero, String ability, String unrecognized) {}
 
     public StatsCommand() {
-        super("stats");
-        this.setDescription("Show a player's stats");
-        this.setUsage("/stats <player> [hero] [gamemode] [ability]");
+        super("stats", "Show a player's stats",
+                "/stats <player> [hero] [gamemode] [ability]",
+                List.of(), null, false);
     }
 
     @Override
-    public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
+    protected void execute(CommandSender sender, String[] args) {
         if (args.length == 0) {
             sender.sendMessage(Component.text("Usage: " + getUsage(), NamedTextColor.YELLOW));
-            return true;
+            return;
         }
 
         PlayerStats stats = PlayerStatsManager.lookupByName(args[0]);
         if (stats == null) {
             sender.sendMessage(Component.text("No stats found for " + args[0] + ".", NamedTextColor.RED));
-            return true;
+            return;
         }
         String displayName = stats.lastKnownName() != null ? stats.lastKnownName() : args[0];
 
-        // Classify filter tokens: gamemode > hero > ability.
+        Filters filters = parseFilters(args, args.length);
+        if (filters.unrecognized() != null) {
+            sender.sendMessage(Component.text("Unrecognized argument: " + filters.unrecognized(), NamedTextColor.RED));
+            return;
+        }
+        if (filters.ability() != null && filters.hero() == null) {
+            sender.sendMessage(Component.text("Specify the hero before the ability.", NamedTextColor.RED));
+            return;
+        }
+
+        if (filters.ability() != null) sendAbilityView(sender, stats, displayName, filters.hero(), filters.mode(), filters.ability());
+        else if (filters.hero() != null) sendHeroView(sender, stats, displayName, filters.hero(), filters.mode());
+        else if (filters.mode() != null) sendModeView(sender, stats, displayName, filters.mode());
+        else sendOverview(sender, stats, displayName);
+    }
+
+    private static Filters parseFilters(String[] args, int endExclusive) {
         GameMode mode = null;
         String hero = null;
         String ability = null;
-        for (int i = 1; i < args.length; i++) {
+        for (int i = 1; i < endExclusive; i++) {
             String token = args[i];
-            if (mode == null && parseMode(token) != null) {
-                mode = parseMode(token);
-            } else if (hero == null && HeroConfig.exists(token.toLowerCase())) {
-                hero = token.toLowerCase();
+            Optional<GameMode> parsedMode = GameMode.fromToken(token);
+            if (mode == null && parsedMode.isPresent()) {
+                mode = parsedMode.get();
+            } else if (hero == null && HeroConfig.exists(token.toLowerCase(Locale.ROOT))) {
+                hero = token.toLowerCase(Locale.ROOT);
             } else if (ability == null) {
                 ability = token;
             } else {
-                sender.sendMessage(Component.text("Unrecognized argument: " + token, NamedTextColor.RED));
-                return true;
+                return new Filters(mode, hero, ability, token);
             }
         }
-
-        if (ability != null && hero == null) {
-            sender.sendMessage(Component.text("Specify the hero before the ability.", NamedTextColor.RED));
-            return true;
-        }
-
-        if (ability != null) sendAbilityView(sender, stats, displayName, hero, mode, ability);
-        else if (hero != null) sendHeroView(sender, stats, displayName, hero, mode);
-        else if (mode != null) sendModeView(sender, stats, displayName, mode);
-        else sendOverview(sender, stats, displayName);
-        return true;
+        return new Filters(mode, hero, ability, null);
     }
 
     // -----------------------------------------------------------------------
@@ -98,14 +103,7 @@ public class StatsCommand extends Command {
                 stats.totalKills(), stats.totalDeaths()));
         sender.sendMessage(damageLine(stats.totalDamage(), stats.totalVoidDamage()));
 
-        // Most played = games (W+L) per hero across all modes.
-        Map<String, Integer> games = new LinkedHashMap<>();
-        for (ModeStats modeStats : stats.modeStats().values()) {
-            for (Map.Entry<String, HeroProgress> e : modeStats.heroStats().entrySet()) {
-                games.merge(e.getKey(), e.getValue().wins() + e.getValue().losses(), Integer::sum);
-            }
-        }
-        String mostPlayed = games.entrySet().stream()
+        String mostPlayed = stats.gamesPerHero().entrySet().stream()
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .limit(3)
                 .map(e -> HeroConfig.formatName(e.getKey()) + " (" + e.getValue() + ")")
@@ -138,41 +136,21 @@ public class StatsCommand extends Command {
         HeroLevel level = stats.getHeroLevel(hero);
         sender.sendMessage(line("Level", level.level() + " (" + level.xp() + " xp into level)"));
 
-        // Aggregate the requested modes.
-        List<GameMode> modes = mode != null ? List.of(mode) : List.of(GameMode.values());
-        int wins = 0, losses = 0, deaths = 0, kills = 0;
-        double damage = 0, voidDamage = 0;
-        Map<String, AbilityStats> abilityTotals = new LinkedHashMap<>();
-        for (GameMode m : modes) {
-            HeroProgress progress = heroProgress(stats, m, hero);
-            if (progress == null) continue;
-            wins += progress.wins();
-            losses += progress.losses();
-            deaths += progress.deaths();
-            kills += progress.totals().kills();
-            damage += progress.totals().damage();
-            voidDamage += progress.totals().voidDamage();
-            for (Map.Entry<String, AbilityStats> e : progress.abilityStats().entrySet()) {
-                AbilityStats sum = abilityTotals.computeIfAbsent(e.getKey(), k -> new AbilityStats());
-                sum.setKills(sum.kills() + e.getValue().kills());
-                sum.setDamage(sum.damage() + e.getValue().damage());
-                sum.setVoidDamage(sum.voidDamage() + e.getValue().voidDamage());
-            }
-        }
-        sender.sendMessage(recordLine(wins, losses, kills, deaths));
-        sender.sendMessage(damageLine(damage, voidDamage));
+        PlayerStats.HeroSummary summary = stats.summarizeHero(hero, mode);
+        sender.sendMessage(recordLine(summary.wins(), summary.losses(), summary.kills(), summary.deaths()));
+        sender.sendMessage(damageLine(summary.damage(), summary.voidDamage()));
 
         if (mode == null) {
             List<String> perMode = new ArrayList<>();
             for (GameMode m : GameMode.values()) {
-                HeroProgress progress = heroProgress(stats, m, hero);
+                HeroProgress progress = stats.findHeroStats(m, hero);
                 if (progress == null || progress.wins() + progress.losses() == 0) continue;
                 perMode.add(m.displayName() + " " + progress.wins() + "W-" + progress.losses() + "L");
             }
             sender.sendMessage(line("Per mode", perMode.isEmpty() ? "none yet" : String.join(" | ", perMode)));
         }
 
-        String topAbilities = abilityTotals.entrySet().stream()
+        String topAbilities = summary.abilities().entrySet().stream()
                 .sorted(Comparator.comparingDouble((Map.Entry<String, AbilityStats> e)
                         -> e.getValue().damage()).reversed())
                 .limit(4)
@@ -184,54 +162,23 @@ public class StatsCommand extends Command {
 
     private void sendAbilityView(CommandSender sender, PlayerStats stats, String name,
                                  String hero, GameMode mode, String abilityToken) {
-        List<GameMode> modes = mode != null ? List.of(mode) : List.of(GameMode.values());
-
-        // Match the recorded ability keys (display names, e.g. "Blazing Deagle") tolerantly.
-        String wanted = normalize(abilityToken);
-        String matchedKey = null;
-        int kills = 0;
-        double damage = 0, voidDamage = 0;
-        List<String> available = new ArrayList<>();
-        for (GameMode m : modes) {
-            HeroProgress progress = heroProgress(stats, m, hero);
-            if (progress == null) continue;
-            for (Map.Entry<String, AbilityStats> e : progress.abilityStats().entrySet()) {
-                if (!available.contains(e.getKey())) available.add(e.getKey());
-                if (normalize(e.getKey()).equals(wanted)) {
-                    matchedKey = e.getKey();
-                    kills += e.getValue().kills();
-                    damage += e.getValue().damage();
-                    voidDamage += e.getValue().voidDamage();
-                }
-            }
-        }
-
-        if (matchedKey == null) {
+        PlayerStats.AbilityLookup result = stats.lookupAbility(hero, mode, abilityToken);
+        if (result.matchedKey() == null) {
             sender.sendMessage(Component.text("No recorded stats for '" + abilityToken + "' on "
                     + HeroConfig.formatName(hero) + ". Recorded: "
-                    + (available.isEmpty() ? "none" : String.join(", ", available)), NamedTextColor.RED));
+                    + (result.available().isEmpty() ? "none" : String.join(", ", result.available())), NamedTextColor.RED));
             return;
         }
 
-        header(sender, name + " — " + HeroConfig.formatName(hero) + " / " + matchedKey
+        header(sender, name + " — " + HeroConfig.formatName(hero) + " / " + result.matchedKey()
                 + (mode != null ? " (" + mode.displayName() + ")" : ""));
-        sender.sendMessage(line("Kills", String.valueOf(kills)));
-        sender.sendMessage(damageLine(damage, voidDamage));
+        sender.sendMessage(line("Kills", String.valueOf(result.stats().kills())));
+        sender.sendMessage(damageLine(result.stats().damage(), result.stats().voidDamage()));
     }
 
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
-
-    /** Read-only view: null when the mode has no entry for this hero (avoids creating one). */
-    private HeroProgress heroProgress(PlayerStats stats, GameMode mode, String hero) {
-        ModeStats modeStats = stats.modeStats().get(mode);
-        if (modeStats == null) return null;
-        for (Map.Entry<String, HeroProgress> e : modeStats.heroStats().entrySet()) {
-            if (e.getKey().equalsIgnoreCase(hero)) return e.getValue();
-        }
-        return null;
-    }
 
     private void header(CommandSender sender, String title) {
         sender.sendMessage(Component.text("=== " + title + " ===", NamedTextColor.GOLD));
@@ -255,66 +202,21 @@ public class StatsCommand extends Command {
         return String.valueOf(Math.round(d));
     }
 
-    private static GameMode parseMode(String token) {
-        return switch (token.toLowerCase()) {
-            case "1v1", "one_v_one" -> GameMode.ONE_V_ONE;
-            case "2v2", "two_v_two" -> GameMode.TWO_V_TWO;
-            case "custom" -> GameMode.CUSTOM;
-            default -> null;
-        };
-    }
-
-    private static String normalize(String s) {
-        return s.toLowerCase().replace('_', ' ').trim();
-    }
-
     // -----------------------------------------------------------------------
     // Tab completion
     // -----------------------------------------------------------------------
 
     @Override
-    public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
+    protected List<String> complete(CommandSender sender, String[] args) {
         if (args.length == 1) {
-            return filter(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList(), args[0]);
+            return TabComplete.onlinePlayers(args[0]);
         }
 
-        // Which filters are already consumed by earlier args?
-        boolean haveMode = false;
-        String hero = null;
-        for (int i = 1; i < args.length - 1; i++) {
-            if (parseMode(args[i]) != null) haveMode = true;
-            else if (hero == null && HeroConfig.exists(args[i].toLowerCase())) hero = args[i].toLowerCase();
-        }
-
+        Filters seen = parseFilters(args, args.length - 1);
         List<String> options = new ArrayList<>();
-        if (!haveMode) options.addAll(List.of("1v1", "2v2", "custom"));
-        if (hero == null) options.addAll(HeroConfig.getAvailableNames());
-        else options.addAll(abilityNames(hero));
-        return filter(options, args[args.length - 1]);
-    }
-
-    /** Ability display names from the hero's yml (underscored for typability) plus Jab. */
-    private static List<String> abilityNames(String hero) {
-        List<String> names = new ArrayList<>();
-        names.add("Jab");
-        var config = HeroConfig.getConfig(hero);
-        if (config == null) return names;
-        for (String slot : List.of("primary", "secondary", "smash")) {
-            String n = config.getString("abilities." + slot + ".name");
-            if (n != null && !n.isEmpty()) names.add(n.replace(' ', '_'));
-        }
-        for (Map<?, ?> passive : config.getMapList("abilities.passives")) {
-            Object n = passive.get("name");
-            if (n != null && !n.toString().isEmpty()) names.add(n.toString().replace(' ', '_'));
-        }
-        return names;
-    }
-
-    private static List<String> filter(List<String> options, String prefix) {
-        return options.stream()
-                .filter(s -> s.toLowerCase().startsWith(prefix.toLowerCase()))
-                .distinct()
-                .sorted()
-                .toList();
+        if (seen.mode() == null) options.addAll(GameMode.tokens());
+        if (seen.hero() == null) options.addAll(HeroConfig.getAvailableNames());
+        else if (seen.ability() == null) options.addAll(HeroConfig.abilityDisplayNames(seen.hero()));
+        return TabComplete.startsWith(options, args[args.length - 1]);
     }
 }

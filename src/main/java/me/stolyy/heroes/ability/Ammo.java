@@ -66,11 +66,10 @@ public class Ammo {
     }
 
     /**
-     * Fills to max and restarts the regen timer. Unlike {@link #forceReload()} this deliberately
-     * applies to an already-empty clip: it exists for weapons that come up loaded regardless of
-     * what state they were stowed in (Punishgers' swap). Restamping matters as much as the fill —
-     * an untouched {@code lastRegenTime} would let wall-clock accrued while the weapon was stowed
-     * carry over into the next reload.
+     * Fills to max and restarts the regen timer. Deliberately applies to an already-empty clip:
+     * it exists for weapons that come up loaded regardless of what state they were stowed in
+     * (Punishgers' swap). Restamping matters as much as the fill — an untouched {@code lastRegenTime}
+     * would let wall-clock accrued while the weapon was stowed carry over into the next reload.
      */
     public void refill() {
         current = max;
@@ -98,16 +97,6 @@ public class Ammo {
     public double getReloadProgress() {
         if (!isReloading() || regenDuration <= 0) return 1.0;
         return Math.min(1.0, (System.currentTimeMillis() - lastRegenTime) / (double) regenDuration);
-    }
-
-    /**
-     * Instant manual reload (Q). CLIP mode only, and only for a partially spent clip:
-     * full clips and in-progress auto-reloads (current == 0) are untouched.
-     */
-    public void forceReload() {
-        if (mode != Mode.CLIP || current <= 0 || current >= max) return;
-        current = max;
-        lastRegenTime = System.currentTimeMillis();
     }
 
     /**

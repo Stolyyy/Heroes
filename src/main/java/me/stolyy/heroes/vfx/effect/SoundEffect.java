@@ -1,54 +1,54 @@
 package me.stolyy.heroes.vfx.effect;
 
 import me.stolyy.heroes.control.Controller;
+import me.stolyy.heroes.util.Configs;
+import me.stolyy.heroes.util.SpecList;
+import me.stolyy.heroes.util.TemplateConfig;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
- * A configurable sound effect that can hold one or more sub-sounds. A single yml block
- * (with `sound:`, `volume:`, etc. at the root) parses to one sub-sound; a block with a
- * `sounds:` list parses one sub-sound per list entry. All `play(...)` overloads dispatch
- * to every sub-sound, so authors can layer multiple sounds in a single yml entry.
+ * A configurable sound effect that can hold one or more sub-sounds. A single YML block parses to
+ * one sub-sound; a {@code sounds:} list parses one sub-sound per entry. All {@code play(...)}
+ * overloads dispatch to every sub-sound.
  */
 public class SoundEffect {
+    /** Explicit no-op sound for genuinely optional sound hooks. */
+    public static final SoundEffect NONE = new SoundEffect();
+
     /**
      * PLAYER — only the triggering player hears it, at their own position (personal cues).
-     * LOCAL — played at the source location with vanilla distance attenuation; anyone close
-     *         enough hears it. THE DEFAULT when a sound block has no scope key (this is the
-     *         behavior the pre-rework "GLOBAL" actually had — clients attenuated it anyway).
-     * GLOBAL — every player in the world hears it regardless of distance, still directional
-     *          (see SoundBuilder.playEverywhere). For map-wide announcements: ult activations.
+     * LOCAL  — played at the source location with vanilla distance attenuation (default).
+     * GLOBAL — every player in the world hears it regardless of distance, directional (ult cues).
      */
     public enum Scope { GLOBAL, LOCAL, PLAYER }
 
-    private final List<SubSound> subs = new ArrayList<>();
+    private final List<SubSound> subs;
+
+    private SoundEffect() {
+        this.subs = List.of();
+    }
+
+    /**
+     * Reads an optional sound section at {@code path} under {@code parent}. Returns {@link #NONE}
+     * when {@code path} is absent, and throws loudly when present but malformed.
+     */
+    public static SoundEffect optional(ConfigurationSection parent, String path) {
+        if (parent == null || !parent.contains(path)) return NONE;
+        ConfigurationSection section = Configs.requireSection(parent, path);
+        if (section.getKeys(false).isEmpty()) return NONE;
+        return new SoundEffect(section);
+    }
 
     public SoundEffect(ConfigurationSection config) {
-        if (config == null) return;
-
-        // Multi-form: `sounds:` list of sub-sound blocks.
-        if (config.contains("sounds")) {
-            List<?> list = config.getList("sounds");
-            if (list != null) {
-                for (Object obj : list) {
-                    if (obj instanceof Map) {
-                        ConfigurationSection sub = config.createSection("temp_" + System.nanoTime(), (Map<?, ?>) obj);
-                        SubSound parsed = SubSound.parse(sub);
-                        if (parsed != null) subs.add(parsed);
-                    }
-                }
-            }
-            return;
+        if (config == null) {
+            throw new IllegalArgumentException(
+                    "SoundEffect config section cannot be null (use SoundEffect.optional for optional cues)");
         }
-
-        // Single-form: parse the root config as one sub-sound.
-        SubSound parsed = SubSound.parse(config);
-        if (parsed != null) subs.add(parsed);
+        this.subs = SpecList.parse(config, "sounds", SubSound::parse);
     }
 
     public void play(Player player) {
@@ -56,7 +56,7 @@ public class SoundEffect {
     }
 
     public void play(Controller controller) {
-        if (controller != null && controller.isPlayer()) play((Player) controller.getEntity());
+        if (controller != null) play(controller.getLocation(), controller);
     }
 
     public void play(Location location) {
@@ -92,35 +92,34 @@ public class SoundEffect {
         }
 
         /**
-         * Every read here goes through a NO-ARG getter, because those are the only ones Bukkit
-         * resolves against {@code setDefaults()} — the overloads that take a supplied default
-         * return it without ever consulting the defaults tree. That distinction is load-bearing:
-         * {@code getConfigurationSection()} hands back a NEW EMPTY section for a block that lives
-         * only in default.yml, so the supplied-default reads made every inherited death/kill/win
-         * sound parse as GLOBAL at pitch 1.0. The literal constants below are a last resort, used
-         * only when a key is absent from the block AND from default.yml.
+         * Reads through Bukkit's no-arg getters first so {@code default.yml} inheritance via
+         * {@code setDefaults()} resolves before falling back to {@code templates.yml} {@code sound.*}.
          */
         static SubSound parse(ConfigurationSection config) {
-            String key = config.getString("sound");
-            if (key == null) return null;
-            float volume = (float) readDouble(config, "volume", 1.0);
-            float pitch = (float) readDouble(config, "pitch", 1.0);
-            float pitchVariation = (float) readDouble(config, "pitch_variation", 0.0);
+            String key = Configs.requireString(config, "sound");
+            float volume = (float) readDoubleOrTemplate(config, "volume", "sound.volume");
+            float pitch = (float) readDoubleOrTemplate(config, "pitch", "sound.pitch");
+            float pitchVariation = (float) readDoubleOrTemplate(config, "pitch_variation", "sound.pitch_variation");
             Object scopeValue = config.get("scope");
-            Scope scope = scopeValue != null ? Scope.valueOf(scopeValue.toString().toUpperCase()) : Scope.LOCAL;
+            String scopeStr = scopeValue != null
+                    ? scopeValue.toString()
+                    : TemplateConfig.requireString("sound.scope");
+            Scope scope = Scope.valueOf(scopeStr.toUpperCase());
             return new SubSound(key, volume, pitch, pitchVariation, scope);
         }
 
-        private static double readDouble(ConfigurationSection config, String path, double fallback) {
+        private static double readDoubleOrTemplate(ConfigurationSection config, String path, String templatePath) {
             Object value = config.get(path);
-            return value instanceof Number number ? number.doubleValue() : fallback;
+            if (value == null) return TemplateConfig.requireDouble(templatePath);
+            if (!(value instanceof Number number)) {
+                throw new IllegalArgumentException("SoundEffect '" + path + "' must be a number, got: " + value);
+            }
+            return number.doubleValue();
         }
 
         void play(Location location, Player context) {
             if (scope == Scope.PLAYER) {
                 if (context == null) return; // location-only call site: nobody to play to
-                // PLAYER scope: play at the player's own location so distance attenuation
-                // doesn't silence sounds from far-away hit locations.
                 SoundBuilder.of(soundKey)
                         .volume(volume)
                         .pitch(pitch)
@@ -128,18 +127,16 @@ public class SoundEffect {
                         .play(context, context.getLocation());
                 return;
             }
-            // LOCAL and GLOBAL both dereference the location (world lookup). A dead or
-            // despawned entity resolves to a null location, and this is a dispatch path
-            // that must never throw back into the damage/death handlers.
+            // Dead/despawned entities resolve to null location; avoid throwing inside death handlers.
             if (location == null) return;
             SoundBuilder builder = SoundBuilder.of(soundKey)
                     .volume(volume)
                     .pitch(pitch)
                     .variation(pitchVariation);
             if (scope == Scope.LOCAL) {
-                builder.playGlobal(location); // "global packet, vanilla attenuation" = LOCAL
+                builder.playLocal(location);
             } else {
-                builder.playEverywhere(location); // true GLOBAL: audible map-wide
+                builder.playEverywhere(location);
             }
         }
 
@@ -147,10 +144,8 @@ public class SoundEffect {
             if (controller.isPlayer()) {
                 play(location, (Player) controller.getEntity());
             } else if (scope != Scope.PLAYER) {
-                // LOCAL/GLOBAL are location-driven — a bot's casts stay audible.
                 play(location, null);
             }
-            // PLAYER scope with non-player controller = no-op
         }
     }
 }

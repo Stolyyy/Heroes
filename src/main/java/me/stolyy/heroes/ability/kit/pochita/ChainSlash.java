@@ -3,7 +3,7 @@ package me.stolyy.heroes.ability.kit.pochita;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.BaseAbility;
 import me.stolyy.heroes.physics.Hitbox;
-import me.stolyy.heroes.physics.Interactions;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.vfx.effect.SoundEffect;
 import me.stolyy.heroes.vfx.effect.VisualEffect;
@@ -21,22 +21,21 @@ public class ChainSlash extends BaseAbility {
 
     public ChainSlash(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        this.energyCostMax = me.stolyy.heroes.util.Configs.requireInt(this.config, "energy_cost_max");
-        this.lowEnergyFloor = me.stolyy.heroes.util.Configs.requireDouble(this.config, "low_energy_floor");
-        this.fullEnergyBonus = me.stolyy.heroes.util.Configs.requireDouble(this.config, "full_energy_bonus");
-        this.activationSound = new SoundEffect(this.config.getConfigurationSection("visuals.activation_sound"));
-        this.hitSound = new SoundEffect(this.config.getConfigurationSection("visuals.hit_sound"));
-        this.waveVisual = new VisualEffect(this.config.getConfigurationSection("visuals.wave_visual"));
+        this.energyCostMax = Configs.requireInt(this.config, "energy_cost_max");
+        this.lowEnergyFloor = Configs.requireDouble(this.config, "low_energy_floor");
+        this.fullEnergyBonus = Configs.requireDouble(this.config, "full_energy_bonus");
+        this.activationSound = new SoundEffect(Configs.requireSection(this.config, "visuals.activation_sound"));
+        this.hitSound = new SoundEffect(Configs.requireSection(this.config, "visuals.hit_sound"));
+        this.waveVisual = new VisualEffect(Configs.requireSection(this.config, "visuals.wave_visual"));
     }
 
     @Override
     public void perform(Hero hero) {
-        LivingEntity self = hero.getController().getEntity();
-        self.setVelocity(new Vector(0, 0, 0));
+        hero.getController().setVelocity(new Vector(0, 0, 0));
 
-        if (hero.getPrimaryAbility() instanceof ChainRev rev && rev.isActive()) {
-            rev.cancelRev(hero);
-        }
+        hero.findAbility(ChainRev.class)
+                .filter(ChainRev::isActive)
+                .ifPresent(rev -> rev.cancelRev(hero));
 
         int consumed = Math.min((int) hero.getEnergy().getCurrentEnergy(), energyCostMax);
         if (consumed > 0) hero.getEnergy().tryConsume(hero.getController(), consumed);
@@ -48,14 +47,13 @@ public class ChainSlash extends BaseAbility {
         activationSound.play(hero.getController().getLocation(), hero.getController());
         waveVisual.play(hero.getController().getCenter());
 
+        LivingEntity self = hero.getController().getEntity();
         Hitbox.sphere(hero.getController().getCenter(), radius)
                 .exclude(self)
                 .excludeTeammates(self)
                 .onHit(victim -> {
                     hitSound.play(victim.getEyeLocation(), hero.getController());
-                    onHit(hero, victim);
-                    Interactions.on(self, victim)
-                            .abilityName(getName())
+                    hit(hero, victim)
                             .damage(scaledDamage)
                             .knockback(scaledKnockback)
                             .execute();

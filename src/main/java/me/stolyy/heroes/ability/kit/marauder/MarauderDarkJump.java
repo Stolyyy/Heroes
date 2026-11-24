@@ -4,6 +4,7 @@ import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroStats;
 import me.stolyy.heroes.control.Controller;
 import me.stolyy.heroes.hero.mechanics.DoubleJump;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.effect.SoundEffect;
 import me.stolyy.heroes.vfx.effect.VisualEffect;
 import org.bukkit.configuration.ConfigurationSection;
@@ -21,12 +22,12 @@ public class MarauderDarkJump extends DoubleJump {
 
     public MarauderDarkJump(HeroStats.JumpStats stats, ConfigurationSection config) {
         super(stats);
-        this.energyCost = config.getInt("dark_jump_energy_cost");
-        this.maxDarkJumps = config.getInt("max_dark_jumps", 1);
-        this.darkStrength = config.getDouble("dark_jump_strength");
-        this.darkYStrength = config.getDouble("dark_jump_y_strength");
-        this.darkSound = new SoundEffect(config.getConfigurationSection("dark_jump_sound"));
-        this.darkVisual = new VisualEffect(config.getConfigurationSection("dark_jump_visuals"));
+        this.energyCost = Configs.requireInt(config, "dark_jump_energy_cost");
+        this.maxDarkJumps = Configs.requireInt(config, "max_dark_jumps");
+        this.darkStrength = Configs.requireDouble(config, "dark_jump_strength");
+        this.darkYStrength = Configs.requireDouble(config, "dark_jump_y_strength");
+        this.darkSound = new SoundEffect(Configs.requireSection(config, "dark_jump_sound"));
+        this.darkVisual = new VisualEffect(Configs.requireSection(config, "dark_jump_visuals"));
     }
 
     @Override

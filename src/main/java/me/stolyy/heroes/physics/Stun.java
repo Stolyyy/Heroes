@@ -43,9 +43,9 @@ public class Stun {
      * Begin (or restart) a stun on {@code victim}. Calling on an already-stunned victim
      * resets the timer to now.
      */
-    public void apply(Hero attacker, LivingEntity victim) {
+    public void apply(LivingEntity victim) {
         startTimes.put(victim.getUniqueId(), System.currentTimeMillis());
-        victim.setVelocity(new Vector(0, 0, 0));
+        Interactions.applyVelocity(victim, new Vector(0, 0, 0));
     }
 
     public boolean isStunned(LivingEntity victim) {
@@ -75,7 +75,7 @@ public class Stun {
                 it.remove();
                 onEnd.accept(attacker, victim);
             } else {
-                victim.setVelocity(new Vector(0, 0, 0));
+                Interactions.applyVelocity(victim, new Vector(0, 0, 0));
             }
         }
     }

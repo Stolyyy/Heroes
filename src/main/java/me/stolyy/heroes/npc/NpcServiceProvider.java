@@ -29,9 +29,6 @@ public class NpcServiceProvider {
         return get().isAvailable();
     }
 
-    /**
-     * Creates the appropriate NpcService based on available plugins.
-     */
     private static NpcService createService() {
         if (Bukkit.getPluginManager().getPlugin("Citizens") != null) {
             try {
@@ -44,12 +41,5 @@ public class NpcServiceProvider {
 
         Heroes.getInstance().getLogger().info("No NPC library found - NPC features disabled");
         return new NoOpNpcService();
-    }
-
-    /**
-     * Resets the service instance (for reloading).
-     */
-    public static void reset() {
-        instance = null;
     }
 }

@@ -131,7 +131,6 @@ public final class PartyReadyCheck {
         return check;
     }
 
-    /** Runs the join when nobody is pending; returns whether it did. */
     private boolean completeIfReady() {
         if (!pending().isEmpty()) return false;
         checks.remove(party);

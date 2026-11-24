@@ -3,7 +3,14 @@ package me.stolyy.heroes.hero.minion;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.game.Game;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Static registry for tracking active minions.
@@ -12,6 +19,7 @@ public class MinionManager {
     private static final Set<MinionHero> activeMinions = new LinkedHashSet<>();
     private static final Map<UUID, List<MinionHero>> ownerMinions = new HashMap<>();
 
+    /** Tracks a spawned minion in the global and per-owner registries. */
     public static void register(MinionHero minion) {
         activeMinions.add(minion);
         UUID ownerUuid = minion.getOwnerId();
@@ -20,6 +28,7 @@ public class MinionManager {
         }
     }
 
+    /** Stops tracking a minion after it has been despawned. */
     public static void unregister(MinionHero minion) {
         activeMinions.remove(minion);
         UUID ownerUuid = minion.getOwnerId();
@@ -63,9 +72,7 @@ public class MinionManager {
         }
     }
 
-    /**
-     * Despawns and removes all active minions.
-     */
+    /** Despawns all active minions and clears registry state on shutdown. */
     public static void clear() {
         for (MinionHero minion : new ArrayList<>(activeMinions)) {
             minion.despawn();

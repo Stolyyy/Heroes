@@ -21,7 +21,7 @@ public class BulkSlam extends Shockwave {
     public void onLand(Hero hero){
         if (!doubleJumped) return;
         doubleJumped = false;
-        if(hero.getSmashAbility().getCooldownObject().isInUse()) return;
+        if (hero.findAbility(BulkSmash.class).map(BulkSmash::isActive).orElse(false)) return;
         execute(hero);
     }
 

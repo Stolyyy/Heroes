@@ -2,8 +2,8 @@ package me.stolyy.heroes.ability.kit.pochita;
 
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.Projectile;
-import me.stolyy.heroes.control.PlayerController;
 import me.stolyy.heroes.physics.Interactions;
+import me.stolyy.heroes.physics.Pull;
 import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import net.kyori.adventure.text.Component;
@@ -12,6 +12,8 @@ import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
+
+import java.util.ArrayList;
 
 public class ChainHook extends Projectile {
     private enum PullMode { NONE, LOCATION, PLAYER }
@@ -25,14 +27,12 @@ public class ChainHook extends Projectile {
     private final int energyCostPerTick;
     private final double driftStrength;
     private final double verticalDriftStrength;
-    private final long missCooldownMs;
     private final Component touchGroundMessage;
 
     private PullMode mode = PullMode.NONE;
     private Location pullLocation;
     private LivingEntity pullTarget;
     private int pullTicksElapsed;
-    private boolean chainInFlight;
 
     private boolean needsGroundContact;
 
@@ -47,42 +47,29 @@ public class ChainHook extends Projectile {
         this.energyCostPerTick = Configs.requireInt(this.config, "energy_cost_per_tick");
         this.driftStrength = Configs.requireDouble(this.config, "drift_strength");
         this.verticalDriftStrength = Configs.requireDouble(this.config, "vertical_drift_strength");
-        this.missCooldownMs = (long) (Configs.requireDouble(this.config, "miss_cooldown") * 1000);
         this.touchGroundMessage = LegacyComponentSerializer.legacyAmpersand()
                 .deserialize(Configs.requireString(this.config, "messages.touch_ground"));
     }
 
     @Override
-    public boolean canExecute(Hero hero) {
-        if (chainInFlight || mode != PullMode.NONE) return false;
+    protected boolean canUse(Hero hero) {
+        if (!activeProjectiles.isEmpty() || mode != PullMode.NONE) return false;
         if (needsGroundContact) {
             hero.getController().sendMessage(touchGroundMessage);
             return false;
         }
-        return super.canExecute(hero);
+        return true;
     }
-
-    @Override
-    public void perform(Hero hero) {
-        cancelPull();
-        chainInFlight = true;
-        super.perform(hero);
-    }
-
-
-    @Override
-    protected void startCooldown(Hero hero) { }
 
     @Override
     public void onHit(Hero attacker, LivingEntity victim, Location hitLoc) {
-        chainInFlight = false;
-        cooldown.start();
+        resolveCooldown(attacker);
         hitSound.play(victim.getEyeLocation(), attacker.getController());
         hitVisual.play(victim.getEyeLocation());
-        attacker.triggerAbilityHit(this, victim);
         if (damage > 0) {
-            Interactions.on(attacker.getController().getEntity(), victim)
-                    .abilityName(getName()).damage(damage).execute();
+            hit(attacker, victim).damage(damage).execute();
+        } else {
+            attacker.triggerAbilityHit(this, victim);
         }
         pullTarget = victim;
         mode = PullMode.PLAYER;
@@ -92,8 +79,7 @@ public class ChainHook extends Projectile {
 
     @Override
     public void onHitWall(Hero hero, Location location) {
-        chainInFlight = false;
-        cooldown.start();
+        resolveCooldown(hero);
         wallSound.play(location, hero.getController());
         wallVisual.play(location);
         pullLocation = location.clone();
@@ -104,14 +90,11 @@ public class ChainHook extends Projectile {
 
     @Override
     public void onExpire(Hero hero, Location location) {
-        chainInFlight = false;
-        cooldown.start();
-        cooldown.reduceCooldown(Math.max(0, cooldown.getCooldownDuration() - missCooldownMs));
+        resolveMissCooldown();
     }
 
     @Override
-    protected void onTick(Hero hero) {
-        super.onTick(hero);
+    protected void onProjectileTick(Hero hero) {
         if (needsGroundContact && hero.getController().isOnGround()) needsGroundContact = false;
 
         if (mode == PullMode.NONE) return;
@@ -125,39 +108,35 @@ public class ChainHook extends Projectile {
             return;
         }
 
-        LivingEntity self = hero.getController().getEntity();
+        if (mode == PullMode.PLAYER && (pullTarget == null || pullTarget.isDead() || !pullTarget.isValid())) {
+            cancelPull();
+            return;
+        }
+        Location anchor = mode == PullMode.PLAYER ? pullTarget.getLocation() : pullLocation;
+        double arrivalDist = mode == PullMode.PLAYER ? 2.0 : 1.5;
         double pullSpeedSelf = Math.min(pullMax, pullStart + pullAccelPerTick * pullTicksElapsed);
-        if (mode == PullMode.LOCATION) {
-            Vector diff = pullLocation.toVector().subtract(self.getLocation().toVector());
-            if (diff.length() < 1.5) {
-                cancelPull();
-                return;
-            }
-            self.setVelocity(diff.normalize().multiply(pullSpeedSelf).add(driftVector(hero)));
-        } else {
-            if (pullTarget == null || pullTarget.isDead() || !pullTarget.isValid()) {
-                cancelPull();
-                return;
-            }
-            Vector diff = pullTarget.getLocation().toVector().subtract(self.getLocation().toVector());
-            if (diff.length() < 2.0) {
-                cancelPull();
-                return;
-            }
-
-            Vector dir = diff.clone().normalize();
-            self.setVelocity(dir.clone().multiply(pullSpeedSelf).add(driftVector(hero)));
-            pullTarget.setVelocity(dir.clone().multiply(-pullSpeedTarget));
+        if (Pull.toward(hero.getController(), anchor, pullSpeedSelf, arrivalDist, driftVector(hero))) {
+            cancelPull();
+            return;
+        }
+        if (mode == PullMode.PLAYER) {
+            Vector dir = anchor.toVector().subtract(hero.getController().getLocation().toVector()).normalize();
+            Interactions.on(hero.getController().getEntity(), pullTarget)
+                    .abilityName(getName())
+                    .knockback(pullSpeedTarget * Interactions.KB_DIVISOR)
+                    .direction(dir.multiply(-1))
+                    .staticKnockback()
+                    .processDirection(false)
+                    .execute();
         }
     }
 
     private Vector driftVector(Hero hero) {
-        if (!(hero.getController() instanceof PlayerController pc)) return new Vector();
-        org.bukkit.Input input = pc.getPlayer().getCurrentInput();
-        int side = (input.isRight() ? 1 : 0) - (input.isLeft() ? 1 : 0);
-        int lift = (input.isForward() ? 1 : 0) - (input.isBackward() ? 1 : 0);
+        Vector axes = hero.getController().getMovementAxes();
+        double side = axes.getX();
+        double lift = axes.getZ();
         if (side == 0 && lift == 0) return new Vector();
-        double yaw = Math.toRadians(pc.getPlayer().getLocation().getYaw());
+        double yaw = Math.toRadians(hero.getController().getLocation().getYaw());
 
         Vector drift = new Vector(-Math.cos(yaw), 0, -Math.sin(yaw)).multiply(side * driftStrength);
         return drift.setY(lift * verticalDriftStrength);
@@ -173,7 +152,10 @@ public class ChainHook extends Projectile {
     @Override
     public void onDeath(Hero hero) {
         super.onDeath(hero);
-        chainInFlight = false;
+        for (ProjectileInstance p : new ArrayList<>(activeProjectiles)) {
+            p.cleanup();
+        }
+        activeProjectiles.clear();
         needsGroundContact = false;
         cancelPull();
     }

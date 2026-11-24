@@ -3,8 +3,6 @@ package me.stolyy.heroes.game;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 
-import java.util.Arrays;
-
 public enum TeamColor {
     RED(NamedTextColor.RED, "Red", Material.RED_WOOL),
     BLUE(NamedTextColor.BLUE, "Blue", Material.BLUE_WOOL),
@@ -27,14 +25,6 @@ public enum TeamColor {
     }
 
     public NamedTextColor textColor() { return textColor; }
-    public NamedTextColor chatColor() { return textColor; }
     public String displayName() { return displayName; }
     public Material wool() { return wool; }
-
-    public static TeamColor fromIndex(int index) {
-        TeamColor[] playable = Arrays.stream(values())
-            .filter(c -> c != SPECTATOR)
-            .toArray(TeamColor[]::new);
-        return playable[index % playable.length];
-    }
 }

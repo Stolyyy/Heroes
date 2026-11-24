@@ -2,6 +2,7 @@ package me.stolyy.heroes.ability.kit.tinman;
 
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.Shockwave;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.util.Vector;
@@ -12,8 +13,8 @@ public class Overload extends Shockwave {
 
     public Overload(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        this.launchX = config.getDouble("launch_x", 1.0);
-        this.launchY = config.getDouble("launch_y", 0.8);
+        this.launchX = Configs.requireDouble(this.config, "launch_x");
+        this.launchY = Configs.requireDouble(this.config, "launch_y");
     }
 
     @Override

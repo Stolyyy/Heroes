@@ -22,8 +22,8 @@ import java.util.WeakHashMap;
 public final class StageSampler {
     private static final Map<World, List<Vector>> CACHE = new WeakHashMap<>();
     private static final double GRID_STEP = 3.0;
-    /** Vertical distance is penalized when the point is ABOVE the seeker — a falling bot
-     *  should prefer the ledge beside it over a platform overhead it cannot reach. */
+    // Vertical distance is penalized when the point is ABOVE the seeker — a falling bot
+    // should prefer the ledge beside it over a platform overhead it cannot reach.
     private static final double ABOVE_WEIGHT = 2.0;
 
     private StageSampler() {
@@ -70,12 +70,10 @@ public final class StageSampler {
 
     private static final Vector DOWN = new Vector(0, -1, 0);
 
-    /**
-     * One column: raycast down for the first STANDABLE surface. Barrier blocks are the maps'
-     * invisible roofs/walls — a bot can neither reach nor stand on them, and anchoring on the
-     * roof sent recovering bots pumping jumps at the ceiling. Step past every barrier hit and
-     * keep looking down; a column that is barrier-all-the-way-down contributes no point.
-     */
+    // One column: raycast down for the first STANDABLE surface. Barrier blocks are the maps'
+    // invisible roofs/walls — a bot can neither reach nor stand on them, and anchoring on the
+    // roof sent recovering bots pumping jumps at the ceiling. Step past every barrier hit and
+    // keep looking down; a column that is barrier-all-the-way-down contributes no point.
     private static void sampleColumn(World world, double x, double z, double top, double minY,
                                      List<Vector> points) {
         double y = top;

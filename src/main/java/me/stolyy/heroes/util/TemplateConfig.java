@@ -27,8 +27,20 @@ public final class TemplateConfig {
         return Configs.requireDouble(section(path), key(path));
     }
 
+    public static int requireInt(String path) {
+        return Configs.requireInt(section(path), key(path));
+    }
+
     public static long requireLong(String path) {
         return Configs.requireLong(section(path), key(path));
+    }
+
+    public static boolean requireBoolean(String path) {
+        return Configs.requireBoolean(section(path), key(path));
+    }
+
+    public static String requireString(String path) {
+        return Configs.requireString(section(path), key(path));
     }
 
     private static ConfigurationSection section(String path) {

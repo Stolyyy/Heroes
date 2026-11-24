@@ -10,13 +10,11 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
 public class ShieldBash extends Dash {
-    private final int windupTicks;
-    private final int empoweredWindupTicks;
+    private final long empoweredWindupMs;
     private final double empoweredSpeedMultiplier;
     private final SoundEffect windupSound;
 
     private Vector pendingDirection;
-    private int windupRemaining = -1;
     private boolean empowered;
 
     private double buffDamageSnapshot = 1.0;
@@ -24,50 +22,32 @@ public class ShieldBash extends Dash {
 
     public ShieldBash(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        this.windupTicks = Configs.requireInt(this.config, "windup_ticks");
-        this.empoweredWindupTicks = Configs.requireInt(this.config, "empowered_windup_ticks");
+        this.empoweredWindupMs = (long) (Configs.requireDouble(this.config, "empowered_windup") * 1000);
         this.empoweredSpeedMultiplier = Configs.requireDouble(this.config, "empowered_speed_multiplier");
-        this.windupSound = new SoundEffect(this.config.getConfigurationSection("visuals.windup_sound"));
+        this.windupSound = new SoundEffect(Configs.requireSection(this.config, "visuals.windup_sound"));
     }
 
     @Override
-    public boolean canExecute(Hero hero) {
-        if (windupRemaining >= 0 || currentDash != null) return false;
-        return super.canExecute(hero);
-    }
-
-    @Override
-    public void perform(Hero hero) {
+    protected void onCast(Hero hero) {
         pendingDirection = hero.getController().getLocation().getDirection().normalize();
-
-        Parry parry = Parry.of(hero);
-        empowered = parry != null && parry.isCharged();
+        empowered = hero.findAbility(Parry.class).map(Parry::isCharged).orElse(false);
         buffDamageSnapshot = hero.getAttributes().getDamageDealtMultiplier();
         buffKnockbackSnapshot = hero.getAttributes().getKnockbackDealtMultiplier();
+    }
 
-        int windup = empowered ? empoweredWindupTicks : windupTicks;
-        if (windup <= 0) {
-            launch(hero);
-            return;
-        }
-        windupRemaining = windup;
+    @Override
+    protected long windupMs(Hero hero) {
+        return empowered ? empoweredWindupMs : windupMs;
+    }
+
+    @Override
+    protected void onWindupStart(Hero hero) {
         windupSound.play(hero.getController().getLocation(), hero.getController());
     }
 
     @Override
-    protected void onTick(Hero hero) {
-        super.onTick(hero);
-        if (windupRemaining > 0) {
-            windupRemaining--;
-        } else if (windupRemaining == 0) {
-            windupRemaining = -1;
-            launch(hero);
-        }
-    }
-
-    private void launch(Hero hero) {
-        activationSound.play(hero.getController().getLocation(), hero.getController());
-        currentDash = new DashInstance(hero, pendingDirection);
+    protected Vector dashDirection(Hero hero) {
+        return pendingDirection != null ? pendingDirection : super.dashDirection(hero);
     }
 
     @Override
@@ -88,7 +68,6 @@ public class ShieldBash extends Dash {
     @Override
     public void onDeath(Hero hero) {
         super.onDeath(hero);
-        windupRemaining = -1;
         pendingDirection = null;
         empowered = false;
     }

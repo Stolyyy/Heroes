@@ -1,8 +1,19 @@
 package me.stolyy.heroes.ability;
 
+import me.stolyy.heroes.control.Controller;
 import me.stolyy.heroes.hero.Hero;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Location;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
+import java.util.List;
+
+/**
+ * Contract for hero abilities and passives covering activation, cooldown/ammo tracking,
+ * hero event callbacks, and keyed stat modifiers.
+ */
 public interface Ability {
     String getName();
     String getDescription();
@@ -25,7 +36,7 @@ public interface Ability {
      * Every cooldown this ability owns, including sub-ability timers. Used by admin tooling
      * (/forceready) so a variant family isn't left half-locked.
      */
-    default java.util.List<Cooldown> getAllCooldowns() { return java.util.List.of(getCooldownObject()); }
+    default List<Cooldown> getAllCooldowns() { return List.of(getCooldownObject()); }
     
     // Returns true if ability was successfully used (triggering cooldown)
     boolean execute(Hero hero);
@@ -35,18 +46,18 @@ public interface Ability {
     default void initialize(Hero hero) {}
 
     // Callbacks for ability interactions
-    default void onHit(Hero attacker, org.bukkit.entity.LivingEntity victim) {}
-    default void onHitWall(Hero hero, org.bukkit.Location location) {}
-    default void onExpire(Hero hero, org.bukkit.Location location) {}
+    default void onHit(Hero attacker, LivingEntity victim) {}
+    default void onHitWall(Hero hero, Location location) {}
+    default void onExpire(Hero hero, Location location) {}
     
     // Death cleanup. Default behavior lives in BaseAbility: resets cooldown if the ability
     // is currently in-use. Abilities that need additional cleanup should override and call
     // super.onDeath(hero) to preserve the cooldown reset.
     default void onDeath(Hero hero) {}
-    default void onKill(Hero hero, org.bukkit.entity.LivingEntity victim) {}
+    default void onKill(Hero hero, LivingEntity victim) {}
 
     /**
-     * A1 lifecycle: independent abilities have released state that acts on the world without
+     * Lifecycle: independent abilities have released state that acts on the world without
      * a live, playing hero — in-flight projectiles, planted objects, minion duration reapers.
      * When a hero is ELIMINATED it goes dormant: normal ticking stops, but abilities returning
      * true here keep receiving {@link #tick(Hero)} so their detached state resolves naturally.
@@ -57,25 +68,25 @@ public interface Ability {
     /**
      * Whether this ability's effect can reach a target through solid geometry. Melee, dash,
      * and buff/passive abilities default true — a wall check only makes sense for something
-     * that travels, and the bot AI's wall gate (BaseBotAI.tryUseAbility) is the only reader.
+     * that travels, and {@code BotCombat} is the main consumer.
      * {@link me.stolyy.heroes.ability.template.RangedAbility} overrides this with its own
      * {@code pierces_walls} config field (default false).
      */
     default boolean piercesWalls() { return true; }
 
     /**
-     * A1 lifecycle: fired ONLY when the hero reference is lost for good — logout or game-end
+     * Lifecycle: fired ONLY when the hero reference is lost for good — logout or game-end
      * teardown (via {@link Hero#cleanup()}). Never fired on death, respawn, or elimination.
      * Override to expire detached world state (remove projectile displays, planted objects).
      */
     default void onOwnerLost(Hero hero) {}
 
     // Global Hooks
-    default void onJabHit(Hero hero, org.bukkit.entity.LivingEntity victim) {}
-    default void onAbilityHit(Hero hero, Ability ability, org.bukkit.entity.LivingEntity victim) {}
+    default void onJabHit(Hero hero, LivingEntity victim) {}
+    default void onAbilityHit(Hero hero, Ability ability, LivingEntity victim) {}
     default void onAbilityUse(Hero hero, Ability ability) {}
-    default void onDamageTaken(Hero hero, org.bukkit.entity.Entity source, double amount) {}
-    default void onKnockbackTaken(Hero hero, org.bukkit.entity.Entity source, Vector knockback) {}
+    default void onDamageTaken(Hero hero, Entity source, double amount) {}
+    default void onKnockbackTaken(Hero hero, Entity source, Vector knockback) {}
     default void onLand(Hero hero) {}
     default void onDoubleJump(Hero hero) {}
     default void tick(Hero hero) {}
@@ -95,13 +106,25 @@ public interface Ability {
      */
     default String getActiveStatusText() { return null; }
 
+    /** Extra lore lines appended to this passive's hotbar reference card. */
+    default List<Component> passiveCardExtras(Controller controller) { return List.of(); }
+
+    /** Side-effect hook invoked when cosmetics are applied to a hero wearing this ability. */
+    default void onCosmeticsApplied(Controller controller) {}
+
     // Dynamic Modification
-    default void setDamage(double damage) {}
+    default void addDamageMultiplier(Object key, double mult) {}
+    default void addDamageFlat(Object key, double delta) {}
+    default void removeDamageModifier(Object key) {}
     default double getDamage() { return 0; }
-    default void setKnockback(double knockback) {}
+
+    default void addKnockbackMultiplier(Object key, double mult) {}
+    default void addKnockbackFlat(Object key, double delta) {}
+    default void removeKnockbackModifier(Object key) {}
     default double getKnockback() { return 0; }
-    default void setRadius(double radius) {}
+
+    default void addRadiusMultiplier(Object key, double mult) {}
+    default void addRadiusFlat(Object key, double delta) {}
+    default void removeRadiusModifier(Object key) {}
     default double getRadius() { return 0; }
-    default void setCooldown(long ms) {}
-    default void setEnergyCost(int cost) {}
 }

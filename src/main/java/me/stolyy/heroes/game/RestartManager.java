@@ -25,8 +25,6 @@ import java.util.Set;
  * through the final countdown too — a match that pops 20 seconds before shutdown is only a cut match.
  */
 public final class RestartManager {
-    private RestartManager() {}
-
     private enum Phase { IDLE, DRAINING, COUNTDOWN }
 
     private static final Set<Integer> TITLE_MARKS = Set.of(30, 10, 5, 4, 3, 2, 1);
@@ -38,10 +36,13 @@ public final class RestartManager {
     private static int elapsed;
     private static int remaining;
 
+    private RestartManager() {}
+
     public static boolean isDraining() { return phase != Phase.IDLE; }
 
     public static boolean isCountingDown() { return phase == Phase.COUNTDOWN; }
 
+    /** Closes queues, lets rated matches finish up to the drain cap, then begins the shutdown countdown. */
     public static void startDrain() {
         drainCapSeconds = Configs.requireInt(GameConfigManager.getGameConfig(), "restart.drain-cap-seconds");
         announceSeconds = Configs.requireInt(GameConfigManager.getGameConfig(), "restart.announce-seconds");
@@ -69,6 +70,7 @@ public final class RestartManager {
         schedule();
     }
 
+    /** Closes queues and begins the shutdown countdown immediately without cutting active matches first. */
     public static void startNow() {
         announceSeconds = Configs.requireInt(GameConfigManager.getGameConfig(), "restart.announce-seconds");
         for (Player player : QueueManager.closeForRestart()) {

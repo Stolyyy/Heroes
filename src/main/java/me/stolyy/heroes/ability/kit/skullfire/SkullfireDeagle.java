@@ -2,6 +2,7 @@ package me.stolyy.heroes.ability.kit.skullfire;
 
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.Hitscan;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import org.bukkit.configuration.ConfigurationSection;
 
@@ -10,20 +11,16 @@ public class SkullfireDeagle extends Hitscan {
 
     public SkullfireDeagle(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        shotsWhileSneaking = config.getInt("shots_while_sneaking");
-        burstDelay = (int) (config.getDouble("sneak_shot_delay") * 1000);
+        shotsWhileSneaking = Configs.requireInt(this.config, "shots_while_sneaking");
     }
 
     @Override
-    public boolean execute(Hero hero) {
-        activeDuration = hero.getController().isSneaking()
-                ? (long) burstDelay * (shotsWhileSneaking - 1) : 0;
-        return super.execute(hero);
+    protected int burstCountFor(Hero hero) {
+        return hero.getController().isSneaking() ? shotsWhileSneaking : 1;
     }
 
     @Override
-    public void perform(Hero hero){
-        burstCount = hero.getController().isSneaking() ? shotsWhileSneaking : 1;
-        super.perform(hero);
+    protected long activeDurationFor(Hero hero) {
+        return hero.getController().isSneaking() ? (long) burstDelay * (shotsWhileSneaking - 1) : 0;
     }
 }

@@ -1,80 +1,65 @@
 package me.stolyy.heroes.command.admin;
 
-import me.stolyy.heroes.hero.Hero;
-import me.stolyy.heroes.hero.HeroManager;
 import me.stolyy.heroes.ability.Ability;
 import me.stolyy.heroes.ability.Cooldown;
+import me.stolyy.heroes.command.HeroesCommand;
+import me.stolyy.heroes.command.TabComplete;
+import me.stolyy.heroes.hero.Hero;
+import me.stolyy.heroes.hero.HeroManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Locale;
 
-public class ForceReadyCommand extends Command {
+public class ForceReadyCommand extends HeroesCommand {
 
     public ForceReadyCommand() {
-        super("forceready");
-        this.setDescription("Admin command to force-ready a hero ability cooldown");
-        this.setUsage("/forceready <primary|secondary|smash|all>");
-        this.setPermission("heroes.forceready");
-        this.setAliases(List.of("fr", "ready"));
+        super("forceready", "Admin command to force-ready a hero ability cooldown",
+                "/forceready <primary|secondary|smash|all>",
+                List.of("fr", "ready"), "heroes.forceready", true);
     }
 
     @Override
-    public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("This command can only be used by players.");
-            return true;
-        }
-
-        if (!player.hasPermission(getPermission())) {
-            player.sendMessage(Component.text("You do not have permission to use this command.", NamedTextColor.RED));
-            return true;
-        }
-
+    protected void execute(Player player, String[] args) {
         if (args.length == 0) {
             player.sendMessage(Component.text("Usage: " + getUsage(), NamedTextColor.YELLOW));
-            return true;
+            return;
         }
 
         Hero hero = HeroManager.getHero(player);
         if (hero == null) {
             player.sendMessage(Component.text("You do not have an active hero.", NamedTextColor.RED));
-            return true;
+            return;
         }
 
-        String arg = args[0].toLowerCase();
-        switch (arg) {
+        switch (args[0].toLowerCase(Locale.ROOT)) {
             case "primary" -> {
-                forceReady(hero.getPrimaryAbility(), "Primary");
+                forceReady(hero.getPrimaryAbility());
                 player.sendMessage(Component.text("Primary ability forced ready.", NamedTextColor.GREEN));
             }
             case "secondary" -> {
-                forceReady(hero.getSecondaryAbility(), "Secondary");
+                forceReady(hero.getSecondaryAbility());
                 player.sendMessage(Component.text("Secondary ability forced ready.", NamedTextColor.GREEN));
             }
             case "smash" -> {
-                forceReady(hero.getSmashAbility(), "Smash");
+                forceReady(hero.getSmashAbility());
                 player.sendMessage(Component.text("Smash ability forced ready.", NamedTextColor.GREEN));
             }
             case "all" -> {
-                forceReady(hero.getPrimaryAbility(), "Primary");
-                forceReady(hero.getSecondaryAbility(), "Secondary");
-                forceReady(hero.getSmashAbility(), "Smash");
+                forceReady(hero.getPrimaryAbility());
+                forceReady(hero.getSecondaryAbility());
+                forceReady(hero.getSmashAbility());
                 player.sendMessage(Component.text("All abilities forced ready.", NamedTextColor.GREEN));
             }
-            default -> {
-                player.sendMessage(Component.text("Unknown ability type: " + args[0] + ". Use primary, secondary, smash, or all.", NamedTextColor.RED));
-            }
+            default -> player.sendMessage(Component.text(
+                    "Unknown ability type: " + args[0] + ". Use primary, secondary, smash, or all.", NamedTextColor.RED));
         }
-
-        return true;
     }
 
-    private void forceReady(Ability ability, String label) {
+    private void forceReady(Ability ability) {
         if (ability != null) {
             // getAllCooldowns, not getCooldownObject: a variant family (Bug's directional
             // secondary) owns a timer per variant, and clearing only the shared one leaves the
@@ -84,11 +69,9 @@ public class ForceReadyCommand extends Command {
     }
 
     @Override
-    public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
+    protected List<String> complete(CommandSender sender, String[] args) {
         if (args.length == 1) {
-            return List.of("primary", "secondary", "smash", "all").stream()
-                    .filter(s -> s.startsWith(args[0].toLowerCase()))
-                    .toList();
+            return TabComplete.startsWith(List.of("primary", "secondary", "smash", "all"), args[0]);
         }
         return List.of();
     }

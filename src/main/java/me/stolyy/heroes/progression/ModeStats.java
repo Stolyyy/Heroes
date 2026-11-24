@@ -1,6 +1,9 @@
 package me.stolyy.heroes.progression;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class ModeStats {
@@ -11,7 +14,23 @@ public class ModeStats {
     }
 
     public HeroProgress getHeroStats(String heroName) {
-        return heroStats.computeIfAbsent(heroName, k -> new HeroProgress());
+        String key = heroName.toLowerCase(Locale.ROOT);
+        HeroProgress exact = heroStats.get(key);
+        if (exact != null) return exact;
+        HeroProgress legacy = findLegacyHeroStats(heroName);
+        return legacy != null ? legacy : heroStats.computeIfAbsent(key, k -> new HeroProgress());
+    }
+
+    public @Nullable HeroProgress findHeroStats(String heroName) {
+        HeroProgress exact = heroStats.get(heroName.toLowerCase(Locale.ROOT));
+        return exact != null ? exact : findLegacyHeroStats(heroName);
+    }
+
+    private @Nullable HeroProgress findLegacyHeroStats(String heroName) {
+        for (Map.Entry<String, HeroProgress> entry : heroStats.entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(heroName)) return entry.getValue();
+        }
+        return null;
     }
 
     public int totalWins() {

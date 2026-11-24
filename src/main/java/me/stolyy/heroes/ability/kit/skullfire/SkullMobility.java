@@ -4,6 +4,7 @@ import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroStats;
 import me.stolyy.heroes.control.Controller;
 import me.stolyy.heroes.hero.mechanics.DoubleJump;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.effect.SoundEffect;
 import me.stolyy.heroes.vfx.effect.VisualEffect;
 import org.bukkit.configuration.ConfigurationSection;
@@ -20,13 +21,15 @@ public class SkullMobility extends DoubleJump {
 
     public SkullMobility(HeroStats.JumpStats stats, ConfigurationSection config) {
         super(stats);
-        this.jumpCap = config.getInt("jumpCap", maxJumps);
+        this.jumpCap = Configs.requireInt(config, "jump_cap");
         this.currentCap = maxJumps;
-        this.skullXStrength = config.getDouble("x_strength", xStrength);
-        this.skullYStrength = config.getDouble("y_strength", yStrength);
+        this.skullXStrength = config.contains("x_strength")
+                ? Configs.requireDouble(config, "x_strength") : xStrength;
+        this.skullYStrength = config.contains("y_strength")
+                ? Configs.requireDouble(config, "y_strength") : yStrength;
 
-        this.skullSound = new SoundEffect(config.getConfigurationSection("skull_sound"));
-        this.skullVisual = new VisualEffect(config.getConfigurationSection("skull_visual"));
+        this.skullSound = SoundEffect.optional(config, "skull_sound");
+        this.skullVisual = new VisualEffect(Configs.requireSection(config, "skull_visual"));
     }
 
     @Override

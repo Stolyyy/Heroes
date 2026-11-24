@@ -1,35 +1,36 @@
 package me.stolyy.heroes.vfx.ui.gui;
 
-import me.stolyy.heroes.hero.HeroConfig;
-import me.stolyy.heroes.hero.HeroManager;
 import me.stolyy.heroes.ability.kit.bug.CharmConfig;
 import me.stolyy.heroes.ability.kit.bug.Charms;
+import me.stolyy.heroes.hero.HeroConfig;
+import me.stolyy.heroes.hero.HeroManager;
 import me.stolyy.heroes.vfx.effect.ItemBuilder;
 import me.stolyy.heroes.vfx.effect.SoundBuilder;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import me.stolyy.heroes.vfx.ui.GuiText;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
+/** Charm loadout GUI for Bug; saves changes on Exit button and on inventory close. */
 public class BugCharmsGUI extends GUI {
     private static final int SLOT_CLOSE = 49;
     private static final int SLOT_RESET = 53;
     private static final int NOTCH_ROW_SIZE = 9;
 
     private final Set<Charms> selectedCharms;
-    private final Map<Charms, Integer> charmLocations;
-    private int usedNotches = 0;
+    private final Map<Charms, Integer> charmLocations = new HashMap<>();
+    private int usedNotches;
 
     public BugCharmsGUI(Player player) {
-        super(player, 54, "Charm Selection");
+        super(player, 54, GuiText.raw("gui.charms.title"));
         this.selectedCharms = new HashSet<>(HeroManager.getEquippedCharms(player.getUniqueId()));
-        this.charmLocations = new HashMap<>();
         initCharmLocations();
-        update();
     }
 
     private void initCharmLocations() {
@@ -53,44 +54,35 @@ public class BugCharmsGUI extends GUI {
     @Override
     protected void populate() {
         inventoryItems.put(SLOT_CLOSE, ItemBuilder.from(Material.PAPER)
-                .name("<red>Save and Exit")
+                .name(GuiText.component("gui.charms.save-and-exit"))
                 .modelData("gui", "general", "close")
                 .build());
         inventoryItems.put(SLOT_RESET, ItemBuilder.from(Material.PAPER)
-                .name("<yellow>Reset Charms")
-                .lore(Component.text("Unequip all charms", NamedTextColor.GRAY))
+                .name(GuiText.component("gui.charms.reset-name"))
+                .lore(GuiText.lore("gui.charms.reset-lore"))
                 .modelData("gui", "charms", "reset")
                 .build());
     }
 
     @Override
     protected void update() {
-        // Calculate used notches from config
         usedNotches = selectedCharms.stream()
                 .mapToInt(CharmConfig::getCost)
                 .sum();
 
-        // Render notch indicators (slots 0-8)
         int totalNotches = CharmConfig.notches();
         for (int i = 0; i < NOTCH_ROW_SIZE; i++) {
             if (i < totalNotches) {
-                if (i < usedNotches) {
-                    inventoryItems.put(i, ItemBuilder.from(Material.PAPER)
-                            .name("<gray>Used Notch")
-                            .modelData("gui", "charms", "notch-used")
-                            .build());
-                } else {
-                    inventoryItems.put(i, ItemBuilder.from(Material.PAPER)
-                            .name("<white>Free Notch")
-                            .modelData("gui", "charms", "notch-free")
-                            .build());
-                }
+                boolean used = i < usedNotches;
+                inventoryItems.put(i, ItemBuilder.from(Material.PAPER)
+                        .name(GuiText.component(used ? "gui.charms.notch-used" : "gui.charms.notch-free"))
+                        .modelData("gui", "charms", used ? "notch-used" : "notch-free")
+                        .build());
             } else {
                 inventoryItems.remove(i);
             }
         }
 
-        // Render charm items using config data
         for (Charms charm : Charms.values()) {
             Integer slot = charmLocations.get(charm);
             if (slot == null) continue;
@@ -100,11 +92,8 @@ public class BugCharmsGUI extends GUI {
             String texture = CharmConfig.getTexture(charm);
 
             ItemBuilder builder = ItemBuilder.from(Material.PAPER)
-                    .name("<gold>" + HeroConfig.formatName(charm.name()))
-                    .lore(
-                            Component.text(description, NamedTextColor.GRAY),
-                            Component.text("Cost: " + cost + " notches", NamedTextColor.AQUA)
-                    )
+                    .name(GuiText.component("gui.charms.charm-name", "charm", HeroConfig.formatName(charm.name())))
+                    .lore(GuiText.lore("gui.charms.charm-lore", "description", description, "cost", cost))
                     .modelData("gui", "charms", texture);
 
             if (selectedCharms.contains(charm)) {
@@ -117,7 +106,6 @@ public class BugCharmsGUI extends GUI {
         super.update();
     }
 
-    /** Persist the selected charms. Called on exit (Save and Exit button or inventory close). */
     private void save() {
         HeroManager.setEquippedCharms(player.getUniqueId(), selectedCharms);
     }
@@ -153,7 +141,7 @@ public class BugCharmsGUI extends GUI {
             SoundBuilder.of(Sound.BLOCK_NOTE_BLOCK_BASS).pitch(1.0f).play(player);
         } else if (CharmConfig.notches() - usedNotches >= cost) {
             selectedCharms.add(charm);
-            SoundBuilder.of(Sound.ENTITY_PLAYER_LEVELUP).pitch(1.0f).play(player);
+            playSuccess();
         } else {
             SoundBuilder.of(Sound.BLOCK_NOTE_BLOCK_BASS).pitch(0.5f).play(player);
         }

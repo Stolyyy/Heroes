@@ -1,24 +1,47 @@
 package me.stolyy.heroes.hero;
 
+import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.ability.kit.bug.CharmConfig;
 import me.stolyy.heroes.ability.kit.bug.Charms;
+import me.stolyy.heroes.ability.kit.greenhood.GreenHoodListener;
+import me.stolyy.heroes.ability.kit.mrmonster.MonsterGrab;
 import me.stolyy.heroes.control.Controller;
 import me.stolyy.heroes.game.GameManager;
+import me.stolyy.heroes.hero.mechanics.JabListener;
+import me.stolyy.heroes.hero.mechanics.MovementListener;
 import me.stolyy.heroes.progression.PlayerStatsManager;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
 import me.stolyy.heroes.vfx.ui.visual.LobbyScoreboard;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.configuration.file.YamlConfiguration;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
+/**
+ * Registry of live {@link Hero} instances, hero construction and cleanup, lobby selection, and
+ * equipped Bug charm persistence.
+ */
 public class HeroManager {
     private static final Map<UUID, Hero> activeHeroes = new HashMap<>();
     private static final Map<UUID, Set<Charms>> equippedCharms = new HashMap<>();
 
-    public static Set<me.stolyy.heroes.ability.kit.bug.Charms> getEquippedCharms(UUID uuid) {
+    public static void initialize() {
+        Heroes plugin = Heroes.getInstance();
+        Bukkit.getPluginManager().registerEvents(new AbilityListener(), plugin);
+        Bukkit.getPluginManager().registerEvents(new MovementListener(), plugin);
+        Bukkit.getPluginManager().registerEvents(new JabListener(), plugin);
+    }
+
+    public static Set<Charms> getEquippedCharms(UUID uuid) {
         if (!equippedCharms.containsKey(uuid)) {
             // Load from persistent stats if not in memory
             Set<String> savedNames = PlayerStatsManager.getStats(uuid).equippedCharms();
@@ -26,7 +49,10 @@ public class HeroManager {
             for (String name : savedNames) {
                 try {
                     loaded.add(Charms.valueOf(name));
-                } catch (IllegalArgumentException ignored) {}
+                } catch (IllegalArgumentException e) {
+                    Heroes.getInstance().getLogger().warning(
+                            "Ignoring unknown saved charm '" + name + "' for player " + uuid);
+                }
             }
             if (!loaded.isEmpty()) {
                 equippedCharms.put(uuid, loaded);
@@ -38,13 +64,13 @@ public class HeroManager {
     }
 
     /** Bot-only: registers equipped charms in memory WITHOUT touching PlayerStats — an NPC uuid
-     *  reaching getStats mints a ghost stats file (the R7 leak). getEquippedCharms hits this map
+     * reaching getStats mints a ghost stats file . getEquippedCharms hits this map
      *  first, so the stats fallback is never consulted for the bot. */
     public static void setEquippedCharmsTransient(UUID uuid, Set<Charms> charms) {
         equippedCharms.put(uuid, charms);
     }
 
-    public static void setEquippedCharms(UUID uuid, Set<me.stolyy.heroes.ability.kit.bug.Charms> charms) {
+    public static void setEquippedCharms(UUID uuid, Set<Charms> charms) {
         equippedCharms.put(uuid, charms);
         // Persist to player stats
         Set<String> charmNames = new HashSet<>();
@@ -61,7 +87,7 @@ public class HeroManager {
         // Load charm configuration on first use if needed
         CharmConfig.load();
 
-        org.bukkit.configuration.file.YamlConfiguration config = HeroConfig.getConfig(heroName);
+        YamlConfiguration config = HeroConfig.getConfig(heroName);
         Hero hero = HeroBuilder.buildHero(config);
         hero.setController(controller);
         hero.resetStats(controller);
@@ -123,8 +149,14 @@ public class HeroManager {
     }
 
     public static void clear() {
+        for (Hero hero : new ArrayList<>(activeHeroes.values())) {
+            hero.cleanup();
+        }
         activeHeroes.clear();
         equippedCharms.clear();
+        AbilityListener.clear();
+        GreenHoodListener.clear();
+        MonsterGrab.clear();
     }
 
     /** Unlock check: default-unlocked in the YML or purchased/granted on the player's stats. */

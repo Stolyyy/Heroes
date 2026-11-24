@@ -8,8 +8,8 @@ import me.stolyy.heroes.game.Team;
 import me.stolyy.heroes.game.TeamColor;
 import me.stolyy.heroes.progression.PlayerStatsManager;
 import me.stolyy.heroes.vfx.effect.ItemBuilder;
+import me.stolyy.heroes.vfx.ui.GuiText;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -18,10 +18,14 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+/** Active match browser for joining spectators; cycles team heads across multi-player matches. */
 public class SpectateGUI extends GUI {
-    private static final int MAX_CONTENT_SLOTS = 45; // first 5 rows
+    private static final int MAX_CONTENT_SLOTS = 45;
     private static final int SLOT_CLOSE = 49;
     private static final long CYCLE_PERIOD_TICKS = 40L;
 
@@ -31,8 +35,7 @@ public class SpectateGUI extends GUI {
     private BukkitTask cycleTask;
 
     public SpectateGUI(Player player) {
-        super(player, 54, "Spectate Games");
-        startCycleTask();
+        super(player, 54, GuiText.raw("gui.spectate.title"));
     }
 
     @Override
@@ -58,13 +61,13 @@ public class SpectateGUI extends GUI {
 
     @Override
     protected void populate() {
-        Set<Game> games = GameManager.getActiveGames();
-        int slot = 0;
+        slotToGame.clear();
+        gamePlayers.clear();
+        currentPlayerIndex.clear();
 
-        for (Game game : games) {
-            // STARTING games are watchable too — join during the countdown, see the whole round.
-            if (game.gameState() != GameState.IN_PROGRESS
-                    && game.gameState() != GameState.STARTING) continue;
+        int slot = 0;
+        for (Game game : GameManager.getActiveGames()) {
+            if (game.gameState() != GameState.IN_PROGRESS && game.gameState() != GameState.STARTING) continue;
             if (slot >= MAX_CONTENT_SLOTS) break;
 
             List<Player> players = new ArrayList<>(game.onlinePlayers(false));
@@ -78,55 +81,61 @@ public class SpectateGUI extends GUI {
             slot++;
         }
 
-        inventoryItems.put(SLOT_CLOSE, ItemBuilder.from(Material.PAPER)
-                .name("<red>Close")
-                .modelData("gui", "general", "close")
-                .build());
+        inventoryItems.put(SLOT_CLOSE, closeItem());
+        startCycleTask();
     }
 
     private ItemStack createGameItem(Game game, Player displayPlayer) {
-        ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-        SkullMeta meta = (SkullMeta) head.getItemMeta();
-        if (meta == null) return head;
-
-        meta.setOwningPlayer(displayPlayer);
-        String starting = game.gameState() == GameState.STARTING ? " (Starting...)" : "";
-        meta.displayName(Component.text(game.gameMode().displayName() + " Game" + starting, NamedTextColor.GOLD));
+        String starting = game.gameState() == GameState.STARTING
+                ? GuiText.raw("gui.spectate.starting-suffix")
+                : "";
 
         List<Component> lore = new ArrayList<>();
         lore.add(Component.empty());
 
-        for (TeamColor teamColor : List.of(TeamColor.RED, TeamColor.BLUE)) {
+        for (TeamColor teamColor : TeamColor.values()) {
+            if (teamColor == TeamColor.SPECTATOR) continue;
             Team team = game.getTeams().get(teamColor);
             if (team == null || team.onlinePlayers().isEmpty()) continue;
 
-            lore.add(Component.text(teamColor.displayName() + " Team:", teamColor.textColor()));
+            lore.add(GuiText.component("gui.spectate.team-header", "team", teamColor.displayName())
+                    .color(teamColor.textColor()));
             for (Player p : team.onlinePlayers()) {
                 int elo = PlayerStatsManager.getStats(p).getElo(game.gameMode());
-                lore.add(Component.text("  " + p.getName() + " ", NamedTextColor.WHITE)
-                        .append(Component.text("(" + elo + ")", NamedTextColor.GRAY)));
+                lore.add(GuiText.component("gui.spectate.player-entry",
+                        "player", p.getName(), "elo", elo));
             }
         }
 
         Team spectators = game.getTeams().get(TeamColor.SPECTATOR);
         if (spectators != null && !spectators.onlinePlayers().isEmpty()) {
             lore.add(Component.empty());
-            lore.add(Component.text("Spectators:", NamedTextColor.GRAY));
+            lore.add(GuiText.component("gui.spectate.spectators-header"));
             for (Player p : spectators.onlinePlayers()) {
-                lore.add(Component.text("  " + p.getName(), NamedTextColor.DARK_GRAY));
+                lore.add(GuiText.component("gui.spectate.spectator-entry", "player", p.getName()));
             }
         }
 
         lore.add(Component.empty());
-        lore.add(Component.text("Click to spectate!", NamedTextColor.YELLOW));
+        lore.add(GuiText.component("gui.spectate.click-lore"));
 
-        meta.lore(lore);
-        head.setItemMeta(meta);
+        ItemStack head = ItemBuilder.from(Material.PLAYER_HEAD)
+                .name(GuiText.component("gui.spectate.item-name",
+                        "mode", game.gameMode().displayName(),
+                        "starting", starting))
+                .lore(lore)
+                .build();
+        head.editMeta(SkullMeta.class, meta -> meta.setOwningPlayer(displayPlayer));
         return head;
     }
 
     private void startCycleTask() {
+        if (cycleTask != null) return;
         cycleTask = Bukkit.getScheduler().runTaskTimer(Heroes.getInstance(), () -> {
+            if (GUIManager.getOpenGui(player) != this) {
+                cleanup();
+                return;
+            }
             boolean updated = false;
             for (int slot : gamePlayers.keySet()) {
                 List<Player> players = gamePlayers.get(slot);
@@ -149,8 +158,9 @@ public class SpectateGUI extends GUI {
 
     @Override
     public void cleanup() {
-        if (cycleTask != null && !cycleTask.isCancelled()) {
+        if (cycleTask != null) {
             cycleTask.cancel();
+            cycleTask = null;
         }
     }
 }

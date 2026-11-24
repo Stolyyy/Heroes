@@ -1,35 +1,28 @@
 package me.stolyy.heroes.command.general;
 
+import me.stolyy.heroes.command.HeroesCommand;
+import me.stolyy.heroes.command.TabComplete;
 import me.stolyy.heroes.game.PracticeArena;
 import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.util.GameConfigManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** /practice — toggles the lobby practice range (B24). */
-public class PracticeCommand extends Command {
+/** /practice — toggles the lobby practice range. */
+public class PracticeCommand extends HeroesCommand {
 
     public PracticeCommand() {
-        super("practice");
-        this.setDescription("Enter or leave the practice range");
-        this.setUsage("/practice [arena]");
-        this.setAliases(List.of("range", "train"));
+        super("practice", "Enter or leave the practice range",
+                "/practice [arena]", List.of("range", "train"));
     }
 
     @Override
-    public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("This command can only be used by players.");
-            return true;
-        }
-
+    protected void execute(Player player, String[] args) {
         if (PracticeManager.isPracticing(player)) {
             PracticeManager.exitPractice(player, true);
         } else {
@@ -40,19 +33,17 @@ public class PracticeCommand extends Command {
                 player.sendMessage(Component.text("Unknown practice arena: " + args[0] + " ("
                         + GameConfigManager.getPracticeArenas().stream().map(PracticeArena::name).collect(Collectors.joining(", "))
                         + ")", NamedTextColor.RED));
-                return true;
+                return;
             }
             PracticeManager.enterPractice(player, arena);
         }
-        return true;
     }
 
     @Override
-    public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
+    protected List<String> complete(CommandSender sender, String[] args) {
         if (args.length != 1) return List.of();
-        return GameConfigManager.getPracticeArenas().stream()
-                .map(PracticeArena::name)
-                .filter(n -> n.toLowerCase().startsWith(args[0].toLowerCase()))
-                .toList();
+        return TabComplete.startsWith(
+                GameConfigManager.getPracticeArenas().stream().map(PracticeArena::name),
+                args[0]);
     }
 }

@@ -1,5 +1,8 @@
 package me.stolyy.heroes.physics;
 
+import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.game.PracticeManager;
+import me.stolyy.heroes.game.SpawnProtection;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroManager;
 import me.stolyy.heroes.hero.minion.MinionHero;
@@ -8,28 +11,31 @@ import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.npc.NpcServiceProvider;
 import me.stolyy.heroes.progression.PlayerStats;
 import me.stolyy.heroes.progression.PlayerStatsManager;
-import me.stolyy.heroes.vfx.effect.ParticleBuilder;
+import me.stolyy.heroes.vfx.effect.BloodTrail;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Central damage, knockback, and stats-credit pipeline built via {@link #on(LivingEntity, LivingEntity)}.
+ */
 public class Interactions {
 
     // Recursion guard — prevents damage() from re-triggering JabListener
-    private static final Set<UUID> processingDamage = new java.util.HashSet<>();
-
-    public static boolean isProcessingDamage(UUID uuid) {
-        return processingDamage.contains(uuid);
-    }
+    private static final Set<UUID> processingDamage = new HashSet<>();
 
     // --- Named Constants ---
     private static final double WEIGHT_FACTOR = 0.125;
     private static final double WEIGHT_BASE = 0.875;
-    private static final double KB_DIVISOR = 2.5;
+    public static final double KB_DIVISOR = 2.5;
     private static final double HEALTH_FACTOR_MIN = 0.03;
     private static final double HEALTH_FACTOR_MAX = 0.04;
     private static final double HEALTH_FACTOR_BASE = 0.06;
@@ -38,12 +44,22 @@ public class Interactions {
     // Actual Bukkit health representing the "0 HP" alive buffer state. Bukkit kills at
     // setHealth(0), so displayed-0 must map to a small positive value; 0.5 renders as 0
     // everywhere the display casts to int. See the one-hit-buffer rule in applyDamage.
-    private static final double ZERO_HP_BUFFER = 0.5;
+    public static final double ZERO_HP_BUFFER = 0.5;
+    private static final double COSMETIC_HIT_DAMAGE = 0.4;
+    private static final double LETHAL_OVERKILL = 1000.0;
     private static final double DEFAULT_VERTICAL_KB_RATIO = 0.4;
     private static final double STEEP_PITCH_THRESHOLD = 80.0;
     private static final double LOW_PITCH_MIN = -10.0;
     private static final double LOW_PITCH_MAX = 20.0;
     private static final double STEEP_VERTICAL_DAMPEN = 0.9;
+
+    public static void initialize() {
+        Bukkit.getPluginManager().registerEvents(new KnockbackListener(), Heroes.getInstance());
+    }
+
+    public static boolean isProcessingDamage(UUID uuid) {
+        return processingDamage.contains(uuid);
+    }
 
     // --- KB Direction Types ---
     public enum KBType {
@@ -147,39 +163,39 @@ public class Interactions {
             // Spawn protection: landing a hit forfeits the ATTACKER's own protection, and a
             // protected VICTIM takes neither damage nor knockback (the hit resolves as nothing —
             // no trigger fires, so a parry can't "succeed" against it either).
-            me.stolyy.heroes.game.SpawnProtection.breakFor(attacker.getUniqueId());
-            if (me.stolyy.heroes.game.SpawnProtection.isProtected(victim)) return;
+            SpawnProtection.breakFor(attacker.getUniqueId());
+            if (SpawnProtection.isProtected(victim)) return;
 
             if ((knockback != 0 || verticalKnockback != 0) && applyKnockback(dir)) {
-                ParticleBuilder.blood(victim);
+                BloodTrail.start(victim);
             }
             if (damage != 0) applyDamage(damage, abilityName, attacker, victim);
         }
 
-        /** @return whether a velocity was actually written to the victim */
         private boolean applyKnockback(Vector direction) {
             Hero hero = HeroManager.getHero(victim.getUniqueId());
             // Practice dummies have no Hero (no kit, no stat block), but eating knockback is the
             // whole point of a target dummy — it's the feedback for kb tuning. They ride the same
             // math with a fixed mid-roster weight and no mitigation. Anything else without a Hero
             // stays motionless, as before.
-            boolean dummy = hero == null && me.stolyy.heroes.game.PracticeManager.isDummy(victim);
+            boolean dummy = hero == null && PracticeManager.isDummy(victim);
             if (hero == null && !dummy) return false;
 
             // Negative knockback = pull toward attacker (flip direction)
-            if (knockback < 0) {
+            double kb = this.knockback;
+            if (kb < 0) {
                 direction = direction.clone().multiply(-1);
-                knockback = Math.abs(knockback);
+                kb = Math.abs(kb);
             }
 
             double weight = hero != null ? hero.getAttributes().getWeight()
-                    : me.stolyy.heroes.game.PracticeManager.DUMMY_WEIGHT;
+                    : PracticeManager.DUMMY_WEIGHT;
             double kbTakenMult = hero != null ? hero.getAttributes().getKnockbackMultiplier() : 1.0;
             double falloff = falloffMultiplier();
-            double finalKb = calculateMagnitude(knockback, weight, kbTakenMult) * falloff;
+            double finalKb = calculateMagnitude(kb, weight, kbTakenMult) * falloff;
             double finalYKb = calculateMagnitude(verticalKnockback, weight, kbTakenMult) * falloff;
 
-            // Attacker-side knockback-dealt multiplier (A2) — the symmetric counterpart to the
+            // Attacker-side knockback-dealt multiplier — the symmetric counterpart to the
             // victim's knockbackMultiplier (kb taken), layered after all other modifiers.
             Hero attackerHero = HeroManager.getHero(attacker.getUniqueId());
             if (attackerHero != null) {
@@ -188,7 +204,7 @@ public class Interactions {
                 finalYKb *= dealtMult;
             }
 
-            // Per-component post-multiplier skip (B18.1): when the victim's multipliers zero
+            // Per-component post-multiplier skip: when the victim's multipliers zero
             // the knockback out entirely (Parry window), the velocity write is SKIPPED so a
             // zeroed vector can't act as a micro-stun — but the trigger still fires, because
             // that trigger is how Parry detects a successful block. Mirrors the damage side,
@@ -200,7 +216,7 @@ public class Interactions {
 
             Vector velocity = calculateVelocity(direction, finalKb, finalYKb);
             if (hero != null) hero.triggerKnockbackTaken(attacker, velocity);
-            victim.setVelocity(velocity);
+            applyVelocity(victim, velocity);
             return true;
         }
 
@@ -225,7 +241,7 @@ public class Interactions {
 
             double healthMult = 1.0;
             if (useHealthScaling) {
-                double maxHP = victim.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
+                double maxHP = victim.getAttribute(Attribute.MAX_HEALTH).getValue();
                 double missingHP = maxHP - victim.getHealth();
                 double healthFactor = Math.max(HEALTH_FACTOR_MIN, Math.min(HEALTH_FACTOR_MAX, HEALTH_FACTOR_BASE - HEALTH_FACTOR_KB_COEFF * scaled));
                 healthMult = 1 + healthFactor * missingHP;
@@ -299,6 +315,19 @@ public class Interactions {
 
     // --- Static Helpers ---
 
+    /**
+     * Writes velocity to {@code target}, routing heroes through their {@link me.stolyy.heroes.control.Controller}
+     * and falling back to the Bukkit entity for non-hero targets (practice dummies).
+     */
+    public static void applyVelocity(LivingEntity target, Vector velocity) {
+        Hero hero = HeroManager.getHero(target.getUniqueId());
+        if (hero != null && hero.getController() != null) {
+            hero.getController().setVelocity(velocity);
+        } else {
+            target.setVelocity(velocity);
+        }
+    }
+
     private static void clampComponents(Vector vel) {
         double hLen = Math.sqrt(vel.getX() * vel.getX() + vel.getZ() * vel.getZ());
         if (hLen > MAX_VELOCITY_COMPONENT) {
@@ -323,21 +352,19 @@ public class Interactions {
      * answers for entities the library still owns, so the metadata check remains the cheap first
      * pass and the fallback when the registry is a no-op (Citizens absent).
      */
-    public static boolean isRealPlayer(org.bukkit.entity.Entity entity) {
+    public static boolean isRealPlayer(Entity entity) {
         return entity instanceof Player
                 && !entity.hasMetadata("NPC")
                 && !NpcServiceProvider.get().isNpcEntity(entity);
     }
 
-    /**
-     * The real player a hit should be credited to: the attacker themselves, or a minion's owner.
-     * Reuses {@link me.stolyy.heroes.game.Game#creditedId} so kill credit and damage credit can never
-     * disagree about who owns a minion. Returns null when nothing creditable is behind the hit.
-     */
+    // The real player a hit should be credited to: the attacker themselves, or a minion's owner.
+    // Reuses KillCredit#creditedId so kill credit and damage credit can never disagree about who
+    // owns a minion. Returns null when nothing creditable is behind the hit.
     private static Player creditedAttacker(LivingEntity attacker) {
-        me.stolyy.heroes.game.Game game = GameManager.getEntityGame(attacker);
+        Game game = GameManager.getEntityGame(attacker);
         if (game != null) {
-            Player credited = org.bukkit.Bukkit.getPlayer(game.creditedId(attacker.getUniqueId()));
+            Player credited = Bukkit.getPlayer(game.credit().creditedId(attacker.getUniqueId()));
             if (isRealPlayer(credited)) return credited;
         }
         return isRealPlayer(attacker) ? (Player) attacker : null;
@@ -354,7 +381,10 @@ public class Interactions {
             damage *= victimHero.getAttributes().getDamageMultiplier();
         }
 
-        if (!Double.isFinite(damage) || damage <= 0) {
+        if (!Double.isFinite(damage)) {
+            throw new IllegalArgumentException("Non-finite damage (" + damage + ") for ability '" + abilityName + "'");
+        }
+        if (damage <= 0) {
             // Fully mitigated, but the trigger STILL fires: it is how Sgt Parry detects a
             // successful block, and a pure-damage hit carries no knockback trigger to fall back
             // on. Mirrors the knockback side's zeroed-multiplier return.
@@ -367,7 +397,7 @@ public class Interactions {
         // to GameListener's out-of-bounds void path.
         Game victimGame = GameManager.getEntityGame(victim);
         if (victimGame != null) {
-            victimGame.recordDamageCredit(victim.getUniqueId(), attacker.getUniqueId(), abilityName);
+            victimGame.credit().recordHit(victim.getUniqueId(), attacker.getUniqueId(), abilityName);
         }
 
         // Track damage stats against the CREDITED player, so a minion's damage lands on its owner
@@ -388,7 +418,7 @@ public class Interactions {
             PlayerStatsManager.getStats(attackerPlayer).recordDamage(abilityName, damage);
         }
         if (victimGame != null) {
-            victimGame.tallyDamage(attacker.getUniqueId(), victim.getUniqueId(), abilityName, damage);
+            victimGame.credit().tallyDamage(attacker.getUniqueId(), victim.getUniqueId(), abilityName, damage);
         }
 
         processingDamage.add(victim.getUniqueId());
@@ -409,14 +439,14 @@ public class Interactions {
                     // can stop either. The entity vanishes and every uuid-keyed game map orphans.
                     // So: cosmetic hit for the hurt flash and damager bookkeeping, park them in the
                     // buffer, and run the death ourselves.
-                    victim.damage(0.4, attacker);
+                    victim.damage(COSMETIC_HIT_DAMAGE, attacker);
                     victim.setHealth(ZERO_HP_BUFFER);
                     victimGame.handleDeath(victimPlayer, attacker);
                 } else {
                     // Real players — and practice NPCs, which have no game to run the death for
                     // them — keep the vanilla path: it preserves killer attribution and routes
                     // through the normal (cancelled) death event pipeline.
-                    victim.damage(current + damage + 1000, attacker);
+                    victim.damage(current + damage + LETHAL_OVERKILL, attacker);
                 }
             } else {
                 double newHP = current - damage;
@@ -424,7 +454,7 @@ public class Interactions {
 
                 // Cosmetic hit: hurt animation/sound + damage-event bookkeeping (last-damager
                 // tracking). Never lethal here since current >= 1.0. Real HP is set below.
-                victim.damage(0.4, attacker);
+                victim.damage(COSMETIC_HIT_DAMAGE, attacker);
                 victim.setHealth(newHP);
 
                 // Minions excluded: the health objectives are keyed by entity NAME, so every hit on
@@ -433,7 +463,7 @@ public class Interactions {
                 if (victim instanceof Player victimPlayer && !(victimHero instanceof MinionHero)) {
                     Game game = GameManager.getEntityGame(victimPlayer.getUniqueId());
                     if (game != null) {
-                        game.getVisuals().updateHealthScore(victimPlayer, (int) newHP);
+                        game.onHealthChanged(victimPlayer);
                     }
                 }
             }

@@ -1,20 +1,23 @@
 package me.stolyy.heroes.vfx.ui.gui;
 
+import me.stolyy.heroes.game.GameBot;
 import me.stolyy.heroes.vfx.effect.ItemBuilder;
+import me.stolyy.heroes.vfx.effect.SoundBuilder;
+import me.stolyy.heroes.vfx.ui.GuiText;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public abstract class GUI implements InventoryHolder {
@@ -25,10 +28,14 @@ public abstract class GUI implements InventoryHolder {
     protected Player player;
 
     public GUI(Player player, int size, String title) {
+        this(player, size, Component.text(title));
+    }
+
+    public GUI(Player player, int size, Component title) {
         this.player = player;
         this.size = size;
         this.inventoryItems = new HashMap<>(size);
-        this.inventory = Bukkit.createInventory(this, size, Component.text(title));
+        this.inventory = Bukkit.createInventory(this, size, title);
     }
 
     @Override
@@ -63,15 +70,7 @@ public abstract class GUI implements InventoryHolder {
         return null;
     }
 
-    // Helper Methods
-
-    protected ItemStack createItem(Material material, String name) {
-        return ItemBuilder.from(material)
-                .name("<white>" + name)
-                .build();
-    }
-
-    /** Shared background filler (B20.4) — textured via the gui_general_filler model key. */
+    /** Shared background filler textured via the {@code gui_general_filler} model key. */
     protected ItemStack fillerItem() {
         return ItemBuilder.from(Material.GRAY_STAINED_GLASS_PANE)
                 .name(Component.empty())
@@ -79,7 +78,21 @@ public abstract class GUI implements InventoryHolder {
                 .build();
     }
 
-    /** Fills every slot without content with the background filler. Call before super.update(). */
+    protected ItemStack backItem() {
+        return ItemBuilder.from(Material.PAPER)
+                .name(GuiText.component("gui.nav.back"))
+                .modelData("gui", "navigation", "back")
+                .build();
+    }
+
+    protected ItemStack closeItem() {
+        return ItemBuilder.from(Material.PAPER)
+                .name(GuiText.component("gui.nav.close"))
+                .modelData("gui", "general", "close")
+                .build();
+    }
+
+    /** Fills every slot without content with the background filler. Call before {@code super.update()}. */
     protected void fillEmptySlots() {
         ItemStack filler = fillerItem();
         for (int i = 0; i < size; i++) {
@@ -88,32 +101,47 @@ public abstract class GUI implements InventoryHolder {
     }
 
     protected ItemStack createPlayerHead(Player target) {
-        ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-        SkullMeta meta = (SkullMeta) head.getItemMeta();
-        if (meta != null) {
-            meta.setOwningPlayer(target);
-            meta.displayName(Component.text(target.getName(), NamedTextColor.GOLD)
-                    .decoration(TextDecoration.ITALIC, false));
-            head.setItemMeta(meta);
-        }
+        return playerHead(target, List.of());
+    }
+
+    protected ItemStack playerHead(Player target, List<Component> lore) {
+        ItemStack head = ItemBuilder.from(Material.PLAYER_HEAD)
+                .name(Component.text(target.getName(), NamedTextColor.GOLD))
+                .lore(lore)
+                .build();
+        head.editMeta(SkullMeta.class, meta -> meta.setOwningPlayer(target));
         return head;
+    }
+
+    protected ItemStack botHead(GameBot bot, List<Component> lore) {
+        return ItemBuilder.from(Material.PLAYER_HEAD)
+                .name(GuiText.component("gui.custom.bot-head-name", "name", bot.getName()))
+                .lore(lore)
+                .build();
     }
 
     protected void highlightItem(ItemStack item) {
         if (item == null) return;
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.setEnchantmentGlintOverride(true);
-            item.setItemMeta(meta);
-        }
+        item.editMeta(meta -> meta.setEnchantmentGlintOverride(true));
     }
 
-    protected void removeHighlight(ItemStack item) {
-        if (item == null) return;
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.setEnchantmentGlintOverride(false);
-            item.setItemMeta(meta);
-        }
+    public void playClick() {
+        SoundBuilder.of(Sound.UI_BUTTON_CLICK).pitch(1.0f).play(player);
+    }
+
+    public void playConfirm() {
+        SoundBuilder.of(Sound.BLOCK_NOTE_BLOCK_PLING).pitch(1.0f).play(player);
+    }
+
+    public void playPromptConfirm() {
+        SoundBuilder.of(Sound.BLOCK_NOTE_BLOCK_PLING).pitch(1.2f).play(player);
+    }
+
+    public void playError() {
+        SoundBuilder.of(Sound.BLOCK_NOTE_BLOCK_BASS).pitch(0.7f).play(player);
+    }
+
+    public void playSuccess() {
+        SoundBuilder.of(Sound.ENTITY_PLAYER_LEVELUP).pitch(1.0f).play(player);
     }
 }

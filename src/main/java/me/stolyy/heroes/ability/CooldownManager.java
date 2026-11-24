@@ -3,19 +3,21 @@ package me.stolyy.heroes.ability;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.BaseAbility;
 import me.stolyy.heroes.control.Controller;
-import me.stolyy.heroes.control.PlayerController;
 import me.stolyy.heroes.vfx.cosmetic.CosmeticManager;
 import me.stolyy.heroes.vfx.effect.ItemBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Drives the per-hero ability HUD each tick: hotbar durability bars, passive reference cards,
+ * primary active/reload action bars, and SMASH ready/active status titles.
+ */
 public class CooldownManager {
     private final Map<UUID, Boolean> smashReadyState = new HashMap<>();
     private final Map<UUID, Integer> ultTitleTicks = new HashMap<>();
@@ -39,16 +41,16 @@ public class CooldownManager {
 
         // Visuals only apply to players
         if (controller.isPlayer()) {
-            Player player = ((PlayerController) controller).getPlayer();
-            ItemStack item = player.getInventory().getItem(slot);
+            ItemStack item = controller.getInventoryItem(slot);
             
             if (item != null && item.getType() == Material.STICK) {
                 Ammo ammo = (ability instanceof BaseAbility base) ? base.getAmmo() : null;
                 // Variant families (Bug's directional secondary) render whichever timer actually
                 // gates the cast the player is aiming; every other ability returns its own cooldown.
                 Cooldown display = ability.getDisplayCooldown(hero);
-                boolean ready = display.isReady(currentEnergy);
-                float progress = display.getVisualProgress(currentEnergy);
+                boolean windingUp = ability instanceof BaseAbility base && base.isWindingUp();
+                boolean ready = !windingUp && display.isReady(currentEnergy);
+                float progress = windingUp ? 1.0f : display.getVisualProgress(currentEnergy);
 
                 // 1. Durability
                 ItemBuilder.applyDamage(item, computeDurabilityDamage(ammo, progress));
@@ -135,18 +137,15 @@ public class CooldownManager {
         }
     }
 
-    /**
-     * Passive reference cards (PAPER, {@link CosmeticManager#resolvePassiveSlots}) get the same
-     * durability-bar cooldown treatment as the STICK ability slots, plus a 4-stage charging
-     * texture (see {@code gui_passive_charging-0..3} in the resource pack) that ramps toward the
-     * animated "ready" look as the cooldown completes. Display only — passive energy/ammo/execute
-     * logic lives entirely elsewhere.
-     */
+    // Passive reference cards (PAPER, CosmeticManager#resolvePassiveSlots) get the same
+    // durability-bar cooldown treatment as the STICK ability slots, plus a 4-stage charging
+    // texture (see gui_passive_charging-0..3 in the resource pack) that ramps toward the
+    // animated "ready" look as the cooldown completes. Display only — passive energy/ammo/execute
+    // logic lives entirely elsewhere.
     private void updatePassiveVisuals(Hero hero, Ability passive, int slot, int currentEnergy, Controller controller) {
         if (passive == null || !controller.isPlayer()) return;
 
-        Player player = ((PlayerController) controller).getPlayer();
-        ItemStack item = player.getInventory().getItem(slot);
+        ItemStack item = controller.getInventoryItem(slot);
         if (item == null || item.getType() != Material.PAPER) return;
 
         Ammo ammo = (passive instanceof BaseAbility base) ? base.getAmmo() : null;
@@ -170,7 +169,7 @@ public class CooldownManager {
         }
     }
 
-    /** Shared by the STICK ability path and the PAPER passive path so their bars can't drift. */
+    // Shared by the STICK ability path and the PAPER passive path so their bars can't drift.
     private static int computeDurabilityDamage(Ammo ammo, float progress) {
         int damage = (int) (progress * 100);
         if (ammo != null && ammo.getMode() == Ammo.Mode.CLIP && ammo.getCurrent() > 0) {
@@ -204,11 +203,9 @@ public class CooldownManager {
         controller.sendActionBar(bar);
     }
 
-    /**
-     * Primary mid-active-phase: the trigger is dead, so the bar stays fully red and carries the
-     * ability's own status text ({@link Ability#getActiveStatusText()}, e.g. "Swapping") rather
-     * than a cooldown countdown that would read as ready-ish.
-     */
+    // Primary mid-active-phase: the trigger is dead, so the bar stays fully red and carries the
+    // ability's own status text (Ability#getActiveStatusText(), e.g. "Swapping") rather than a
+    // cooldown countdown that would read as ready-ish.
     private void sendActivePrimaryActionBar(Controller controller, Ability ability, Ammo ammo) {
         String status = ability.getActiveStatusText();
         if (status == null) status = "Ready in";
@@ -226,7 +223,7 @@ public class CooldownManager {
         controller.sendActionBar(bar);
     }
 
-    /** CLIP reload: the bar fills red→green with reload progress instead of showing cooldown. */
+    // CLIP reload: the bar fills red→green with reload progress instead of showing cooldown.
     private void sendReloadActionBar(Controller controller, Ammo ammo) {
         int doneCount = (int) (ammo.getReloadProgress() * 10);
         double seconds = ammo.getReloadRemainingMs() / 1000.0;
@@ -262,7 +259,6 @@ public class CooldownManager {
         smashReadyState.put(uuid, currentlyReady);
     }
 
-    /** Green/yellow/red by remaining thirds of the active window. */
     private static NamedTextColor remainingColor(long remainingMs, long totalMs) {
         double fraction = remainingMs / (double) totalMs;
         if (fraction > 2.0 / 3) return NamedTextColor.GREEN;

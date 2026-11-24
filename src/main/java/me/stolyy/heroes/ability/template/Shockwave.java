@@ -1,21 +1,30 @@
 package me.stolyy.heroes.ability.template;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.ability.AbilityType;
 import me.stolyy.heroes.hero.Hero;
-import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
+import me.stolyy.heroes.physics.Hitbox;
 import me.stolyy.heroes.physics.Interactions;
+import me.stolyy.heroes.util.Configs;
+import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.vfx.effect.BlockDisplayBuilder;
 import me.stolyy.heroes.vfx.effect.SoundEffect;
 import me.stolyy.heroes.vfx.effect.VisualEffect;
-import me.stolyy.heroes.physics.Hitbox;
 import org.bukkit.Location;
-import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
+import java.util.UUID;
 
-public abstract class Shockwave extends BaseAbility {
+/**
+ * Directional ground shockwave template sweeping consecutive column checks and optional rising
+ * floor block displays.
+ */
+public class Shockwave extends BaseAbility {
     protected double height;
     protected boolean piercesWalls;
     protected boolean showBlockWave;
@@ -24,23 +33,31 @@ public abstract class Shockwave extends BaseAbility {
     protected VisualEffect waveVisual, hitVisual;
 
     public Shockwave(ConfigurationSection config, HeroSkin skin) {
-        super(config, skin);
-        this.height = this.config.getDouble("height", 2.0);
-        this.piercesWalls = this.config.getBoolean("pierces_walls", false);
-        this.showBlockWave = this.config.getBoolean("show_block_wave", true);
+        this(config, skin, null);
+    }
 
-        this.activationSound = new SoundEffect(this.config.getConfigurationSection("visuals.activation_sound"));
-        this.hitSound = new SoundEffect(this.config.getConfigurationSection("visuals.hit_sound"));
-        
-        this.waveVisual = new VisualEffect(this.config.getConfigurationSection("visuals.wave_visual"));
-        this.hitVisual = new VisualEffect(this.config.getConfigurationSection("visuals.hit_visual"));
+    public Shockwave(ConfigurationSection config, HeroSkin skin, AbilityType explicitType) {
+        super(config, skin, explicitType);
+        this.height = Configs.orTemplate(this.config, "height", "shockwave.height");
+        this.piercesWalls = Configs.orTemplateBoolean(this.config, "pierces_walls", "shockwave.pierces_walls");
+        this.showBlockWave = Configs.orTemplateBoolean(this.config, "show_block_wave", "shockwave.show_block_wave");
+
+        this.activationSound = SoundEffect.optional(this.config, "visuals.activation_sound");
+        this.hitSound = SoundEffect.optional(this.config, "visuals.hit_sound");
+
+        this.waveVisual = VisualEffect.optional(this.config, "visuals.wave_visual");
+        this.hitVisual = VisualEffect.optional(this.config, "visuals.hit_visual");
     }
 
     @Override
     public void perform(Hero hero) {
+        perform(hero, null);
+    }
+
+    public void perform(Hero hero, @Nullable Map<UUID, Long> sharedHitHistory) {
         activationSound.play(hero.getController().getLocation(), hero.getController());
-        Location center = hero.getController().getEntity().getLocation();
-        new ShockwaveTask(hero, center).runTaskTimer(Heroes.getInstance(), 0, 1);
+        Location center = hero.getController().getLocation();
+        new ShockwaveTask(hero, center, sharedHitHistory).runTaskTimer(Heroes.getInstance(), 0, 1);
     }
 
     private class ShockwaveTask extends BukkitRunnable {
@@ -50,15 +67,19 @@ public abstract class Shockwave extends BaseAbility {
         private final double expansionPerTick = radius / 5.0;
         private final Hitbox hitbox;
 
-        public ShockwaveTask(Hero hero, Location center) {
+        public ShockwaveTask(Hero hero, Location center, @Nullable Map<UUID, Long> sharedHitHistory) {
             this.hero = hero;
             this.center = center;
             this.hitbox = Hitbox.cylinder(center, new Vector(0, 1, 0), radius, height)
                     .exclude(hero.getController().getEntity())
                     .excludeTeammates(hero.getController().getEntity())
                     .checkWalls(!piercesWalls)
-                    .trackHits()
                     .onHit((victim) -> onHit(hero, victim, center));
+            if (sharedHitHistory != null) {
+                this.hitbox.shareHitHistory(sharedHitHistory);
+            } else {
+                this.hitbox.trackHits();
+            }
         }
 
         @Override
@@ -85,35 +106,21 @@ public abstract class Shockwave extends BaseAbility {
                 double x = center.getX() + Math.cos(angle) * r;
                 double z = center.getZ() + Math.sin(angle) * r;
                 Location loc = new Location(center.getWorld(), x, center.getY() - 1, z);
-                Block b = loc.getBlock();
-                if (b.getType().isAir()) b = loc.clone().add(0, -1, 0).getBlock();
-                if (!b.getType().isAir() && b.getType().isSolid()) {
-                    Location spawnLoc = b.getLocation().add(0.5, 0, 0.5);
-                    BlockDisplayBuilder.create(spawnLoc)
-                            .block(b.getType())
-                            .duration(5)
-                            .translation(0, 1.0f, 0)
-                            .brightness(15, 15)
-                            .spawn();
-                }
+                BlockDisplayBuilder.riseAndFall(loc, 1.0f, 5);
             }
         }
     }
 
-    protected double calcDamage(Hero hero, org.bukkit.entity.LivingEntity victim) { return damage; }
-    protected double calcKnockback(Hero hero, org.bukkit.entity.LivingEntity victim) { return knockback; }
-
-    protected void applyInteraction(Hero hero, org.bukkit.entity.LivingEntity victim, Location center) {
+    protected void applyInteraction(Hero hero, LivingEntity victim, Location center) {
+        Interactions.InteractionBuilder interaction = hit(hero, victim);
         double dmg = calcDamage(hero, victim);
         double kb = calcKnockback(hero, victim);
-        Interactions.on(hero.getController().getEntity(), victim).abilityName(getName()).damage(dmg).knockback(kb).execute();
+        interaction.damage(dmg).knockback(kb).execute();
     }
 
-    protected void onHit(Hero hero, org.bukkit.entity.LivingEntity victim, Location center) {
+    protected void onHit(Hero hero, LivingEntity victim, Location center) {
         hitSound.play(victim.getEyeLocation(), hero.getController());
         hitVisual.play(victim.getEyeLocation());
         applyInteraction(hero, victim, center);
     }
-
-    @Override public void onHit(Hero attacker, org.bukkit.entity.LivingEntity victim) { }
 }

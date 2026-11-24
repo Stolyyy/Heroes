@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
  * what HP each surviving hero carries between rounds.
  *
  * <p><b>Sentinel:</b> {@code -1.0} = dead/spent. 0.0 is a legal ALIVE value (the 0-HP
- * one-hit-buffer rule, B29.1), so deadness cannot be encoded as 0. Absent key = untouched
+ * one-hit-buffer rule,), so deadness cannot be encoded as 0. Absent key = untouched
  * hero at full HP.
  *
  * <p>Ephemeral per-series — carry-over is between ROUNDS of one series. Cross-session
@@ -44,12 +44,6 @@ public class SeriesPlayerState {
         heroHp.put(heroName, hp);
     }
 
-    /** Stored carry-over HP, or {@code maxHp} for an untouched hero. */
-    public double getHeroHp(String heroName, double maxHp) {
-        Double hp = heroHp.get(heroName);
-        return (hp == null || hp == DEAD) ? maxHp : hp;
-    }
-
     /** Raw stored value: null = untouched, {@link #DEAD} = dead/spent, else carry-over HP. */
     public Double storedHp(String heroName) {
         return heroHp.get(heroName);
@@ -60,9 +54,5 @@ public class SeriesPlayerState {
                 .filter(e -> e.getValue() == DEAD)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
-    }
-
-    public void reset() {
-        heroHp.clear();
     }
 }

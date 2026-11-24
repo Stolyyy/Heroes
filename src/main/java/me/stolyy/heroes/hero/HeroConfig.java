@@ -1,6 +1,7 @@
 package me.stolyy.heroes.hero;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.util.YmlSurgeon;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -9,8 +10,20 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 import java.io.File;
-import java.util.*;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * Handles reading/writing to hero yml files for the balance command,
@@ -20,6 +33,13 @@ public class HeroConfig {
 
     private static final Map<String, YamlConfiguration> heroConfigs = new HashMap<>();
     private static final Set<String> adminOnlyHeroes = new HashSet<>();
+    private static final Map<String, String> HERO_ALIASES = Map.ofEntries(
+            Map.entry("void", "voidcrawler"),
+            Map.entry("skull", "skullfire"),
+            Map.entry("spiderman", "spooderman"),
+            Map.entry("spidey", "spooderman"),
+            Map.entry("spider", "spooderman")
+    );
     private static YamlConfiguration defaultConfig;
 
     // -----------------------------------------------------------------------
@@ -37,12 +57,10 @@ public class HeroConfig {
 
         // Load Default Config
         File defaultFile = new File(heroesFolder, "default.yml");
-        if (defaultFile.exists()) {
-            defaultConfig = YamlConfiguration.loadConfiguration(defaultFile);
-        } else {
-            Heroes.getInstance().getLogger().warning("No default.yml found in heroes folder!");
-            defaultConfig = new YamlConfiguration();
+        if (!defaultFile.exists()) {
+            throw new IllegalStateException("Missing required heroes/default.yml in " + heroesFolder.getPath());
         }
+        defaultConfig = YamlConfiguration.loadConfiguration(defaultFile);
 
         // Load Hero Configs
         File[] files = heroesFolder.listFiles((dir, name) -> name.endsWith(".yml") && !name.equals("default.yml"));
@@ -115,6 +133,33 @@ public class HeroConfig {
         return new ArrayList<>(heroConfigs.keySet());
     }
 
+    /** Resolves an optional command alias to its canonical lowercase hero id. */
+    public static String resolve(String input) {
+        String lower = input.toLowerCase(Locale.ROOT);
+        return HERO_ALIASES.getOrDefault(lower, lower);
+    }
+
+    public static Map<String, String> aliases() {
+        return HERO_ALIASES;
+    }
+
+    /** Underscore-escaped ability display names configured on {@code heroName}, plus {@code Jab}. */
+    public static List<String> abilityDisplayNames(String heroName) {
+        List<String> names = new ArrayList<>();
+        names.add("Jab");
+        YamlConfiguration config = getConfig(heroName);
+        if (config == null) return names;
+        for (String slot : List.of("primary", "secondary", "smash")) {
+            String name = config.getString("abilities." + slot + ".name");
+            if (name != null && !name.isEmpty()) names.add(name.replace(' ', '_'));
+        }
+        for (Map<?, ?> passive : config.getMapList("abilities.passives")) {
+            Object name = passive.get("name");
+            if (name != null && !name.toString().isEmpty()) names.add(name.toString().replace(' ', '_'));
+        }
+        return names;
+    }
+
     public static boolean exists(String heroName) {
         if (heroName.equalsIgnoreCase("default")) return defaultConfig != null;
         return heroConfigs.containsKey(heroName.toLowerCase());
@@ -124,20 +169,25 @@ public class HeroConfig {
         return adminOnlyHeroes.contains(heroName.toLowerCase());
     }
 
-    // Unlock economy (B25): per-hero unlock block, falling back to default.yml's.
-    public static boolean isDefaultUnlocked(String heroName) {
+    // Unlock economy: per-hero unlock block, falling back to default.yml's via copyDefaults.
+    private static YamlConfiguration requireHeroConfig(String heroName) {
         YamlConfiguration config = getConfig(heroName);
-        return config != null && config.getBoolean("unlock.default-unlocked", false);
+        if (config == null) {
+            throw new IllegalStateException("Unknown hero config: " + heroName);
+        }
+        return config;
+    }
+
+    public static boolean isDefaultUnlocked(String heroName) {
+        return Configs.requireBoolean(requireHeroConfig(heroName), "unlock.default-unlocked");
     }
 
     public static int getUnlockCost(String heroName) {
-        YamlConfiguration config = getConfig(heroName);
-        return config != null ? config.getInt("unlock.token-cost", 1) : 1;
+        return Configs.requireInt(requireHeroConfig(heroName), "unlock.token-cost");
     }
 
     public static int getSmashLevelRequirement(String heroName) {
-        YamlConfiguration config = getConfig(heroName);
-        return config != null ? config.getInt("unlock.smash-level-requirement", 0) : 0;
+        return Configs.requireInt(requireHeroConfig(heroName), "unlock.smash-level-requirement");
     }
 
     /** Display name: the hero yml's {@code name:} field when present (so renaming a hero
@@ -146,9 +196,9 @@ public class HeroConfig {
         YamlConfiguration config = getConfig(heroName.toLowerCase());
         String display = config != null ? config.getString("name") : null;
         if (display != null && !display.isEmpty()) return display;
-        return java.util.Arrays.stream(heroName.split("_"))
+        return Arrays.stream(heroName.split("_"))
                 .map(s -> s.substring(0, 1).toUpperCase() + s.substring(1).toLowerCase())
-                .collect(java.util.stream.Collectors.joining(" "));
+                .collect(Collectors.joining(" "));
     }
 
     /**
@@ -232,8 +282,8 @@ public class HeroConfig {
 
         String original;
         try {
-            original = java.nio.file.Files.readString(file.toPath(), java.nio.charset.StandardCharsets.UTF_8);
-        } catch (java.io.IOException e) {
+            original = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
             throw new IllegalStateException("Could not read " + file.getName(), e);
         }
 
@@ -245,8 +295,8 @@ public class HeroConfig {
         String now = getValue(heroName, path);
         if (now == null || !now.equalsIgnoreCase(value)) {
             try {
-                java.nio.file.Files.writeString(file.toPath(), original, java.nio.charset.StandardCharsets.UTF_8);
-            } catch (java.io.IOException e) {
+                Files.writeString(file.toPath(), original, StandardCharsets.UTF_8);
+            } catch (IOException e) {
                 throw new IllegalStateException("Bad edit AND restore failed for " + file.getName(), e);
             }
             reload(heroName);
@@ -307,11 +357,9 @@ public class HeroConfig {
     // List-aware path resolution (for passives and other YAML list sections)
     // -----------------------------------------------------------------------
 
-    /**
-     * Walks a path that may traverse YAML lists by matching the "type" field.
-     * e.g., ["abilities", "passives", "bulkslam", "damage"] resolves through the
-     * passives list to find the entry with type=bulkslam, then returns its damage value.
-     */
+    // Walks a path that may traverse YAML lists by matching the "type" field.
+    // e.g., ["abilities", "passives", "bulkslam", "damage"] resolves through the
+    // passives list to find the entry with type=bulkslam, then returns its damage value.
     private static Object resolveValue(YamlConfiguration config, String[] segments) {
         Object current = config;
         for (String segment : segments) {

@@ -58,11 +58,9 @@ public class GlowingEntitiesGlowService implements GlowService {
         }
     }
 
-    /**
-     * The library's whole API is checked-exception based because every call is reflective NMS. Rethrown
-     * unchecked rather than swallowed: a failure here means the library no longer matches the server
-     * build, which has to be visible rather than degrade into silently missing outlines.
-     */
+    // The library's whole API is checked-exception based because every call is reflective NMS.
+    // Rethrown unchecked rather than swallowed: a failure here means the library no longer matches
+    // the server build, which has to be visible rather than degrade into silently missing outlines.
     private IllegalStateException failure(String what, ReflectiveOperationException cause) {
         return new IllegalStateException("GlowingEntities failed to " + what, cause);
     }

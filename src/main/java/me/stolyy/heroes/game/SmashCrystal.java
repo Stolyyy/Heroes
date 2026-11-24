@@ -1,6 +1,7 @@
 package me.stolyy.heroes.game;
 
 import me.stolyy.heroes.util.GameConfigManager;
+import me.stolyy.heroes.vfx.effect.AbstractDisplayBuilder;
 import me.stolyy.heroes.vfx.effect.ItemDisplayBuilder;
 import me.stolyy.heroes.vfx.effect.TextDisplayBuilder;
 import net.kyori.adventure.text.Component;
@@ -14,7 +15,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BoundingBox;
-import org.joml.Quaternionf;
 
 import java.util.Set;
 
@@ -25,16 +25,15 @@ public class SmashCrystal {
         ACTIVE
     }
 
-    // Config fields
-    private static final double width = GameConfigManager.getCrystalWidth();
-    private static final double height = GameConfigManager.getCrystalHeight();
-    private static final double yOffset = GameConfigManager.getCrystalYOffset();
-    private static final int spawnDelayTicks = GameConfigManager.getCrystalSpawnDelayTicks();
-    private static final float spinSpeed = GameConfigManager.getCrystalSpinSpeed();
-    private static final double bobAmplitude = GameConfigManager.getCrystalBobAmplitude();
-    private static final double bobSpeed = GameConfigManager.getCrystalBobSpeed();
+    // Config fields (read per instance so /balance reload takes effect and class init doesn't depend on load order)
+    private final double width;
+    private final double height;
+    private final double yOffset;
+    private final int spawnDelayTicks;
+    private final float spinSpeed;
+    private final double bobAmplitude;
+    private final double bobSpeed;
 
-    // Instance fields
     private final Location baseLocation;
     private final ItemDisplay displayEntity;
     private final TextDisplay textEntity;
@@ -42,11 +41,17 @@ public class SmashCrystal {
     private int tickCounter;
 
     public SmashCrystal(Location location) {
+        this.width = GameConfigManager.getCrystalWidth();
+        this.height = GameConfigManager.getCrystalHeight();
+        this.yOffset = GameConfigManager.getCrystalYOffset();
+        this.spawnDelayTicks = GameConfigManager.getCrystalSpawnDelayTicks();
+        this.spinSpeed = GameConfigManager.getCrystalSpinSpeed();
+        this.bobAmplitude = GameConfigManager.getCrystalBobAmplitude();
+        this.bobSpeed = GameConfigManager.getCrystalBobSpeed();
         this.baseLocation = location.clone().add(0, yOffset, 0);
         this.state = CrystalState.SPAWNING;
         this.tickCounter = 0;
 
-        // Spawn the ItemDisplay crystal model
         this.displayEntity = ItemDisplayBuilder.create(baseLocation)
                 .item(new ItemStack(Material.END_CRYSTAL))
                 .transformType(ItemDisplay.ItemDisplayTransform.GROUND)
@@ -55,21 +60,13 @@ public class SmashCrystal {
                 .viewRange(2.0f)
                 .spawn();
 
-        // Spawn the TextDisplay as a passenger of the ItemDisplay
-        if (displayEntity != null) {
-            Location textLoc = baseLocation.clone().add(0, 1.5, 0);
-            this.textEntity = TextDisplayBuilder.create(textLoc)
-                    .text(Component.text("Spawning...", NamedTextColor.YELLOW))
-                    .billboard(Display.Billboard.CENTER)
-                    .viewRange(2.0f)
-                    .spawn();
-
-            if (textEntity != null) {
-                displayEntity.addPassenger(textEntity);
-            }
-        } else {
-            this.textEntity = null;
-        }
+        Location textLoc = baseLocation.clone().add(0, 1.5, 0);
+        this.textEntity = TextDisplayBuilder.create(textLoc)
+                .text(Component.text("Spawning...", NamedTextColor.YELLOW))
+                .billboard(Display.Billboard.CENTER)
+                .viewRange(2.0f)
+                .spawn();
+        displayEntity.addPassenger(textEntity);
     }
 
     /**
@@ -79,22 +76,13 @@ public class SmashCrystal {
      * @return the player who picked up the crystal, or null if not picked up this tick
      */
     public Player tick(Set<Player> players) {
-        if (displayEntity == null || displayEntity.isDead()) return null;
+        if (displayEntity.isDead()) return null;
 
         tickCounter++;
 
-        // Apply spin: rotate Y by spinSpeed degrees each tick
         float spinRad = (float) Math.toRadians(spinSpeed * tickCounter);
-        org.bukkit.util.Transformation trans = displayEntity.getTransformation();
-        org.joml.Quaternionf yRotation = new Quaternionf().rotateY(spinRad);
-        displayEntity.setTransformation(new org.bukkit.util.Transformation(
-                trans.getTranslation(),
-                yRotation,
-                trans.getScale(),
-                trans.getRightRotation()
-        ));
+        AbstractDisplayBuilder.spin(displayEntity, spinRad);
 
-        // Apply bob: move entity up and down
         double bobY = baseLocation.getY() + bobAmplitude * Math.sin(tickCounter * bobSpeed);
         Location currentLoc = displayEntity.getLocation();
         currentLoc.setY(bobY);
@@ -122,7 +110,6 @@ public class SmashCrystal {
             return null;
         }
 
-        // ACTIVE: check player overlap
         Location loc = displayEntity.getLocation();
         double halfW = width / 2.0;
         BoundingBox crystalBox = new BoundingBox(
@@ -158,9 +145,5 @@ public class SmashCrystal {
     /** The crystal's anchor location (bots pathfind here while it's up). */
     public Location location() {
         return baseLocation.clone();
-    }
-
-    public CrystalState getState() {
-        return state;
     }
 }

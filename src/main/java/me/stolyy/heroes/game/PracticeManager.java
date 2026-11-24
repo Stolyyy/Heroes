@@ -31,15 +31,15 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Lobby practice range (B24): /practice gives you your selected hero inside the
+ * Lobby practice range: /practice gives you your selected hero inside the
  * configured practice-arenas (game-config.yml) with full ability use — no game needed.
- * Target dummies (B24.2) spawn at configured points via the NPC layer; they take damage and
+ * Target dummies spawn at configured points via the NPC layer; they take damage and
  * knockback (they have no Hero — Interactions.applyKnockback special-cases them with
  * DUMMY_WEIGHT) and respawn a few seconds after dying.
  *
  * <p>Leaving every arena on foot, /practice again, or logging out ends practice mode.
  */
-public class PracticeManager implements Listener {
+public class PracticeManager {
     private static final int DUMMY_RESPAWN_TICKS = 60;
     private static final double DUMMY_HEALTH = 100.0;
     // Dummies have no Hero and therefore no stat block; Interactions.applyKnockback uses this as
@@ -53,6 +53,7 @@ public class PracticeManager implements Listener {
     // --- Lifecycle (wired from Heroes) ---
 
     public static void initialize() {
+        Bukkit.getPluginManager().registerEvents(new QuitListener(), Heroes.getInstance());
         Bukkit.getScheduler().runTaskTimer(Heroes.getInstance(), PracticeManager::tick, 1L, 1L);
     }
 
@@ -177,6 +178,10 @@ public class PracticeManager implements Listener {
             Player p = Bukkit.getPlayer(uuid);
             Hero hero = HeroManager.getHero(uuid);
             if (p == null || hero == null) {
+                if (p != null) {
+                    p.setFlying(false);
+                    p.setAllowFlight(false);
+                }
                 practicing.remove(uuid);
                 continue;
             }
@@ -200,18 +205,20 @@ public class PracticeManager implements Listener {
 
     // --- Lifecycle triggers ---
 
-    @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        if (practicing.remove(event.getPlayer().getUniqueId()) != null) {
-            // abilities.mayfly is persisted in player.dat and PlayerQuitEvent fires before
-            // PlayerList#save, so quitting mid-practice used to hand the flight permission back
-            // on the next login — hero-less, in the lobby.
-            event.getPlayer().setFlying(false);
-            event.getPlayer().setAllowFlight(false);
+    public static class QuitListener implements Listener {
+        @EventHandler
+        public void onQuit(PlayerQuitEvent event) {
+            if (practicing.remove(event.getPlayer().getUniqueId()) != null) {
+                // abilities.mayfly is persisted in player.dat and PlayerQuitEvent fires before
+                // PlayerList#save, so quitting mid-practice used to hand the flight permission back
+                // on the next login — hero-less, in the lobby.
+                event.getPlayer().setFlying(false);
+                event.getPlayer().setAllowFlight(false);
+            }
+            // Hero teardown happens in PlayerLeaveListener via GameManager.detach ->
+            // HeroManager.removePlayer is a no-op there for practice players, so do it here.
+            HeroManager.removePlayer(event.getPlayer());
         }
-        // Hero teardown happens in PlayerLeaveListener via GameManager.leaveGame →
-        // HeroManager.removePlayer is a no-op there for practice players, so do it here.
-        HeroManager.removePlayer(event.getPlayer());
     }
 
     /** One configured dummy point: keeps a target NPC alive there, respawning after death. */

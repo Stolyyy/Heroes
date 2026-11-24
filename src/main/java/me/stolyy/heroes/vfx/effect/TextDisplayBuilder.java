@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -41,6 +42,10 @@ public class TextDisplayBuilder extends AbstractDisplayBuilder<TextDisplay, Text
         return this;
     }
 
+    public TextDisplayBuilder transparentBackground() {
+        return backgroundColor(Color.fromARGB(0, 0, 0, 0));
+    }
+
     public TextDisplayBuilder defaultBackground(boolean defaultBackground) {
         this.defaultBackground = defaultBackground;
         return this;
@@ -55,7 +60,7 @@ public class TextDisplayBuilder extends AbstractDisplayBuilder<TextDisplay, Text
         this.textOpacity = (byte) alpha;
         return this;
     }
-    
+
     public TextDisplayBuilder seeThrough(boolean seeThrough) {
         this.seeThrough = seeThrough;
         return this;
@@ -68,9 +73,9 @@ public class TextDisplayBuilder extends AbstractDisplayBuilder<TextDisplay, Text
 
     @Override
     public TextDisplay spawn() {
-        if (location.getWorld() == null) return null;
+        World world = requireWorld();
         Location spawnAt = spawnLocation();
-        return (TextDisplay) spawnAt.getWorld().spawnEntity(spawnAt, EntityType.TEXT_DISPLAY, CreatureSpawnEvent.SpawnReason.CUSTOM, entity -> {
+        return (TextDisplay) world.spawnEntity(spawnAt, EntityType.TEXT_DISPLAY, CreatureSpawnEvent.SpawnReason.CUSTOM, entity -> {
             TextDisplay display = (TextDisplay) entity;
             applyBase(display);
             if (text != null) {

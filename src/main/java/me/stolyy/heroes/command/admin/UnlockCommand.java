@@ -1,44 +1,38 @@
 package me.stolyy.heroes.command.admin;
 
+import me.stolyy.heroes.command.HeroesCommand;
+import me.stolyy.heroes.command.TabComplete;
 import me.stolyy.heroes.hero.HeroConfig;
 import me.stolyy.heroes.progression.PlayerStats;
 import me.stolyy.heroes.progression.PlayerStatsManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Locale;
 
 /** Admin command: /unlock <hero> [player] — forcibly unlocks a hero (target defaults to the sender). */
-public class UnlockCommand extends Command {
+public class UnlockCommand extends HeroesCommand {
 
     public UnlockCommand() {
-        super("unlock");
-        this.setDescription("Admin command to forcibly unlock a hero for a player");
-        this.setUsage("/unlock <hero> [player]");
-        this.setPermission("heroes.unlock");
+        super("unlock", "Admin command to forcibly unlock a hero for a player",
+                "/unlock <hero> [player]", List.of("unlockhero"), "heroes.unlock", false);
     }
 
     @Override
-    public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
-        if (!sender.hasPermission(getPermission())) {
-            sender.sendMessage(Component.text("You do not have permission to use this command.", NamedTextColor.RED));
-            return true;
-        }
-
+    protected void execute(CommandSender sender, String[] args) {
         if (args.length == 0) {
             sender.sendMessage(Component.text("Usage: " + getUsage(), NamedTextColor.YELLOW));
-            return true;
+            return;
         }
 
-        String heroName = args[0].toLowerCase();
+        String heroName = args[0].toLowerCase(Locale.ROOT);
         if (!HeroConfig.exists(heroName)) {
             sender.sendMessage(Component.text("Hero not found: " + args[0], NamedTextColor.RED));
-            return true;
+            return;
         }
 
         Player target;
@@ -46,12 +40,12 @@ public class UnlockCommand extends Command {
             target = Bukkit.getPlayer(args[1]);
             if (target == null) {
                 sender.sendMessage(Component.text("Player not found: " + args[1], NamedTextColor.RED));
-                return true;
+                return;
             }
         } else {
             if (!(sender instanceof Player senderPlayer)) {
                 sender.sendMessage(Component.text("Specify a player when running from console: " + getUsage(), NamedTextColor.YELLOW));
-                return true;
+                return;
             }
             target = senderPlayer;
         }
@@ -60,7 +54,7 @@ public class UnlockCommand extends Command {
         String display = HeroConfig.formatName(heroName);
         if (stats.isHeroUnlocked(heroName) || HeroConfig.isDefaultUnlocked(heroName)) {
             sender.sendMessage(Component.text(display + " is already unlocked for " + target.getName() + ".", NamedTextColor.YELLOW));
-            return true;
+            return;
         }
 
         stats.unlockHero(heroName);
@@ -68,22 +62,15 @@ public class UnlockCommand extends Command {
         if (target != sender) {
             target.sendMessage(Component.text(display + " has been unlocked for you!", NamedTextColor.GOLD));
         }
-        return true;
     }
 
     @Override
-    public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {
+    protected List<String> complete(CommandSender sender, String[] args) {
         if (args.length == 1) {
-            return HeroConfig.getAvailableNames().stream()
-                    .filter(name -> name.startsWith(args[0].toLowerCase()))
-                    .sorted()
-                    .toList();
+            return TabComplete.startsWith(HeroConfig.getAvailableNames(), args[0]);
         }
         if (args.length == 2) {
-            return Bukkit.getOnlinePlayers().stream()
-                    .map(Player::getName)
-                    .filter(name -> name.toLowerCase().startsWith(args[1].toLowerCase()))
-                    .toList();
+            return TabComplete.onlinePlayers(args[1]);
         }
         return List.of();
     }

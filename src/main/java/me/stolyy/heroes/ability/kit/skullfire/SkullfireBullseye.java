@@ -4,6 +4,7 @@ import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.Ability;
 import me.stolyy.heroes.ability.AbilityType;
 import me.stolyy.heroes.ability.template.BaseAbility;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.hero.mechanics.DoubleJump;
 import org.bukkit.configuration.ConfigurationSection;
@@ -17,7 +18,7 @@ public class SkullfireBullseye extends BaseAbility {
 
     public SkullfireBullseye(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        hitsForReset = config.getInt("hits_for_reset");
+        hitsForReset = Configs.requireInt(this.config, "hits_for_reset");
     }
 
     @Override
@@ -40,7 +41,7 @@ public class SkullfireBullseye extends BaseAbility {
 
         DoubleJump mobility = hero.getMobility();
         if(mobility instanceof SkullMobility skullMobility){
-            if(!hero.getController().getEntity().isOnGround())
+            if(!hero.getController().isOnGround())
                 skullMobility.addJump(hero);
         }
 

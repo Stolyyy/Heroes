@@ -1,9 +1,7 @@
 package me.stolyy.heroes.ability.kit.greenhood;
 
-import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.BaseAbility;
-import me.stolyy.heroes.listener.GreenHoodListener;
-import me.stolyy.heroes.physics.Interactions;
+import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.physics.WallDetection;
 import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
@@ -21,7 +19,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-public class PearlArrow extends BaseAbility {
+public class PearlArrow extends BaseAbility implements ArmedShot {
     private final double speedMin;
     private final double speedScale;
     private final double pearlDamage;
@@ -39,55 +37,57 @@ public class PearlArrow extends BaseAbility {
         this.speedScale = Configs.requireDouble(this.config, "speed_scale");
         this.pearlDamage = Configs.requireDouble(this.config, "pearl_damage");
         this.pearlKnockback = Configs.requireDouble(this.config, "pearl_knockback");
-        this.armSound = new SoundEffect(this.config.getConfigurationSection("visuals.arm_sound"));
-        this.teleportSound = new SoundEffect(this.config.getConfigurationSection("visuals.teleport_sound"));
-        this.teleportVisual = new VisualEffect(this.config.getConfigurationSection("visuals.teleport_visual"));
+        this.armSound = new SoundEffect(Configs.requireSection(this.config, "visuals.arm_sound"));
+        this.teleportSound = new SoundEffect(Configs.requireSection(this.config, "visuals.teleport_sound"));
+        this.teleportVisual = new VisualEffect(Configs.requireSection(this.config, "visuals.teleport_visual"));
     }
 
-    public double launchSpeed(double force) {
-        return speedMin + force * speedScale;
+    @Override
+    public boolean isArmed() {
+        return armed;
+    }
+
+    @Override
+    public void disarm() {
+        armed = false;
     }
 
     @Override
     public void perform(Hero hero) {
         armed = true;
-        GreenHoodListener.disarmOthers(hero, this);
+        ArmedShot.disarmOthers(hero, this);
         armSound.play(hero.getController().getLocation(), hero.getController());
         hero.getController().sendActionBar(Component.text("Pearl arrow — next shot", NamedTextColor.LIGHT_PURPLE));
     }
 
-    public boolean isArmed() {
-        return armed;
-    }
-
-    public void disarm() {
+    @Override
+    public boolean fireFromBow(Hero hero, GreenHoodBow bow, AbstractArrow arrow, Vector aim, Vector carried,
+                               double charge, int overchargeTicks, double force) {
         armed = false;
-    }
-
-    /** Takes over the bow's own arrow from the shoot event; see {@link GreenHoodListener#onShoot}. */
-    public void fire(AbstractArrow arrow, Vector aim, Vector carried, double speed) {
-        armed = false;
-        GreenHoodListener.aim(arrow, aim, speed, carried, "pearl", pearlDamage);
         liveArrows.add(arrow.getUniqueId());
-    }
+        bow.launch(arrow, aim, speedMin + force * speedScale, carried, new ArrowShot() {
+            @Override
+            public void onEntityHit(Hero h, LivingEntity victim, AbstractArrow a) {
+                hit(h, victim)
+                        .damage(pearlDamage)
+                        .knockback(pearlKnockback)
+                        .direction(a.getVelocity())
+                        .execute();
+                if (liveArrows.remove(a.getUniqueId())) {
+                    teleportTo(h, victim.getLocation());
+                }
+                a.remove();
+            }
 
-    public void onVictimContact(Hero hero, LivingEntity victim, AbstractArrow arrow) {
-        hero.triggerAbilityHit(this, victim);
-        Interactions.on(hero.getController().getEntity(), victim)
-                .abilityName(getName())
-                .damage(pearlDamage)
-                .knockback(pearlKnockback)
-                .direction(arrow.getVelocity())
-                .execute();
-        if (liveArrows.remove(arrow.getUniqueId())) {
-            teleportTo(hero, victim.getLocation());
-        }
-    }
-
-    public void onGroundContact(Hero hero, AbstractArrow arrow) {
-        if (liveArrows.remove(arrow.getUniqueId())) {
-            teleportTo(hero, arrow.getLocation());
-        }
+            @Override
+            public void onGroundHit(Hero h, AbstractArrow a) {
+                if (liveArrows.remove(a.getUniqueId())) {
+                    teleportTo(h, a.getLocation());
+                }
+                a.remove();
+            }
+        });
+        return true;
     }
 
     private void teleportTo(Hero hero, Location landing) {
@@ -95,13 +95,7 @@ public class PearlArrow extends BaseAbility {
         Location target = landing.clone();
         target.setYaw(current.getYaw());
         target.setPitch(current.getPitch());
-        hero.getController().teleport(target);
-
-        LivingEntity entity = hero.getController().getEntity();
-        if (WallDetection.isTrapped(entity)) {
-            Vector out = WallDetection.escapeOffset(entity, 3.0, 0.1);
-            if (out != null) entity.teleport(entity.getLocation().add(out));
-        }
+        WallDetection.safeTeleport(hero.getController(), target);
 
         teleportSound.play(target, hero.getController());
         teleportVisual.play(target);
@@ -109,8 +103,8 @@ public class PearlArrow extends BaseAbility {
 
     @Override
     public void onDeath(Hero hero) {
-        super.onDeath(hero);
-        armed = false;
+        disarm();
         liveArrows.clear();
+        super.onDeath(hero);
     }
 }

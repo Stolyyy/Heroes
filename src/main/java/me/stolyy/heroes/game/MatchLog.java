@@ -49,10 +49,11 @@ public final class MatchLog {
         line.addProperty("endReason", reason.name());
         line.addProperty("winner", winner == null ? null : winner.color().name());
 
-        if (game.isSeriesRound()) {
+        Game.SeriesRound seriesRound = game.seriesRound();
+        if (seriesRound != null) {
             JsonObject series = new JsonObject();
-            series.addProperty("id", game.seriesId());
-            series.addProperty("round", game.seriesRound());
+            series.addProperty("id", seriesRound.id());
+            series.addProperty("round", seriesRound.round());
             line.add("series", series);
         } else {
             line.add("series", null);

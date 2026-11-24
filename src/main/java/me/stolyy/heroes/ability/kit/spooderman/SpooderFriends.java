@@ -5,6 +5,7 @@ import me.stolyy.heroes.hero.HeroBuilder;
 import me.stolyy.heroes.hero.minion.MinionHero;
 import me.stolyy.heroes.ability.kit.minions.spooderbuddy.SpooderBuddyAI;
 import me.stolyy.heroes.ability.template.BaseAbility;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.hero.minion.MinionManager;
 import org.bukkit.Location;
@@ -29,10 +30,10 @@ public class SpooderFriends extends BaseAbility {
 
     public SpooderFriends(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        this.jabsPerMinion = this.config.getInt("jabs_per_minion", 3);
-        this.maxMinions = this.config.getInt("max_minions", 2);
-        this.minionDuration = (long) (this.config.getDouble("minion_duration", 15.0) * 1000);
-        this.minionConfig = this.config.getConfigurationSection("minion");
+        this.jabsPerMinion = Configs.requireInt(this.config, "jabs_per_minion");
+        this.maxMinions = Configs.requireInt(this.config, "max_minions");
+        this.minionDuration = (long) (Configs.requireDouble(this.config, "minion_duration") * 1000);
+        this.minionConfig = Configs.requireSection(this.config, "minion");
     }
 
     @Override

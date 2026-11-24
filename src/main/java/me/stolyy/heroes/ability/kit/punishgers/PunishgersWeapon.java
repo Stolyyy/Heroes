@@ -1,21 +1,26 @@
 package me.stolyy.heroes.ability.kit.punishgers;
 
-import me.stolyy.heroes.physics.Interactions;
-import me.stolyy.heroes.physics.VectorUtil;
-import me.stolyy.heroes.hero.Hero;
+import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.ability.AbilityType;
 import me.stolyy.heroes.ability.Ammo;
+import me.stolyy.heroes.ability.Cooldown;
 import me.stolyy.heroes.ability.template.BaseAbility;
+import me.stolyy.heroes.ability.template.CompositeAbility;
 import me.stolyy.heroes.ability.template.Cone;
 import me.stolyy.heroes.ability.template.Hitscan;
 import me.stolyy.heroes.ability.template.Projectile;
+import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.util.Configs;
+import me.stolyy.heroes.vfx.cosmetic.CosmeticManager;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
-public class PunishgersWeapon extends BaseAbility {
+public class PunishgersWeapon extends CompositeAbility {
+    public enum WeaponMode { MINIGUN, SHOTGUN }
+
     private final MinigunMode minigun;
     private final ShotgunMode shotgun;
     private final double movementPenaltyMultiplier;
@@ -23,32 +28,29 @@ public class PunishgersWeapon extends BaseAbility {
     private final int pulloutTicks;
     private final int swapReloadTicks;
 
-    private PunishgersSwap swap;
+    private WeaponMode mode = WeaponMode.MINIGUN;
     private boolean penaltyActive;
     private int ticksSinceLastShot;
-    private long swapEndsAt;
 
     private boolean unlimitedAmmo;
     private boolean penaltyDisabled;
 
     public PunishgersWeapon(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        this.minigun = new MinigunMode(this.config.getConfigurationSection("minigun"), skin);
-        this.shotgun = new ShotgunMode(this.config.getConfigurationSection("shotgun"), skin);
+        this.minigun = addChild(new MinigunMode(Configs.requireSection(this.config, "minigun"), skin));
+        this.shotgun = addChild(new ShotgunMode(Configs.requireSection(this.config, "shotgun"), skin));
         this.movementPenaltyMultiplier = Configs.requireDouble(this.config, "movement_penalty_multiplier");
         this.penaltyLingerTicks = Configs.requireInt(this.config, "penalty_linger_ticks");
         this.pulloutTicks = Configs.requireInt(this.config, "pullout_ticks");
         this.swapReloadTicks = Configs.requireInt(this.config, "swap_reload_ticks");
     }
 
-    @Override
-    public void initialize(Hero hero) {
-        this.swap = PunishgersSwap.find(hero);
+    public boolean isShotgun() {
+        return mode == WeaponMode.SHOTGUN;
     }
 
     private BaseAbility activeGun() {
-        boolean shotgunMode = swap != null && swap.getMode() == PunishgersSwap.WeaponMode.SHOTGUN;
-        return shotgunMode ? shotgun : minigun;
+        return isShotgun() ? shotgun : minigun;
     }
 
     @Override
@@ -57,8 +59,13 @@ public class PunishgersWeapon extends BaseAbility {
     }
 
     @Override
-    public boolean canExecute(Hero hero) {
-        if (cooldown.isInUse() || isUltWindingUp(hero)) return false;
+    public Cooldown getDisplayCooldown(Hero hero) {
+        return isSwapping() ? cooldown : activeGun().getCooldownObject();
+    }
+
+    @Override
+    protected boolean canUse(Hero hero) {
+        if (isSwapping() || isUltWindingUp(hero)) return false;
         return activeGun().canExecute(hero);
     }
 
@@ -66,40 +73,34 @@ public class PunishgersWeapon extends BaseAbility {
         return hero.getSmashAbility() instanceof BaseAbility ult && ult.isWindingUp();
     }
 
-    /** True while the incoming gun is still being drawn after a weapon swap (pullout or reload). */
+    /** True while the incoming gun is still being drawn after a weapon swap (cooldown active window). */
     public boolean isSwapping() {
-        return System.currentTimeMillis() < swapEndsAt;
+        return cooldown.isInUse();
     }
 
     @Override
-    public boolean execute(Hero hero) {
-        if (cooldown.isInUse() || isUltWindingUp(hero)) {
-            return false;
-        }
+    public void perform(Hero hero) {
         BaseAbility gun = activeGun();
         if (unlimitedAmmo && gun.getAmmo() != null) {
             gun.getAmmo().setAmmo(gun.getAmmo().getMax());
         }
-        boolean fired = gun.execute(hero);
-        if (fired) {
+        if (gun.execute(hero)) {
             ticksSinceLastShot = 0;
             if (!penaltyDisabled && !penaltyActive) {
                 penaltyActive = true;
-                hero.getAttributes().setSpeedMultiplier(hero.getController(), movementPenaltyMultiplier);
+                hero.getAttributes().addSpeedMultiplier(hero.getController(), this, movementPenaltyMultiplier);
             }
         }
-        return fired;
     }
 
-    @Override
-    public void perform(Hero hero) { }
-
-    void onModeSwapped(Hero hero) {
+    void swap(Hero hero) {
+        mode = isShotgun() ? WeaponMode.MINIGUN : WeaponMode.SHOTGUN;
         Ammo incoming = activeGun().getAmmo();
         int drawTicks = incoming.getCurrent() < incoming.getMax() ? swapReloadTicks : pulloutTicks;
         incoming.refill();
-        cooldown.start(drawTicks * 50L);
-        swapEndsAt = System.currentTimeMillis() + drawTicks * 50L;
+        cooldown.start(drawTicks * Heroes.MS_PER_TICK);
+        CosmeticManager.setHeldModel(hero, isShotgun()
+                ? "shotgun" : CosmeticManager.defaultHeldTexture(hero));
     }
 
     void drainClips(Hero hero) {
@@ -115,53 +116,54 @@ public class PunishgersWeapon extends BaseAbility {
     }
 
     @Override
-    protected void onTick(Hero hero) {
-        minigun.tick(hero);
-        shotgun.tick(hero);
-
+    protected void onCompositeTick(Hero hero) {
         ticksSinceLastShot++;
         if (penaltyActive && ticksSinceLastShot > penaltyLingerTicks) {
             penaltyActive = false;
-            hero.getAttributes().setSpeedMultiplier(hero.getController(), 1.0);
+            hero.getAttributes().removeSpeedModifier(hero.getController(), this);
         }
     }
 
     public void setUnlimitedAmmo(boolean unlimited) {
         this.unlimitedAmmo = unlimited;
+        if (unlimited) {
+            minigun.getAmmo().refill();
+            shotgun.getAmmo().refill();
+        }
     }
 
     public void setPenaltyDisabled(Hero hero, boolean disabled) {
         this.penaltyDisabled = disabled;
         if (disabled && penaltyActive) {
             penaltyActive = false;
-            hero.getAttributes().setSpeedMultiplier(hero.getController(), 1.0);
+            hero.getAttributes().removeSpeedModifier(hero.getController(), this);
         }
     }
 
-    public void applyFireRateMultiplier(double multiplier) {
-        minigun.getCooldownObject().setCooldownMultiplier(multiplier);
-        shotgun.getCooldownObject().setCooldownMultiplier(multiplier);
+    public void addFireRateModifier(Object key, double multiplier) {
+        minigun.getCooldownObject().addDurationMultiplier(key, multiplier);
+        shotgun.getCooldownObject().addDurationMultiplier(key, multiplier);
+    }
+
+    public void removeFireRateModifier(Object key) {
+        minigun.getCooldownObject().removeDurationModifier(key);
+        shotgun.getCooldownObject().removeDurationModifier(key);
     }
 
     @Override
-    public boolean isIndependent() { return true; }
-
-    @Override
-    public void onOwnerLost(Hero hero) {
-        shotgun.onOwnerLost(hero);
-    }
-
-    @Override
-    public void onDeath(Hero hero) {
-        super.onDeath(hero);
-        minigun.onDeath(hero);
-        shotgun.onDeath(hero);
-        swapEndsAt = 0;
+    protected void onCompositeDeath(Hero hero) {
+        mode = WeaponMode.MINIGUN;
         if (penaltyActive) {
             penaltyActive = false;
-            if (hero.getController() != null && hero.getController().getEntity() != null) {
-                hero.getAttributes().setSpeedMultiplier(hero.getController(), 1.0);
-            }
+            hero.getAttributes().removeSpeedModifier(hero.getController(), this);
+        }
+    }
+
+    @Override
+    protected void onCompositeOwnerLost(Hero hero) {
+        if (penaltyActive) {
+            penaltyActive = false;
+            hero.getAttributes().removeSpeedModifier(hero.getController(), this);
         }
     }
 
@@ -171,7 +173,7 @@ public class PunishgersWeapon extends BaseAbility {
         private final double kbFalloffMinMult;
 
         MinigunMode(ConfigurationSection config, HeroSkin skin) {
-            super(config, skin);
+            super(config, skin, AbilityType.PRIMARY);
             this.kbFalloffStart = Configs.requireDouble(this.config, "kb_falloff_start");
             this.kbFalloffEnd = Configs.requireDouble(this.config, "kb_falloff_end");
             this.kbFalloffMinMult = Configs.requireDouble(this.config, "kb_falloff_min_mult");
@@ -179,8 +181,7 @@ public class PunishgersWeapon extends BaseAbility {
 
         @Override
         protected void applyInteraction(Hero attacker, LivingEntity victim, Location hitLoc) {
-            Interactions.on(attacker.getController().getEntity(), victim)
-                    .abilityName(getName())
+            hit(attacker, victim)
                     .damage(calcDamage(attacker, victim))
                     .knockback(calcKnockback(attacker, victim))
                     .direction(currentDirection)
@@ -198,13 +199,13 @@ public class PunishgersWeapon extends BaseAbility {
         private final double kbLengthMinMult, kbLengthMaxMult, kbAccuracyMinMult, kbAccuracyMaxMult;
 
         ShotgunMode(ConfigurationSection config, HeroSkin skin) {
-            super(config, skin);
+            super(config, skin, AbilityType.PRIMARY);
             this.pelletCount = Configs.requireInt(this.config, "pellet_count");
-            double maxAngle = Configs.requireDouble(this.config, "max_angle");
+            double maxAngle = Configs.requireDouble(this.config, "spread_deg");
             this.range = Configs.requireDouble(this.config, "range");
             this.minRadius = Configs.requireDouble(this.config, "min_radius");
             this.radius = minRadius + range * Math.tan(Math.toRadians(maxAngle));
-            this.pellets = new PelletVisuals(this.config, skin, maxAngle);
+            this.pellets = new PelletVisuals(this.config, skin);
 
             this.dmgLengthMinMult = Configs.requireDouble(this.config, "dmg_length_min_mult");
             this.dmgLengthMaxMult = Configs.requireDouble(this.config, "dmg_length_max_mult");
@@ -235,9 +236,7 @@ public class PunishgersWeapon extends BaseAbility {
 
             hitSound.play(victim.getEyeLocation(), hero.getController());
             hitVisual.play(victim.getEyeLocation());
-            hero.triggerAbilityHit(this, victim);
-            Interactions.on(hero.getController().getEntity(), victim)
-                    .abilityName(getName()).damage(dmg).knockback(kb).direction(direction).execute();
+            hit(hero, victim).damage(dmg).knockback(kb).direction(direction).execute();
         }
 
         private static double lerp(double from, double to, double t) {
@@ -245,8 +244,7 @@ public class PunishgersWeapon extends BaseAbility {
         }
 
         @Override
-        protected void onTick(Hero hero) {
-            super.onTick(hero);
+        protected void onConeTick(Hero hero) {
             pellets.tick(hero);
         }
 
@@ -261,11 +259,8 @@ public class PunishgersWeapon extends BaseAbility {
 
     /** Flies the pellet model downrange for show: it never damages anyone and passes through players. */
     private static class PelletVisuals extends Projectile {
-        private final double maxAngle;
-
-        PelletVisuals(ConfigurationSection config, HeroSkin skin, double maxAngle) {
-            super(config, skin);
-            this.maxAngle = maxAngle;
+        PelletVisuals(ConfigurationSection config, HeroSkin skin) {
+            super(config, skin, AbilityType.PRIMARY);
             this.piercesPlayers = true;
         }
 
@@ -275,10 +270,5 @@ public class PunishgersWeapon extends BaseAbility {
 
         @Override
         public void onHit(Hero attacker, LivingEntity victim, Location hitLoc) { }
-
-        @Override
-        protected Vector getDirection(Location location) {
-            return VectorUtil.randomSpread(location.getDirection(), maxAngle);
-        }
     }
 }

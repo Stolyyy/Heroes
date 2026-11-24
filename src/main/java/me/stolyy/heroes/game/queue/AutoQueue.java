@@ -3,7 +3,6 @@ package me.stolyy.heroes.game.queue;
 import me.stolyy.heroes.game.Game;
 import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.game.GameMode;
-import me.stolyy.heroes.game.RestartManager;
 import me.stolyy.heroes.party.PartyManager;
 import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.util.GameConfigManager;
@@ -41,7 +40,7 @@ import java.util.UUID;
 public final class AutoQueue {
     private AutoQueue() {}
 
-    /** Matches QueueManager.updateTitles — a 2s stay refreshed every 1s never flickers. */
+    // Matches QueueManager.updateTitles — a 2s stay refreshed every 1s never flickers.
     private static final Title.Times TITLE_TIMES =
             Title.Times.times(Duration.ZERO, Duration.ofSeconds(2), Duration.ZERO);
 
@@ -79,10 +78,7 @@ public final class AutoQueue {
     }
 
     public static void arm(Player player, GameMode mode) {
-        if (RestartManager.isDraining()) {
-            player.sendMessage(GameConfigManager.getMessage("restart.queue-closed"));
-            return;
-        }
+        if (!QueueManager.admit(player)) return;
 
         // Spectators may arm mid-match and stay watching until the queue pops, which is what
         // joinQueue already allows for a hand-typed /join.
@@ -187,12 +183,10 @@ public final class AutoQueue {
         }
     }
 
-    /**
-     * Whether the countdown may run. Out of a game entirely is the normal case. Attached to a game
-     * only counts when it is the very game they armed from as a spectator — in particular a player
-     * eliminated into their own match's spectator team does NOT resume counting, so auto-queue
-     * never pulls someone out of a match their team is still playing.
-     */
+    // Whether the countdown may run. Out of a game entirely is the normal case. Attached to a game
+    // only counts when it is the very game they armed from as a spectator — in particular a player
+    // eliminated into their own match's spectator team does NOT resume counting, so auto-queue
+    // never pulls someone out of a match their team is still playing.
     private static boolean eligible(Player player, Armed state) {
         Game game = GameManager.getPlayerGame(player);
         if (game == null) {
@@ -206,7 +200,6 @@ public final class AutoQueue {
         return GameManager.isSpectating(player);
     }
 
-    /** The armed player plus their online party members — everyone the countdown will affect. */
     private static Set<Player> audience(Player player) {
         Set<Player> members = PartyManager.getPartyMembers(player);
         if (members.isEmpty()) return Set.of(player);

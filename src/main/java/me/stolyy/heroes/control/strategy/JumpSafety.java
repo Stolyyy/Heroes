@@ -39,13 +39,6 @@ public final class JumpSafety {
         return botLoc.distance(target.getLocation()) <= reach + BotConfig.preventionReachMargin();
     }
 
-    /** Directional variant for non-chase jumps (retreat hops): safe = landing has ground. */
-    public static boolean isJumpLandingSafe(Hero hero, BotController controller, Vector horizontalDir) {
-        if (!BotConfig.isJumpVetoEnabled()) return true;
-        if (horizontalDir.lengthSquared() < 0.01) return true;
-        return !landsOverVoid(controller.getLocation(), horizontalDir.clone().normalize(), jumpReach(hero));
-    }
-
     private static double jumpReach(Hero hero) {
         double airTicks = Math.max(1, 2 * hero.getMobility().getYStrength() / GRAVITY_PER_TICK);
         return hero.getMobility().getXStrength() * airTicks;

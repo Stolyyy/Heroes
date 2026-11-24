@@ -2,8 +2,7 @@ package me.stolyy.heroes.game;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.settings.PlayerSettings;
-import me.stolyy.heroes.hero.Hero;
-import me.stolyy.heroes.hero.HeroManager;
+import me.stolyy.heroes.physics.Interactions;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -24,7 +23,7 @@ public class GameEffects {
         AttributeInstance healthAttr = Objects.requireNonNull(player.getAttribute(Attribute.MAX_HEALTH));
         double totalHealth = playerSettings.health();
         healthAttr.setBaseValue(totalHealth);
-        player.setHealth(Math.max(0.5, totalHealth));
+        player.setHealth(Math.max(Interactions.ZERO_HP_BUFFER, totalHealth));
         player.setHealthScale(20.0);
         player.setHealthScaled(true);
         player.setMaximumNoDamageTicks(1);
@@ -39,35 +38,32 @@ public class GameEffects {
     }
 
     public static void restrictPlayer(Player player){
-        // Set movement speed to 0
         AttributeInstance movementAttr = player.getAttribute(Attribute.MOVEMENT_SPEED);
         if (movementAttr != null) {
             removeModifier(movementAttr, RESTRICT_MOVEMENT_KEY);
             movementAttr.addModifier(new AttributeModifier(
                     RESTRICT_MOVEMENT_KEY,
-                    -1.0, // -100% movement speed
+                    -1.0,
                     AttributeModifier.Operation.MULTIPLY_SCALAR_1
             ));
         }
 
-        // Set jump strength to 0
         AttributeInstance jumpAttr = player.getAttribute(Attribute.JUMP_STRENGTH);
         if (jumpAttr != null) {
             removeModifier(jumpAttr, RESTRICT_JUMP_KEY);
             jumpAttr.addModifier(new AttributeModifier(
                     RESTRICT_JUMP_KEY,
-                    -1.0, // -100% jump strength
+                    -1.0,
                     AttributeModifier.Operation.MULTIPLY_SCALAR_1
             ));
         }
 
-        // Increase gravity to prevent floating
         AttributeInstance gravityAttr = player.getAttribute(Attribute.GRAVITY);
         if (gravityAttr != null) {
             removeModifier(gravityAttr, RESTRICT_GRAVITY_KEY);
             gravityAttr.addModifier(new AttributeModifier(
                     RESTRICT_GRAVITY_KEY,
-                    2.0, // +200% gravity
+                    2.0,
                     AttributeModifier.Operation.MULTIPLY_SCALAR_1
             ));
         }

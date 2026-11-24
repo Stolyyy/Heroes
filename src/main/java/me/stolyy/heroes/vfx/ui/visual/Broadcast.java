@@ -17,7 +17,7 @@ public final class Broadcast {
     }
 
     public static void title(Component title, Component subtitle, Duration stay) {
-        Title t = Title.title(title, subtitle, Title.Times.times(Duration.ofMillis(250), stay, Duration.ofMillis(500)));
+        Title t = Titles.of(title, subtitle, stay);
         for (Player player : realPlayers()) player.showTitle(t);
     }
 

@@ -10,6 +10,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -77,6 +78,29 @@ public final class MapSkipPoll {
         timeout.cancel();
         sendTally();
         broadcast(GameConfigManager.getMessage(timedOut ? "poll.skipmap.timed-out" : "poll.skipmap.ended"));
+    }
+
+    /** Ends any poll whose leader is in {@code game} (or whose leader is no longer in any game). */
+    public static void endForGame(Game game) {
+        for (MapSkipPoll poll : new ArrayList<>(polls.values())) {
+            Player leader = Bukkit.getPlayer(poll.leaderId);
+            Game leaderGame = leader == null ? null : GameManager.getPlayerGame(leader);
+            if (leaderGame == null || leaderGame == game) {
+                poll.end(false);
+            }
+        }
+    }
+
+    public static void endForLeader(UUID leaderId) {
+        MapSkipPoll poll = polls.get(leaderId);
+        if (poll != null) poll.end(false);
+    }
+
+    public static void clear() {
+        for (MapSkipPoll poll : new ArrayList<>(polls.values())) {
+            poll.timeout.cancel();
+        }
+        polls.clear();
     }
 
     private Set<Player> participants() {

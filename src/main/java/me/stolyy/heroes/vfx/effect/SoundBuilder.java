@@ -1,32 +1,35 @@
 package me.stolyy.heroes.vfx.effect;
 
-import net.kyori.adventure.sound.Sound;
 import org.bukkit.Location;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
 
 import java.util.Collection;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class SoundBuilder {
+    private static final double VANILLA_AUDIBLE_RANGE_PER_VOL = 16.0;
+    private static final double DISTANT_PROXY_OFFSET_BLOCKS = 8.0;
 
     private final String soundKey;
-    private final org.bukkit.Sound bukkitSound;
+    private final Sound bukkitSound;
     private float volume = 1.0f;
     private float pitch = 1.0f;
     private float pitchVariation = 0.0f;
-    private Sound.Source source = Sound.Source.MASTER;
 
     private SoundBuilder(String soundKey) {
         this.soundKey = soundKey.toLowerCase();
         this.bukkitSound = null;
     }
 
-    private SoundBuilder(org.bukkit.Sound bukkitSound) {
+    private SoundBuilder(Sound bukkitSound) {
         this.soundKey = null;
         this.bukkitSound = bukkitSound;
     }
 
-    public static SoundBuilder of(org.bukkit.Sound sound) {
+    public static SoundBuilder of(Sound sound) {
         return new SoundBuilder(sound);
     }
 
@@ -44,23 +47,23 @@ public class SoundBuilder {
         return this;
     }
 
-    /**
-     * Adds a random variation to the pitch when played.
-     * The actual pitch will be: pitch +/- (variation / 2)
-     */
+    /** Sets random pitch spread: actual pitch is {@code pitch +/- (variation / 2)}. */
     public SoundBuilder variation(float variation) {
         this.pitchVariation = variation;
-        return this;
-    }
-
-    public SoundBuilder source(Sound.Source source) {
-        this.source = source;
         return this;
     }
 
     private float getFinalPitch() {
         if (pitchVariation <= 0) return pitch;
         return pitch + ((ThreadLocalRandom.current().nextFloat() - 0.5f) * pitchVariation);
+    }
+
+    private void playAt(Player player, Location location, float rolledPitch) {
+        if (bukkitSound != null) {
+            player.playSound(location, bukkitSound, SoundCategory.MASTER, volume, rolledPitch);
+        } else if (soundKey != null) {
+            player.playSound(location, soundKey, SoundCategory.MASTER, volume, rolledPitch);
+        }
     }
 
     // --- Play Logic ---
@@ -70,61 +73,47 @@ public class SoundBuilder {
     }
 
     public void play(Player player, Location location) {
-        if (bukkitSound != null) {
-            player.playSound(location, bukkitSound, org.bukkit.SoundCategory.valueOf(source.name()), volume, getFinalPitch());
-        } else if (soundKey != null) {
-            player.playSound(location, soundKey, org.bukkit.SoundCategory.valueOf(source.name()), volume, getFinalPitch());
-        }
+        playAt(player, location, getFinalPitch());
     }
 
     public void play(Location location) {
         if (location.getWorld() == null) return;
+        float rolledPitch = getFinalPitch();
         if (bukkitSound != null) {
-            location.getWorld().playSound(location, bukkitSound, org.bukkit.SoundCategory.valueOf(source.name()), volume, getFinalPitch());
+            location.getWorld().playSound(location, bukkitSound, SoundCategory.MASTER, volume, rolledPitch);
         } else if (soundKey != null) {
-            location.getWorld().playSound(location, soundKey, org.bukkit.SoundCategory.valueOf(source.name()), volume, getFinalPitch());
+            location.getWorld().playSound(location, soundKey, SoundCategory.MASTER, volume, rolledPitch);
         }
     }
 
-    public void play(Collection<? extends Player> players, Location location) {
+    private void play(Collection<? extends Player> players, Location location) {
         for (Player player : players) {
             play(player, location);
         }
     }
 
-    /** LOCAL-scope playback: the packet goes to everyone in the world, but the CLIENT applies
-     *  vanilla distance attenuation (rolloff ≈ 16 x volume blocks) — distant players hear
-     *  nothing. (Named before the scope rework; this is what Scope.LOCAL dispatches to.) */
-    public void playGlobal(Location location) {
+    /** LOCAL-scope playback: sent to everyone in the world with vanilla distance attenuation. */
+    public void playLocal(Location location) {
         if (location.getWorld() == null) return;
         play(location.getWorld().getPlayers(), location);
     }
 
     /**
-     * GLOBAL-scope playback: every player in the world hears it, wherever they are. Within
-     * vanilla audible range (16 x volume blocks) it plays at the source — real directionality
-     * and natural attenuation. Beyond that, it plays at a point 8 blocks from the listener
-     * TOWARD the source: still at configured volume, still directionally from the right way,
-     * just no longer distance-faded — the point of GLOBAL (map-wide ult announcements).
-     * One pitch roll shared by every listener, so they all hear the same sound.
+     * GLOBAL-scope playback: heard map-wide by everyone in the world. Beyond vanilla range,
+     * places a directional proxy {@value #DISTANT_PROXY_OFFSET_BLOCKS} blocks toward the source.
      */
     public void playEverywhere(Location location) {
         if (location.getWorld() == null) return;
         float rolledPitch = getFinalPitch();
-        double range = 16.0 * Math.max(1.0f, volume);
+        double range = VANILLA_AUDIBLE_RANGE_PER_VOL * Math.max(1.0f, volume);
         double rangeSq = range * range;
         for (Player player : location.getWorld().getPlayers()) {
             Location at = location;
             if (player.getLocation().distanceSquared(location) > rangeSq) {
-                org.bukkit.util.Vector toSource = location.toVector()
-                        .subtract(player.getLocation().toVector()).normalize();
-                at = player.getLocation().add(toSource.multiply(8));
+                Vector toSource = location.toVector().subtract(player.getLocation().toVector()).normalize();
+                at = player.getLocation().add(toSource.multiply(DISTANT_PROXY_OFFSET_BLOCKS));
             }
-            if (bukkitSound != null) {
-                player.playSound(at, bukkitSound, org.bukkit.SoundCategory.valueOf(source.name()), volume, rolledPitch);
-            } else if (soundKey != null) {
-                player.playSound(at, soundKey, org.bukkit.SoundCategory.valueOf(source.name()), volume, rolledPitch);
-            }
+            playAt(player, at, rolledPitch);
         }
     }
 }

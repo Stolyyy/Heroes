@@ -3,13 +3,11 @@ package me.stolyy.heroes.game.rules;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.Game;
 import me.stolyy.heroes.game.GamePlayer;
-import me.stolyy.heroes.game.GameState;
 import me.stolyy.heroes.vfx.effect.ItemBuilder;
 import me.stolyy.heroes.vfx.ui.gui.GUIManager;
 import me.stolyy.heroes.vfx.ui.gui.HeroSelectGUI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -45,7 +43,7 @@ public enum RespawnAction {
         }
     };
 
-    /** PDC tag marking the countdown-only "Change Hero" hotbar item. */
+    // PDC tag marking the countdown-only "Change Hero" hotbar item.
     private static final NamespacedKey REPICK_KEY = new NamespacedKey(Heroes.getInstance(), "respawn_repick");
     // Middle slot — 8..5 belong to the passive reference cards (CosmeticManager).
     private static final int REPICK_SLOT = 4;
@@ -61,8 +59,7 @@ public enum RespawnAction {
     /** Opens the respawn hero re-pick GUI (shared by the countdown open and the item reopen). */
     public static void openPickGui(Player player, Game game) {
         GamePlayer gamePlayer = game.getGamePlayer(player.getUniqueId());
-        GUIManager.open(player, new HeroSelectGUI(player, "Pick Your Next Hero",
-                gamePlayer::setPendingHero, null, null).markRespawnPick());
+        GUIManager.open(player, HeroSelectGUI.forRespawn(player, gamePlayer::setPendingHero));
     }
 
     public static boolean isRepickItem(ItemStack item) {

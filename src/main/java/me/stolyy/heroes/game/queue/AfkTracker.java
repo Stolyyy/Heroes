@@ -1,27 +1,32 @@
 package me.stolyy.heroes.game.queue;
 
+import me.stolyy.heroes.party.PartyManager;
 import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.util.GameConfigManager;
+import me.stolyy.heroes.vfx.effect.SoundBuilder;
+import net.kyori.adventure.title.Title;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
+import java.time.Duration;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
- * Last-input clock per online player, fed by {@link me.stolyy.heroes.listener.ActivityListener}.
- *
- * <p>Only the queue reads it: a player who stops touching the game while queued (or while
- * auto-queue is armed) is warned with a title and a sound, then dropped before a match can pop
- * around them, so an idle lobby never starts a 2v1. The timeout is long on purpose: queues can
- * sit for minutes and tabbing out while waiting is normal. It is not a server-wide AFK kick.
- *
- * <p>The map is concurrent because chat arrives on an async thread.
+ * Last-input clock per online player (fed by {@code ActivityListener}) and queue AFK warning/drop sweep.
+ * Queued players and armed auto-queues share this sweep so idle lobbies never pop into empty matches.
  */
 public final class AfkTracker {
 
     private static final Map<UUID, Long> lastActivity = new ConcurrentHashMap<>();
+    private static final Set<UUID> afkWarned = new HashSet<>();
 
     private AfkTracker() {}
 
@@ -33,27 +38,86 @@ public final class AfkTracker {
         lastActivity.remove(playerId);
     }
 
+    public static void clear() {
+        lastActivity.clear();
+        afkWarned.clear();
+    }
+
+    static boolean isWarned(UUID playerId) {
+        return afkWarned.contains(playerId);
+    }
+
+    /** Warns or drops idle players across both active queues and armed auto-queue loops. */
+    static void sweep(Set<UUID> queuedPlayers, Consumer<Player> dequeue, Predicate<Player> isQueued) {
+        int timeout = timeoutSeconds();
+        int warning = warningSeconds();
+
+        Set<UUID> watched = new LinkedHashSet<>(queuedPlayers);
+        watched.addAll(AutoQueue.armedPlayers());
+        afkWarned.retainAll(watched);
+
+        for (UUID uuid : watched) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player == null) continue;
+            int idle = idleSeconds(player);
+
+            if (idle >= timeout) {
+                afkWarned.remove(uuid);
+                Set<Player> partyMembers = PartyManager.getPartyMembers(player);
+                boolean wasQueued = isQueued.test(player);
+                dequeue.accept(player);
+                boolean wasArmed = AutoQueue.stop(player);
+                player.clearTitle();
+                if (wasQueued) {
+                    player.sendMessage(GameConfigManager.getMessage("queue.afk-removed",
+                            Map.of("seconds", String.valueOf(timeout))));
+                }
+                if (wasArmed) {
+                    player.sendMessage(GameConfigManager.getMessage("queue.auto.stopped-afk"));
+                }
+                for (Player member : partyMembers) {
+                    if (member.equals(player) || isQueued.test(member)) continue;
+                    member.clearTitle();
+                    member.sendMessage(GameConfigManager.getMessage("queue.afk-party-removed",
+                            Map.of("player", player.getName())));
+                }
+                continue;
+            }
+
+            int secondsLeft = timeout - idle;
+            if (secondsLeft > warning) {
+                afkWarned.remove(uuid);
+                continue;
+            }
+
+            boolean firstWarning = afkWarned.add(uuid);
+            Map<String, String> ph = Map.of("seconds", String.valueOf(secondsLeft));
+            if (firstWarning) {
+                player.sendMessage(GameConfigManager.getMessage("queue.afk-warning", ph));
+            }
+            player.showTitle(Title.title(
+                    GameConfigManager.getMessage("queue.afk-warning-title", ph),
+                    GameConfigManager.getMessage("queue.afk-warning-subtitle", ph),
+                    Title.Times.times(Duration.ZERO, Duration.ofMillis(1500), Duration.ZERO)));
+            if (firstWarning || secondsLeft <= 5) {
+                SoundBuilder.of(warningSound()).volume(warningSoundVolume()).pitch(warningSoundPitch()).play(player);
+            }
+        }
+    }
+
     public static int idleSeconds(Player player) {
         Long last = lastActivity.get(player.getUniqueId());
         if (last == null) {
-            // First sighting counts as activity; otherwise a player who joined before the
-            // listener saw any input would read as idle since the epoch.
             touch(player);
             return 0;
         }
         return (int) ((System.currentTimeMillis() - last) / 1000);
     }
 
-    public static boolean isAfk(Player player) {
-        return idleSeconds(player) >= timeoutSeconds();
-    }
-
-    /** {@code queue.afk-timeout-seconds} from game-config.yml. */
     public static int timeoutSeconds() {
         return Configs.requireInt(queueSection(), "afk-timeout-seconds");
     }
 
-    /** {@code queue.afk-warning-seconds}: how long before the timeout the warning starts. */
     public static int warningSeconds() {
         return Configs.requireInt(queueSection(), "afk-warning-seconds");
     }

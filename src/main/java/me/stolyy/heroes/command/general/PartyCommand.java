@@ -1,104 +1,87 @@
 package me.stolyy.heroes.command.general;
 
-import me.stolyy.heroes.game.queue.QueueManager;
+import me.stolyy.heroes.command.HeroesCommand;
+import me.stolyy.heroes.command.TabComplete;
+import me.stolyy.heroes.game.GameMode;
 import me.stolyy.heroes.game.map.GameMapManager;
+import me.stolyy.heroes.game.rules.GameModePreset;
 import me.stolyy.heroes.party.PartyManager;
 import me.stolyy.heroes.party.PartyReadyCheck;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Stream;
 
-public class PartyCommand extends Command {
+public class PartyCommand extends HeroesCommand {
     public PartyCommand() {
-        super("party");
-        this.setDescription("Manage parties");
-        this.setUsage("/party <invite|invite-all|accept|list|leave|disband|transfer|kick|ready> [player|mode...]");
-        this.setAliases(List.of("p"));
+        super("party", "Manage parties",
+                "/party <invite|invite-all|accept|list|leave|disband|transfer|kick|ready> [player|mode...]",
+                List.of("p"));
     }
 
     @Override
-    public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, String @NotNull [] args) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage(Component.text("This command can only be used by players.", NamedTextColor.RED));
-            return true;
-        }
-
+    protected void execute(Player player, String[] args) {
         if (args.length == 0) {
             usage(player);
-            return true;
+            return;
         }
 
-        String subCommand = args[0].toLowerCase();
+        String subCommand = args[0].toLowerCase(Locale.ROOT);
         Player target = (args.length > 1) ? Bukkit.getPlayer(args[1]) : null;
 
         switch (subCommand) {
-            case "invite":
+            case "invite" -> {
                 if (target == null) {
                     player.sendMessage(Component.text("Player not found or not specified.", NamedTextColor.RED));
-                    return true;
+                    return;
                 }
                 PartyManager.invitePlayer(player, target);
-                break;
-            case "invite-all":
-            case "inviteall":
-                PartyManager.inviteAll(player);
-                break;
-            case "accept":
+            }
+            case "invite-all", "inviteall" -> PartyManager.inviteAll(player);
+            case "accept" -> {
                 if (target == null) {
                     player.sendMessage(Component.text("You must specify whose invite to accept.", NamedTextColor.RED));
-                    return true;
+                    return;
                 }
                 PartyManager.acceptInvite(player, target);
-                QueueManager.removeFromAllQueues(player);
-                break;
-            case "list":
-                list(player);
-                break;
-            case "leave":
-                PartyManager.leaveParty(player);
-                break;
-            case "disband":
-                PartyManager.disbandParty(player);
-                break;
-            case "transfer":
+            }
+            case "list" -> list(player);
+            case "leave" -> PartyManager.leaveParty(player);
+            case "disband" -> PartyManager.disbandParty(player);
+            case "transfer" -> {
                 if (target == null) {
                     player.sendMessage(Component.text("You must specify a player to transfer leadership to.", NamedTextColor.RED));
-                    return true;
+                    return;
                 }
                 PartyManager.transferLeader(player, target);
-                break;
-            case "kick":
+            }
+            case "kick" -> {
                 if (target == null) {
                     player.sendMessage(Component.text("You must specify a player to kick.", NamedTextColor.RED));
-                    return true;
+                    return;
                 }
                 PartyManager.kickPlayer(player, target);
-                break;
-            case "ready":
-                ready(player, args);
-                break;
-            case "readyvote":
+            }
+            case "ready" -> ready(player, args);
+            case "readyvote" -> {
                 if (args.length < 2 || !(args[1].equalsIgnoreCase("yes") || args[1].equalsIgnoreCase("no"))) {
                     usage(player);
-                    return true;
+                    return;
                 }
                 PartyReadyCheck.vote(player, args[1].equalsIgnoreCase("yes"));
-                break;
-            default:
-                usage(player);
+            }
+            default -> usage(player);
         }
-        return true;
     }
 
-    /** {@code /party ready <mode> [args...]} (same grammar as /join), {@code force} or {@code cancel}. */
     private void ready(Player player, String[] args) {
         if (args.length < 2) {
             usage(player);
@@ -139,48 +122,47 @@ public class PartyCommand extends Command {
     }
 
     @Override
-    public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, String @NotNull [] args) throws IllegalArgumentException {
+    protected List<String> complete(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) return Collections.emptyList();
 
         if (args.length == 1) {
-            return Arrays.asList("invite", "invite-all", "accept", "list", "leave", "disband", "transfer", "kick", "ready");
+            return TabComplete.startsWith(
+                    List.of("invite", "invite-all", "accept", "list", "leave", "disband", "transfer", "kick", "ready"),
+                    args[0]);
         }
 
         if (args[0].equalsIgnoreCase("ready")) {
             if (args.length == 2) {
-                return Stream.of("force", "cancel", "1v1", "2v2", "custom", "tdm", "evolution", "series", "nuzlocke", "ironman", "boss")
-                        .filter(s -> s.startsWith(args[1].toLowerCase()))
-                        .collect(Collectors.toList());
+                Stream<String> readyTokens = Stream.concat(
+                        Stream.concat(Stream.of("force", "cancel"), GameMode.tokens().stream()),
+                        GameModePreset.commandTokens().stream());
+                return TabComplete.startsWith(readyTokens, args[1]);
             }
             if (args.length == 3) {
-                return GameMapManager.getAllMapNames().stream()
-                        .filter(name -> name.toLowerCase().startsWith(args[2].toLowerCase()))
-                        .collect(Collectors.toList());
+                return TabComplete.startsWith(GameMapManager.getAllMapNames(), args[2]);
             }
             return Collections.emptyList();
         }
 
         if (args.length == 2) {
-            String subCommand = args[0].toLowerCase();
-            switch (subCommand) {
-                case "invite":
+            return switch (args[0].toLowerCase(Locale.ROOT)) {
+                case "invite" -> {
                     Set<Player> partyMembers = PartyManager.getPartyMembers(player);
-                    return Bukkit.getOnlinePlayers().stream()
-                            .filter(onlinePlayer -> !partyMembers.contains(onlinePlayer))
-                            .map(Player::getName)
-                            .collect(Collectors.toList());
-                case "transfer":
-                case "kick":
-                    if (!PartyManager.isPartyLeader(player)) return Collections.emptyList();
-                    return PartyManager.getPartyMembers(player).stream()
-                            .filter(member -> !member.equals(player))
-                            .map(Player::getName)
-                            .collect(Collectors.toList());
-                case "accept":
-                    return PartyManager.getPendingInvites(player).stream()
-                            .map(Player::getName)
-                            .collect(Collectors.toList());
-            }
+                    yield TabComplete.onlinePlayers(args[1], online -> !partyMembers.contains(online));
+                }
+                case "transfer", "kick" -> {
+                    if (!PartyManager.isPartyLeader(player)) yield Collections.emptyList();
+                    yield TabComplete.startsWith(
+                            PartyManager.getPartyMembers(player).stream()
+                                    .filter(member -> !member.equals(player))
+                                    .map(Player::getName),
+                            args[1]);
+                }
+                case "accept" -> TabComplete.startsWith(
+                        PartyManager.getPendingInvites(player).stream().map(Player::getName),
+                        args[1]);
+                default -> Collections.emptyList();
+            };
         }
         return Collections.emptyList();
     }

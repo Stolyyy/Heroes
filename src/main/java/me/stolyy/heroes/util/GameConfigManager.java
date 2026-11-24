@@ -16,11 +16,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Central loader and typed accessor for {@code game-config.yml} and {@code messages.yml}.
+ */
 public class GameConfigManager {
     private static FileConfiguration gameConfig;
     private static FileConfiguration messagesConfig;
     private static List<PracticeArena> practiceArenas;
 
+    /** Loads (or extracts defaults for) {@code game-config.yml}, {@code messages.yml}, and {@code templates.yml}. */
     public static void reload() {
         Heroes plugin = Heroes.getInstance();
         gameConfig = loadOrCreateConfig(plugin, "game-config.yml");
@@ -40,13 +44,13 @@ public class GameConfigManager {
     public static FileConfiguration getGameConfig() { return gameConfig; }
     public static FileConfiguration getMessagesConfig() { return messagesConfig; }
 
-    public static int getCountdownTime() { return gameConfig.getInt("timing.countdown"); }
+    public static int getCountdownTime() { return Configs.requireInt(gameConfig, "timing.countdown"); }
     /** Which column (0-8) of the custom game GUI holds the utility buttons. 8 = rightmost, 4 = middle. */
-    public static int getCustomGuiUtilityColumn() { return gameConfig.getInt("custom-gui.utility-column", 8); }
-    public static int getQueueTitleCycleInterval() { return gameConfig.getInt("queue.title-cycle-interval", 2); }
-    public static int getRespawnTime() { return gameConfig.getInt("timing.respawn"); }
-    public static int getCleanupDelay() { return gameConfig.getInt("timing.cleanup-delay"); }
-    public static int getDefaultGameDuration() { return gameConfig.getInt("timing.default-game-duration"); }
+    public static int getCustomGuiUtilityColumn() { return Configs.requireInt(gameConfig, "custom-gui.utility-column"); }
+    public static int getQueueTitleCycleInterval() { return Configs.requireInt(gameConfig, "queue.title-cycle-interval"); }
+    public static int getRespawnTime() { return Configs.requireInt(gameConfig, "timing.respawn"); }
+    public static int getCleanupDelay() { return Configs.requireInt(gameConfig, "timing.cleanup-delay"); }
+    public static int getDefaultGameDuration() { return Configs.requireInt(gameConfig, "timing.default-game-duration"); }
 
     public static List<Vector> getSpawnOffsets() {
         List<Vector> offsets = new ArrayList<>();
@@ -64,7 +68,7 @@ public class GameConfigManager {
         return offsets;
     }
 
-    // --- Practice arenas (B24) ---
+    // --- Practice arenas ---
 
     /** Every {@code practice-arenas} entry in yml order; the first is the default arena. */
     public static List<PracticeArena> getPracticeArenas() {
@@ -96,19 +100,19 @@ public class GameConfigManager {
         return null;
     }
 
-    public static double getCrystalWidth() { return gameConfig.getDouble("crystals.width"); }
-    public static double getCrystalHeight() { return gameConfig.getDouble("crystals.height"); }
-    public static double getCrystalYOffset() { return gameConfig.getDouble("crystals.y-offset"); }
-    public static int getCrystalSpawnDelayTicks() { return gameConfig.getInt("crystals.spawn-delay-ticks"); }
-    public static int getCrystalDefaultInterval() { return gameConfig.getInt("crystals.default-interval"); }
-    public static float getCrystalSpinSpeed() { return (float) gameConfig.getDouble("crystals.spin-speed"); }
-    public static double getCrystalBobAmplitude() { return gameConfig.getDouble("crystals.bob-amplitude"); }
-    public static double getCrystalBobSpeed() { return gameConfig.getDouble("crystals.bob-speed"); }
+    public static double getCrystalWidth() { return Configs.requireDouble(gameConfig, "crystals.width"); }
+    public static double getCrystalHeight() { return Configs.requireDouble(gameConfig, "crystals.height"); }
+    public static double getCrystalYOffset() { return Configs.requireDouble(gameConfig, "crystals.y-offset"); }
+    public static int getCrystalSpawnDelayTicks() { return Configs.requireInt(gameConfig, "crystals.spawn-delay-ticks"); }
+    public static int getCrystalDefaultInterval() { return Configs.requireInt(gameConfig, "crystals.default-interval"); }
+    public static float getCrystalSpinSpeed() { return (float) Configs.requireDouble(gameConfig, "crystals.spin-speed"); }
+    public static double getCrystalBobAmplitude() { return Configs.requireDouble(gameConfig, "crystals.bob-amplitude"); }
+    public static double getCrystalBobSpeed() { return Configs.requireDouble(gameConfig, "crystals.bob-speed"); }
 
     // --- Bots ---
 
     /** Cap on bots addable via the custom game GUI's Add Bot button (map-change carryover ignores this). */
-    public static int getMaxBotsPerGame() { return gameConfig.getInt("bots.max-per-game", 8); }
+    public static int getMaxBotsPerGame() { return Configs.requireInt(gameConfig, "bots.max-per-game"); }
 
     // --- Rating (see EloCalculator) ---
 
@@ -132,26 +136,25 @@ public class GameConfigManager {
         return Configs.requireDouble(gameConfig, "elo.team-gap-damping.max-reduction");
     }
 
-    public static int getInt(String path, int def) { return gameConfig.getInt(path, def); }
-    public static int getInt(String path) { return gameConfig.getInt(path); }
-    public static String getString(String path) { return gameConfig.getString(path, ""); }
-    public static boolean getBoolean(String path) { return gameConfig.getBoolean(path); }
-    public static List<String> getStringList(String path) { return messagesConfig.getStringList(path); }
-    public static long getLong(String path, long def) { return gameConfig.getLong(path, def); }
-
+    /** Formats a required message from {@code messages.yml} using legacy {@code &} color codes. */
     public static Component getMessage(String path) {
         return getMessage(path, Map.of());
     }
 
+    /** Formats a required message from {@code messages.yml}, substituting {@code {key}} placeholders. */
     public static Component getMessage(String path, Map<String, String> placeholders) {
-        String raw = messagesConfig.getString(path, "");
+        String raw = Configs.requireString(messagesConfig, path);
         for (Map.Entry<String, String> entry : placeholders.entrySet()) {
             raw = raw.replace("{" + entry.getKey() + "}", entry.getValue());
         }
         return LegacyComponentSerializer.legacyAmpersand().deserialize(raw);
     }
 
+    /** Formats a required message list from {@code messages.yml}, substituting {@code {key}} placeholders. */
     public static List<Component> getMessageList(String path, Map<String, String> placeholders) {
+        if (!messagesConfig.contains(path)) {
+            throw new IllegalStateException("Missing required message list '" + path + "' in messages.yml");
+        }
         List<String> rawList = messagesConfig.getStringList(path);
         List<Component> result = new ArrayList<>();
         for (String raw : rawList) {
@@ -163,15 +166,8 @@ public class GameConfigManager {
         return result;
     }
 
+    /** Returns a required raw string from {@code messages.yml} without color deserialization. */
     public static String getMessageString(String path) {
-        return messagesConfig.getString(path, "");
-    }
-
-    public static String getMessageString(String path, Map<String, String> placeholders) {
-        String raw = messagesConfig.getString(path, "");
-        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-            raw = raw.replace("{" + entry.getKey() + "}", entry.getValue());
-        }
-        return raw;
+        return Configs.requireString(messagesConfig, path);
     }
 }

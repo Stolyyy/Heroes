@@ -27,13 +27,13 @@ import java.util.UUID;
  */
 public final class AutoSpectate {
 
-    private AutoSpectate() {}
-
     // watcher uuid -> target uuid
     private static final Map<UUID, UUID> targets = new HashMap<>();
     // watcher uuid -> action bar refresher (lobby only; started on arm, cancelled on disarm/quit)
     private static final Map<UUID, BukkitTask> actionBars = new HashMap<>();
     private static boolean initialized;
+
+    private AutoSpectate() {}
 
     public static void initialize() {
         if (initialized) return;
@@ -119,6 +119,14 @@ public final class AutoSpectate {
         // doesn't — the fire simply re-seats the watcher.
         if (GameManager.isPlayerInGame(watcher) && !GameManager.isSpectating(watcher)) return;
         GameManager.spectateGame(watcher, target);
+    }
+
+    public static void clear() {
+        for (BukkitTask task : actionBars.values()) {
+            task.cancel();
+        }
+        actionBars.clear();
+        targets.clear();
     }
 
     /** Watcher arms die with the connection. */

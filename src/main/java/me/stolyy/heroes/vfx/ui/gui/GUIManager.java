@@ -7,11 +7,23 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public class GUIManager {
     private static final Map<UUID, GUI> openGuis = new HashMap<>();
     private static final Set<UUID> changingGuis = new HashSet<>();
+
+    public static void initialize() {
+        Heroes plugin = Heroes.getInstance();
+        Bukkit.getPluginManager().registerEvents(new GUIListener(), plugin);
+        Bukkit.getPluginManager().registerEvents(new CustomGameHotbarListener(), plugin);
+    }
 
     public static void open(Player player, GUI gui) {
         changingGuis.add(player.getUniqueId());
@@ -87,14 +99,15 @@ public class GUIManager {
     }
 
     public static void clear() {
-        openGuis.keySet().forEach(uuid -> {
+        List<UUID> open = new ArrayList<>(openGuis.keySet());
+        openGuis.clear();
+        changingGuis.clear();
+        for (UUID uuid : open) {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null && player.isOnline()) {
                 player.closeInventory();
             }
-        });
-        openGuis.clear();
-        changingGuis.clear();
+        }
     }
 
     public static void closeAndCleanup(Player player) {

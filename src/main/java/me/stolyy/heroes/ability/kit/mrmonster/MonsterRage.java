@@ -34,7 +34,14 @@ public class MonsterRage extends BaseAbility {
     protected void onTick(Hero hero) {
         int max = hero.getEnergy().getMaxEnergy();
         double fraction = max > 0 ? hero.getEnergy().getCurrentEnergy() / (double) max : 0;
-        hero.getAttributes().setDamageDealtMultiplier(1 + fraction * (maxDamageDealtMultiplier - 1));
-        hero.getAttributes().setKnockbackDealtMultiplier(1 + fraction * (maxKnockbackDealtMultiplier - 1));
+        hero.getAttributes().addDamageDealtMultiplier(this, 1 + fraction * (maxDamageDealtMultiplier - 1));
+        hero.getAttributes().addKnockbackDealtMultiplier(this, 1 + fraction * (maxKnockbackDealtMultiplier - 1));
+    }
+
+    @Override
+    public void onDeath(Hero hero) {
+        super.onDeath(hero);
+        hero.getAttributes().removeDamageDealtModifier(this);
+        hero.getAttributes().removeKnockbackDealtModifier(this);
     }
 }

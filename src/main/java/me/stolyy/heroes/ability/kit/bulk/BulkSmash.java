@@ -1,10 +1,11 @@
 package me.stolyy.heroes.ability.kit.bulk;
 
+import me.stolyy.heroes.ability.AbilityType;
 import me.stolyy.heroes.hero.Hero;
-import me.stolyy.heroes.ability.template.BaseAbility;
+import me.stolyy.heroes.ability.template.CompositeAbility;
 import me.stolyy.heroes.ability.template.Shockwave;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
-import me.stolyy.heroes.physics.Interactions;
 import me.stolyy.heroes.vfx.effect.SoundEffect;
 import me.stolyy.heroes.vfx.effect.VisualEffect;
 import me.stolyy.heroes.physics.Hitbox;
@@ -13,11 +14,11 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
-public class BulkSmash extends BaseAbility {
+public class BulkSmash extends CompositeAbility {
     private final int smashCount;
 
     private final int launchDelayTicks;
@@ -29,7 +30,7 @@ public class BulkSmash extends BaseAbility {
 
     private final double secondaryCooldownMultiplier;
 
-    private final LandingShockwave landingShockwave;
+    private final Shockwave landingShockwave;
 
     private final SoundEffect activationSound;
     private final SoundEffect launchSound;
@@ -46,36 +47,40 @@ public class BulkSmash extends BaseAbility {
     private boolean isDescending = false;
     private boolean waitingForDescent = false;
     private int descentDelayCounter = 0;
-    private final Set<UUID> descentHitHistory = new HashSet<>();
-    private long originalSecondaryCooldown;
+    private final Map<UUID, Long> descentHitHistory = new HashMap<>();
 
     public BulkSmash(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
 
-        this.smashCount = config.getInt("smash_count");
-        this.launchDelayTicks = config.getInt("launch_delay_ticks");
-        this.launchHorizontalStrength = config.getDouble("launch_horizontal_strength");
-        this.launchVerticalStrength = config.getDouble("launch_vertical_strength");
-        this.descentDelayTicks = config.getInt("descent_delay_ticks");
-        this.descentHorizontalStrength = config.getDouble("descent_horizontal_strength");
-        this.descentVerticalStrength = config.getDouble("descent_vertical_strength");
+        this.smashCount = Configs.requireInt(this.config, "smash_count");
+        this.launchDelayTicks = Configs.requireInt(this.config, "launch_delay_ticks");
+        this.launchHorizontalStrength = Configs.requireDouble(this.config, "launch_horizontal_strength");
+        this.launchVerticalStrength = Configs.requireDouble(this.config, "launch_vertical_strength");
+        this.descentDelayTicks = Configs.requireInt(this.config, "descent_delay_ticks");
+        this.descentHorizontalStrength = Configs.requireDouble(this.config, "descent_horizontal_strength");
+        this.descentVerticalStrength = Configs.requireDouble(this.config, "descent_vertical_strength");
 
-        this.secondaryCooldownMultiplier = config.getDouble("secondary_cooldown_multiplier");
+        this.secondaryCooldownMultiplier = Configs.requireDouble(this.config, "secondary_cooldown_multiplier");
 
-        this.landingShockwave = new LandingShockwave(config.getConfigurationSection("shockwave"), skin);
+        this.landingShockwave = addChild(new Shockwave(
+                Configs.requireSection(this.config, "shockwave"), skin, AbilityType.SMASH));
 
-        this.activationSound = new SoundEffect(this.config.getConfigurationSection("visuals.activation_sound"));
-        this.launchSound = new SoundEffect(this.config.getConfigurationSection("visuals.launch_sound"));
-        this.descentSound = new SoundEffect(this.config.getConfigurationSection("visuals.descent_sound"));
-        this.hitSound = new SoundEffect(this.config.getConfigurationSection("visuals.hit_sound"));
-        this.launchVisual = new VisualEffect(this.config.getConfigurationSection("visuals.launch_visual"));
-        this.descentVisual = new VisualEffect(this.config.getConfigurationSection("visuals.descent_visual"));
-        this.hitVisual = new VisualEffect(this.config.getConfigurationSection("visuals.hit_visual"));
+        this.activationSound = new SoundEffect(Configs.requireSection(this.config, "visuals.activation_sound"));
+        this.launchSound = SoundEffect.optional(this.config, "visuals.launch_sound");
+        this.descentSound = SoundEffect.optional(this.config, "visuals.descent_sound");
+        this.hitSound = new SoundEffect(Configs.requireSection(this.config, "visuals.hit_sound"));
+        this.launchVisual = VisualEffect.optional(this.config, "visuals.launch_visual");
+        this.descentVisual = VisualEffect.optional(this.config, "visuals.descent_visual");
+        this.hitVisual = VisualEffect.optional(this.config, "visuals.hit_visual");
     }
 
     @Override
-    public void onDeath(Hero hero) {
-        super.onDeath(hero);
+    protected void onCompositeDeath(Hero hero) {
+        endUltimate(hero);
+    }
+
+    @Override
+    protected void onCompositeOwnerLost(Hero hero) {
         endUltimate(hero);
     }
 
@@ -85,10 +90,9 @@ public class BulkSmash extends BaseAbility {
         smashesRemaining = smashCount;
         descentHitHistory.clear();
 
-
-        originalSecondaryCooldown = hero.getSecondaryAbility().getCooldown();
-        long modifiedCooldown = (long) (originalSecondaryCooldown * secondaryCooldownMultiplier);
-        hero.getSecondaryAbility().setCooldown(modifiedCooldown);
+        if (hero.getSecondaryAbility() != null) {
+            hero.getSecondaryAbility().getCooldownObject().addDurationMultiplier(this, secondaryCooldownMultiplier);
+        }
 
         activationSound.play(hero.getController());
 
@@ -107,15 +111,15 @@ public class BulkSmash extends BaseAbility {
     }
 
     private void beginLaunch(Hero hero) {
-        LivingEntity entity = hero.getController().getEntity();
-        Vector direction = entity.getLocation().getDirection().normalize();
+        Location loc = hero.getController().getLocation();
+        Vector direction = loc.getDirection().normalize();
 
         Vector launchVelocity = direction.clone().multiply(launchHorizontalStrength);
         launchVelocity.setY(launchVerticalStrength);
-        entity.setVelocity(launchVelocity);
+        hero.getController().setVelocity(launchVelocity);
 
-        launchSound.play(entity.getLocation(), hero.getController());
-        launchVisual.play(entity.getLocation(), direction);
+        launchSound.play(loc, hero.getController());
+        launchVisual.play(loc, direction);
 
         waitingForDescent = true;
         descentDelayCounter = descentDelayTicks;
@@ -124,19 +128,19 @@ public class BulkSmash extends BaseAbility {
     private void beginDescent(Hero hero) {
         isDescending = true;
 
-        LivingEntity entity = hero.getController().getEntity();
-        Vector direction = entity.getLocation().getDirection().normalize();
+        Location loc = hero.getController().getLocation();
+        Vector direction = loc.getDirection().normalize();
 
         Vector descentVelocity = direction.clone().multiply(descentHorizontalStrength);
         descentVelocity.setY(-descentVerticalStrength);
-        entity.setVelocity(descentVelocity);
+        hero.getController().setVelocity(descentVelocity);
 
-        descentSound.play(entity.getLocation(), hero.getController());
-        descentVisual.play(entity.getLocation(), new Vector(0, -1, 0));
+        descentSound.play(loc, hero.getController());
+        descentVisual.play(loc, new Vector(0, -1, 0));
     }
 
     @Override
-    protected void onTick(Hero hero) {
+    protected void onCompositeTick(Hero hero) {
         if (!isActive) return;
 
         if (waitingForLaunch) {
@@ -162,19 +166,14 @@ public class BulkSmash extends BaseAbility {
 
     private void checkDescentHitbox(Hero hero) {
         LivingEntity entity = hero.getController().getEntity();
-        Location center = entity.getBoundingBox().getCenter().toLocation(entity.getWorld());
+        Location center = hero.getController().getCenter();
 
-        Hitbox hitbox = Hitbox.sphere(center, radius)
+        Hitbox.sphere(center, radius)
                 .exclude(entity)
-                .filter(e -> !descentHitHistory.contains(e.getUniqueId()))
-                .onHit((victim, loc) -> {
-                    descentHitHistory.add(victim.getUniqueId());
-                    onDescentHit(hero, victim);
-                });
-
-        hitbox.excludeTeammates(entity);
-
-        hitbox.check();
+                .excludeTeammates(entity)
+                .shareHitHistory(descentHitHistory)
+                .onHit((victim, loc) -> onDescentHit(hero, victim))
+                .check();
     }
 
     private void onDescentHit(Hero hero, LivingEntity victim) {
@@ -182,9 +181,7 @@ public class BulkSmash extends BaseAbility {
         hitVisual.play(victim.getEyeLocation());
 
         Vector downward = new Vector(0, -1, 0);
-        Interactions.on(hero.getController().getEntity(), victim).abilityName(getName()).damage(damage).knockback(knockback).direction(downward).execute();
-
-        hero.triggerAbilityHit(this, victim);
+        hit(hero, victim).damage(damage).knockback(knockback).direction(downward).execute();
     }
 
     @Override
@@ -192,35 +189,12 @@ public class BulkSmash extends BaseAbility {
         if (!isActive || !isDescending) return;
 
         isDescending = false;
-        performShockwave(hero);
+        landingShockwave.perform(hero, new HashMap<>(descentHitHistory));
 
         if (smashesRemaining > 0) {
             performSmash(hero);
         } else {
             endUltimate(hero);
-        }
-    }
-
-    private void performShockwave(Hero hero) {
-        landingShockwave.setExcludedTargets(descentHitHistory);
-        landingShockwave.execute(hero);
-    }
-
-    private static class LandingShockwave extends Shockwave {
-        private Set<UUID> excludedTargets = new HashSet<>();
-
-        public LandingShockwave(ConfigurationSection config, HeroSkin skin) {
-            super(config, skin);
-        }
-
-        public void setExcludedTargets(Set<UUID> targets) {
-            this.excludedTargets = new HashSet<>(targets);
-        }
-
-        @Override
-        protected void onHit(Hero hero, LivingEntity victim, Location center) {
-            if (excludedTargets.contains(victim.getUniqueId())) return;
-            super.onHit(hero, victim, center);
         }
     }
 
@@ -236,7 +210,9 @@ public class BulkSmash extends BaseAbility {
         smashesRemaining = 0;
         descentHitHistory.clear();
 
-        hero.getSecondaryAbility().setCooldown(originalSecondaryCooldown);
+        if (hero.getSecondaryAbility() != null) {
+            hero.getSecondaryAbility().getCooldownObject().removeDurationModifier(this);
+        }
     }
 
     public boolean isActive() {

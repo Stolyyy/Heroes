@@ -1,13 +1,16 @@
 package me.stolyy.heroes.ability.kit.voidcrawler;
 
-import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.Hitscan;
+import me.stolyy.heroes.hero.Hero;
+import me.stolyy.heroes.physics.WallDetection;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.vfx.effect.VisualEffect;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Nullable;
 
 public class VoidTeleboom extends Hitscan {
     private final double distanceToTeleportLocation;
@@ -15,27 +18,12 @@ public class VoidTeleboom extends Hitscan {
 
     public VoidTeleboom(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        this.distanceToTeleportLocation = config.getDouble("distance_to_teleport_spot");
-        this.boomVisual = new VisualEffect(config.getConfigurationSection("boom_visual"));
+        this.distanceToTeleportLocation = Configs.requireDouble(this.config, "distance_to_teleport_spot");
+        this.boomVisual = new VisualEffect(Configs.requireSection(this.config, "boom_visual"));
     }
 
     @Override
-    public void onHit(Hero attacker, LivingEntity victim, Location hitLoc) {
-        super.onHit(attacker, victim, hitLoc);
-        teleport(attacker, hitLoc);
-        boomVisual.play(attacker.getController().getLocation());
-    }
-
-    @Override
-    public void onHitWall(Hero hero, Location location) {
-        super.onHitWall(hero, location);
-        teleport(hero, location);
-        boomVisual.play(hero.getController().getLocation());
-    }
-
-    @Override
-    public void onExpire(Hero hero, Location location) {
-        super.onExpire(hero, location);
+    protected void onImpact(Hero hero, Location location, @Nullable LivingEntity victim, ImpactCause cause) {
         teleport(hero, location);
         boomVisual.play(hero.getController().getLocation());
     }
@@ -46,7 +34,6 @@ public class VoidTeleboom extends Hitscan {
         Location teleportLocation = location.clone().subtract(direction.multiply(distanceToTeleportLocation));
         teleportLocation.setYaw(playerLoc.getYaw());
         teleportLocation.setPitch(playerLoc.getPitch());
-        attacker.getController().getEntity().teleport(teleportLocation);
+        WallDetection.safeTeleport(attacker.getController(), teleportLocation);
     }
-
 }

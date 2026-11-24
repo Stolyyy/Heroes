@@ -2,49 +2,51 @@ package me.stolyy.heroes.vfx.ui.visual;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.util.Configs;
+import me.stolyy.heroes.util.SpecList;
+import me.stolyy.heroes.vfx.effect.DisplayTags;
+import me.stolyy.heroes.vfx.effect.TextDisplayBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
-import org.bukkit.Color;
 import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.TextDisplay;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Static lobby plaques from lobby.yml {@code memorials:}: season placements, first-to-X achievements,
- * tournament winners, cosmetic hall labels. Each entry is one multi-line {@link TextDisplay}; the text is
- * MiniMessage. Season snapshots that write entries here are a separate feature; this only renders them.
- */
+/** Static lobby plaques from lobby.yml {@code memorials:}. Each entry is one multi-line {@link TextDisplay}. */
 public class MemorialDisplays {
-    private static final NamespacedKey ENTITY_TAG = new NamespacedKey(Heroes.getInstance(), "memorial");
     private final List<TextDisplay> displays = new ArrayList<>();
 
     public void spawn() {
         despawn();
-        cleanupOrphans();
+        DisplayTags.sweep(DisplayTags.MEMORIAL);
 
         File file = new File(Heroes.getInstance().getDataFolder(), "lobby.yml");
+        if (!file.exists()) {
+            Heroes.getInstance().getLogger().warning("lobby.yml not found; skipping memorial displays");
+            return;
+        }
         YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
         for (Map<?, ?> raw : config.getMapList("memorials")) {
-            ConfigurationSection entry = config.createSection("memorials-parse", raw);
-            spawnOne(entry);
+            spawnOne(SpecList.fromMap(raw));
         }
     }
 
     private void spawnOne(ConfigurationSection entry) {
-        World world = Bukkit.getWorld(Configs.requireString(entry, "world"));
-        if (world == null) return;
+        String worldName = Configs.requireString(entry, "world");
+        World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            Heroes.getInstance().getLogger().warning("Skipping lobby.yml memorial: world '" + worldName + "' is not loaded");
+            return;
+        }
         Location location = new Location(world,
                 Configs.requireDouble(entry, "x"),
                 Configs.requireDouble(entry, "y"),
@@ -57,26 +59,16 @@ public class MemorialDisplays {
 
         location.getChunk().setForceLoaded(true);
         location.getChunk().load();
-        TextDisplay display = world.spawn(location, TextDisplay.class, d -> {
-            d.text(text);
-            d.setBillboard(Display.Billboard.CENTER);
-            d.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
-            d.setPersistent(false);
-            d.getPersistentDataContainer().set(ENTITY_TAG, PersistentDataType.BYTE, (byte) 1);
-        });
-        displays.add(display);
+        displays.add(TextDisplayBuilder.create(location)
+                .text(text)
+                .billboard(Display.Billboard.CENTER)
+                .transparentBackground()
+                .tag(DisplayTags.MEMORIAL)
+                .spawn());
     }
 
     public void despawn() {
         displays.forEach(Entity::remove);
         displays.clear();
-    }
-
-    private void cleanupOrphans() {
-        for (World world : Bukkit.getWorlds()) {
-            for (Entity e : world.getEntitiesByClass(TextDisplay.class)) {
-                if (e.getPersistentDataContainer().has(ENTITY_TAG, PersistentDataType.BYTE)) e.remove();
-            }
-        }
     }
 }

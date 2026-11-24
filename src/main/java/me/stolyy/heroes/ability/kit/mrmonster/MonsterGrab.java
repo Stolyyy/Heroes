@@ -1,16 +1,21 @@
 package me.stolyy.heroes.ability.kit.mrmonster;
 
+import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroManager;
 import me.stolyy.heroes.ability.template.BaseAbility;
-import me.stolyy.heroes.physics.Interactions;
 import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.vfx.effect.SoundEffect;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDismountEvent;
 import org.bukkit.util.Vector;
 
 import java.util.Set;
@@ -19,10 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class MonsterGrab extends BaseAbility {
     private static final Set<UUID> GRABBED = ConcurrentHashMap.newKeySet();
-
-    public static boolean isGrabbedVictim(UUID uuid) {
-        return GRABBED.contains(uuid);
-    }
 
     private final int armWindowTicks;
     private final int throwWindowTicks;
@@ -39,6 +40,28 @@ public class MonsterGrab extends BaseAbility {
     private LivingEntity victim;
     private int throwTicksLeft;
 
+    public static void initialize() {
+        Bukkit.getPluginManager().registerEvents(new DismountListener(), Heroes.getInstance());
+    }
+
+    public static void clear() {
+        GRABBED.clear();
+    }
+
+    public static boolean isGrabbedVictim(UUID uuid) {
+        return GRABBED.contains(uuid);
+    }
+
+    /** Prevents grabbed victims from sneaking off Mr. Monster's shoulder mid-grab. */
+    public static class DismountListener implements Listener {
+        @EventHandler
+        public void onDismount(EntityDismountEvent event) {
+            if (event.getEntity() instanceof Player victim && isGrabbedVictim(victim.getUniqueId())) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
     public MonsterGrab(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
         this.armWindowTicks = Configs.requireInt(this.config, "arm_window_ticks");
@@ -47,15 +70,14 @@ public class MonsterGrab extends BaseAbility {
         this.throwDamage = Configs.requireDouble(this.config, "throw_damage");
         this.throwKnockback = Configs.requireDouble(this.config, "throw_knockback");
         this.throwLift = Configs.requireDouble(this.config, "throw_lift");
-        this.activationSound = new SoundEffect(this.config.getConfigurationSection("visuals.activation_sound"));
-        this.grabSound = new SoundEffect(this.config.getConfigurationSection("visuals.grab_sound"));
-        this.throwSound = new SoundEffect(this.config.getConfigurationSection("visuals.throw_sound"));
+        this.activationSound = new SoundEffect(Configs.requireSection(this.config, "visuals.activation_sound"));
+        this.grabSound = new SoundEffect(Configs.requireSection(this.config, "visuals.grab_sound"));
+        this.throwSound = new SoundEffect(Configs.requireSection(this.config, "visuals.throw_sound"));
     }
 
     @Override
-    public boolean canExecute(Hero hero) {
-        if (grabbing || armTicksLeft >= 0) return false;
-        return super.canExecute(hero);
+    protected boolean canUse(Hero hero) {
+        return !grabbing && armTicksLeft < 0 && super.canUse(hero);
     }
 
     @Override
@@ -74,20 +96,19 @@ public class MonsterGrab extends BaseAbility {
     }
 
     private void startGrab(Hero hero, LivingEntity grabbed) {
-        LivingEntity self = hero.getController().getEntity();
         grabbing = true;
         victim = grabbed;
         throwTicksLeft = throwWindowTicks;
 
         GRABBED.add(grabbed.getUniqueId());
-        self.addPassenger(grabbed);
+        hero.getController().addPassenger(grabbed);
 
         hero.setActionsLocked(true);
         Hero victimHero = HeroManager.getHero(grabbed.getUniqueId());
         if (victimHero != null) victimHero.setActionsLocked(true);
 
         hero.setPrimaryOverride(() -> executeThrow(hero));
-        grabSound.play(self.getLocation(), hero.getController());
+        grabSound.play(hero.getController().getLocation(), hero.getController());
     }
 
     @Override
@@ -98,10 +119,10 @@ public class MonsterGrab extends BaseAbility {
         }
 
         if (!grabbing) return;
-        LivingEntity self = hero.getController() != null ? hero.getController().getEntity() : null;
 
-        if (self == null || victim == null || victim.isDead() || !victim.isValid()
-                || !self.getPassengers().contains(victim)) {
+        if (hero.getController() == null || hero.getController().getEntity() == null
+                || victim == null || victim.isDead() || !victim.isValid()
+                || !hero.getController().hasPassenger(victim)) {
             release(hero);
             return;
         }
@@ -119,13 +140,11 @@ public class MonsterGrab extends BaseAbility {
         if (!grabbing) return;
         LivingEntity thrown = victim;
         Vector direction = hero.getController().getEyeLocation().getDirection();
-        LivingEntity self = hero.getController().getEntity();
         release(hero);
 
         hero.suppressPrimary(throwPrimaryLockoutTicks);
-        throwSound.play(self.getLocation(), hero.getController());
-        Interactions.on(self, thrown)
-                .abilityName(getName())
+        throwSound.play(hero.getController().getLocation(), hero.getController());
+        hit(hero, thrown)
                 .damage(throwDamage)
                 .knockback(throwKnockback)
                 .verticalKnockback(throwLift)
@@ -140,8 +159,7 @@ public class MonsterGrab extends BaseAbility {
         victim = null;
         if (held != null) {
             GRABBED.remove(held.getUniqueId());
-            LivingEntity self = hero.getController() != null ? hero.getController().getEntity() : null;
-            if (self != null) self.removePassenger(held);
+            if (hero.getController() != null) hero.getController().removePassenger(held);
             Hero victimHero = HeroManager.getHero(held.getUniqueId());
             if (victimHero != null) victimHero.setActionsLocked(false);
         }

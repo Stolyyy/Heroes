@@ -3,20 +3,17 @@ package me.stolyy.heroes.util;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.Game;
 import me.stolyy.heroes.game.GamePlayer;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.logging.Level;
 
 /**
- * Logs an exception as SEVERE and, when {@code discord.error-webhook} is set in game-config.yml, posts it
- * to Discord with the game it happened in. Posts are deduplicated per exception class + top frame for
- * {@code discord.error-dedupe-minutes} and capped at {@code discord.error-max-per-hour}.
+ * Logs errors as SEVERE and, when {@code discord.error-webhook} is set in game-config.yml, posts
+ * them to Discord with game context. Posts are deduplicated and capped per hour.
  */
 public final class ErrorReporter {
     private static final Map<String, Long> lastPosted = new HashMap<>();
@@ -25,31 +22,46 @@ public final class ErrorReporter {
 
     private ErrorReporter() {}
 
+    public static void report(String context) {
+        report((Game) null, context);
+    }
+
+    public static void report(@Nullable Game game, String context) {
+        Heroes.getInstance().getLogger().severe(context);
+        post("Server Error", "msg@" + context, game, context, null);
+    }
+
     public static void report(String context, Throwable error) {
         report(null, context, error);
     }
 
-    public static void report(Game game, String context, Throwable error) {
+    public static void report(@Nullable Game game, String context, Throwable error) {
         Heroes.getInstance().getLogger().log(Level.SEVERE, context, error);
+        StackTraceElement[] trace = error.getStackTrace();
+        String key = error.getClass().getName() + "@" + (trace.length > 0 ? trace[0].toString() : "?");
+        post(error.getClass().getSimpleName(), key, game, context, stackTop(error, 8));
+    }
 
+    private static void post(String title, String dedupeKey, @Nullable Game game,
+                             String context, @Nullable String stack) {
         String url = GameConfigManager.getGameConfig().getString("discord.error-webhook", "");
-        if (url.isEmpty() || !allow(error)) return;
+        if (url.isEmpty() || !allow(dedupeKey)) return;
 
         StringBuilder description = new StringBuilder();
-        description.append("**").append(DiscordWebhook.escape(context)).append("**\n");
-        if (game != null) description.append(DiscordWebhook.escape(describe(game))).append('\n');
-        description.append("```\n").append(DiscordWebhook.escape(stackTop(error, 8))).append("```");
+        description.append("**").append(context).append("**\n");
+        if (game != null) description.append(describe(game)).append('\n');
+        if (stack != null) description.append("```\n").append(stack).append("```");
 
-        String json = "{\"embeds\":[{\"title\":\"" + DiscordWebhook.escape(error.getClass().getSimpleName())
-                + "\",\"description\":\"" + description + "\",\"color\":15158332,\"footer\":{\"text\":\"Heroes "
+        String json = "{\"embeds\":[{\"title\":\"" + DiscordWebhook.escape(title)
+                + "\",\"description\":\"" + DiscordWebhook.escape(description.toString()) + "\",\"color\":15158332,\"footer\":{\"text\":\"Heroes "
                 + DiscordWebhook.escape(Heroes.version()) + "\"}}]}";
         DiscordWebhook.post(url, json);
     }
 
-    private static boolean allow(Throwable error) {
+    private static boolean allow(String key) {
         long now = System.currentTimeMillis();
-        long dedupeMs = GameConfigManager.getGameConfig().getInt("discord.error-dedupe-minutes", 10) * 60_000L;
-        int maxPerHour = GameConfigManager.getGameConfig().getInt("discord.error-max-per-hour", 20);
+        long dedupeMs = Configs.requireInt(GameConfigManager.getGameConfig(), "discord.error-dedupe-minutes") * 60_000L;
+        int maxPerHour = Configs.requireInt(GameConfigManager.getGameConfig(), "discord.error-max-per-hour");
 
         if (now - hourWindowStart > 3_600_000L) {
             hourWindowStart = now;
@@ -57,8 +69,6 @@ public final class ErrorReporter {
         }
         if (postedThisHour >= maxPerHour) return false;
 
-        StackTraceElement[] trace = error.getStackTrace();
-        String key = error.getClass().getName() + "@" + (trace.length > 0 ? trace[0].toString() : "?");
         Long last = lastPosted.get(key);
         if (last != null && now - last < dedupeMs) return false;
 
@@ -72,19 +82,13 @@ public final class ErrorReporter {
         sb.append(game.gameMode()).append(" / ").append(game.modeConfig().winCondition())
                 .append(" on ").append(game.settings().map().name()).append(", ").append(game.gameState()).append('\n');
         for (GamePlayer gp : game.getGamePlayers().values()) {
-            sb.append("  ").append(gp.team()).append(' ').append(participantName(gp))
+            String name = game.participantName(gp) + (gp.isBot() ? " [bot]" : "");
+            sb.append("  ").append(gp.team()).append(' ').append(name)
                     .append(" (").append(gp.currentHeroName()).append(')');
             if (gp.leftGame()) sb.append(" [left]");
             sb.append('\n');
         }
         return sb.toString();
-    }
-
-    private static String participantName(GamePlayer gp) {
-        if (gp.bot() != null) return gp.bot().getName() + " [bot]";
-        UUID uuid = gp.uuid();
-        OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
-        return player.getName() != null ? player.getName() : uuid.toString();
     }
 
     private static String stackTop(Throwable error, int frames) {

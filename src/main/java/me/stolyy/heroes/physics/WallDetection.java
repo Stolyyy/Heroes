@@ -1,20 +1,28 @@
 package me.stolyy.heroes.physics;
+import me.stolyy.heroes.control.Controller;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.BoundingBox;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
+/**
+ * Block collision, line-of-sight, swept movement clamping, and unstick utilities.
+ */
 public class WallDetection {
+    public static final double DEFAULT_ESCAPE_MAX_DISTANCE = 3.0;
+    public static final double DEFAULT_ESCAPE_STEP = 0.1;
     private static final double STEP_SIZE = 0.0625;
     private static final double EPSILON = 1.0E-7;
-    /**
-     * Trimmed off an entity hitbox before testing it against block geometry: resting on a face and
-     * sub-millimetre sinking into the floor are not "inside a block".
-     */
+    // Trimmed off an entity hitbox before testing it against block geometry: resting on a face and
+    // sub-millimetre sinking into the floor are not "inside a block".
     private static final double HITBOX_MARGIN = 0.02;
-    /** Horizontal first, then up, then down — see {@link #escapeOffset(World, BoundingBox, double, double)}. */
+    // Horizontal first, then up, then down — see escapeOffset(World, BoundingBox, double, double).
     private static final Vector[] ESCAPE_DIRECTIONS = {
             new Vector(1, 0, 0), new Vector(-1, 0, 0), new Vector(0, 0, 1), new Vector(0, 0, -1),
             new Vector(0, 1, 0), new Vector(0, -1, 0)
@@ -40,15 +48,6 @@ public class WallDetection {
         }
 
         return false;
-    }
-
-    /**
-     * True if any solid, non-passable block overlaps the sphere centered at {@code center}.
-     * Unlike {@link #detectWall(Location, double)}, which tests an axis-aligned cube, this
-     * tests true spherical overlap so a sphere's corners aren't counted as walls.
-     */
-    public static boolean detectWallInSphere(Location center, double radius){
-        return nearestSolidBlockInSphere(center, radius) != null;
     }
 
     /**
@@ -115,16 +114,6 @@ public class WallDetection {
         return origin;
     }
 
-    public static boolean rayCast(Location start, double distance){
-        if(!isValidLocation(start) || !isFinite(distance) || distance <= 0) {
-            return false; //Input is invalid
-        }
-
-        Vector direction = start.getDirection().normalize();
-        Location end = start.clone().add(direction.multiply(distance));
-        return rayCast(start, end);
-    }
-
     public static boolean rayCast(Location start, Location end){
         if(!isValidLocation(start) || !isValidLocation(end)) {
             return false;
@@ -172,7 +161,7 @@ public class WallDetection {
         if (Math.abs(vx) >= 0.001) {
             double leadX = vx > 0 ? boundingBox.getMaxX() : boundingBox.getMinX();
             double sign = Math.signum(vx);
-            double availableX = findAvailableDistance(world, boundingBox, leadX, sign, 0,
+            double availableX = findAvailableDistance(world, leadX, sign, 0,
                     boundingBox.getMinY(), boundingBox.getMaxY(),
                     boundingBox.getMinZ(), boundingBox.getMaxZ(),
                     Math.abs(vx));
@@ -186,7 +175,7 @@ public class WallDetection {
         if (Math.abs(vy) >= 0.001) {
             double leadY = vy > 0 ? boundingBox.getMaxY() : boundingBox.getMinY();
             double sign = Math.signum(vy);
-            double availableY = findAvailableDistance(world, boundingBox, leadY, sign, 1,
+            double availableY = findAvailableDistance(world, leadY, sign, 1,
                     boundingBox.getMinX(), boundingBox.getMaxX(),
                     boundingBox.getMinZ(), boundingBox.getMaxZ(),
                     Math.abs(vy));
@@ -200,7 +189,7 @@ public class WallDetection {
         if (Math.abs(vz) >= 0.001) {
             double leadZ = vz > 0 ? boundingBox.getMaxZ() : boundingBox.getMinZ();
             double sign = Math.signum(vz);
-            double availableZ = findAvailableDistance(world, boundingBox, leadZ, sign, 2,
+            double availableZ = findAvailableDistance(world, leadZ, sign, 2,
                     boundingBox.getMinX(), boundingBox.getMaxX(),
                     boundingBox.getMinY(), boundingBox.getMaxY(),
                     Math.abs(vz));
@@ -221,21 +210,7 @@ public class WallDetection {
         return new Vector(0, 0, 0);
     }
 
-    /**
-     * Finds available travel distance along one axis before hitting a solid block.
-     *
-     * @param world      the world
-     * @param box        the bounding box (used for anti-lock guard)
-     * @param leadFace   the coordinate of the leading face on the checked axis
-     * @param sign       +1 or -1 (direction of movement)
-     * @param axis       0=X, 1=Y, 2=Z
-     * @param min1       min on the first perpendicular axis
-     * @param max1       max on the first perpendicular axis
-     * @param min2       min on the second perpendicular axis
-     * @param max2       max on the second perpendicular axis
-     * @param requested  abs value of the velocity component
-     */
-    private static double findAvailableDistance(World world, BoundingBox box,
+    private static double findAvailableDistance(World world,
                                                 double leadFace, double sign, int axis,
                                                 double min1, double max1,
                                                 double min2, double max2,
@@ -375,6 +350,54 @@ public class WallDetection {
     /** {@link #escapeOffset(World, BoundingBox, double, double)} for an entity's own hitbox. */
     public static Vector escapeOffset(Entity entity, double maxDistance, double stepSize) {
         return escapeOffset(entity.getWorld(), trappedBox(entity), maxDistance, stepSize);
+    }
+
+    public static RayTraceResult rayTraceBlock(Location start, Vector direction, double maxDistance) {
+        return start.getWorld().rayTraceBlocks(start, direction, maxDistance, FluidCollisionMode.NEVER, true);
+    }
+
+    public static void unstick(Controller controller) {
+        if (controller == null) return;
+        LivingEntity entity = controller.getEntity();
+        if (entity == null || !isTrapped(entity)) return;
+        Vector out = escapeOffset(entity, DEFAULT_ESCAPE_MAX_DISTANCE, DEFAULT_ESCAPE_STEP);
+        if (out != null) controller.teleport(controller.getLocation().add(out));
+    }
+
+    public static void safeTeleport(Controller controller, Location target) {
+        controller.teleport(target);
+        unstick(controller);
+    }
+
+    /** Ground probe resilient to slab/ledge overhanging corners where {@code isOnGround()} flickers false. */
+    public static boolean isGrounded(LivingEntity entity) {
+        if (entity.isOnGround()) return true;
+        if (entity.getVelocity().getY() > 0.1) return false;
+        BoundingBox box = entity.getBoundingBox();
+        World world = entity.getWorld();
+        int y = (int) Math.floor(box.getMinY() - 0.06);
+        if (box.getMinY() - y > 1.06) return false;
+        double inset = 0.02;
+        double[][] corners = {
+                {box.getMinX() + inset, box.getMinZ() + inset},
+                {box.getMaxX() - inset, box.getMinZ() + inset},
+                {box.getMinX() + inset, box.getMaxZ() - inset},
+                {box.getMaxX() - inset, box.getMaxZ() - inset}};
+        for (double[] corner : corners) {
+            if (world.getBlockAt((int) Math.floor(corner[0]), y, (int) Math.floor(corner[1]))
+                    .getType().isSolid()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isAdjacentToSolidWall(Location loc) {
+        Block block = loc.getBlock();
+        return block.getRelative(BlockFace.NORTH).getType().isSolid()
+                || block.getRelative(BlockFace.SOUTH).getType().isSolid()
+                || block.getRelative(BlockFace.EAST).getType().isSolid()
+                || block.getRelative(BlockFace.WEST).getType().isSolid();
     }
 
     private static BoundingBox trappedBox(Entity entity) {

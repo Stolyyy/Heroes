@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * When a game is over, and who won it. Dispatch is polymorphic on the enum —
- * no per-mode Game subclasses, no god-switch (A4 design).
+ * no per-mode Game subclasses, no god-switch.
  */
 public enum WinCondition {
 
@@ -45,7 +45,7 @@ public enum WinCondition {
 
         @Override
         public Team timeoutWinner(Game game) {
-            TeamColor leader = game.leadingTeamByKills();
+            TeamColor leader = leadingTeamByKills(game);
             return leader != null ? game.getTeams().get(leader) : null;
         }
     },
@@ -94,10 +94,60 @@ public enum WinCondition {
 
     /** Winner when the match timer expires; null = draw. Default: most lives remaining. */
     public Team timeoutWinner(Game game) {
-        return game.calculateWinnerByLives();
+        return calculateWinnerByLives(game);
     }
 
-    /** Non-spectator teams that still have at least one member in activePlayers. */
+    /** Team with the most total remaining lives, or null on a tie / empty board. */
+    public static Team calculateWinnerByLives(Game game) {
+        Team winningTeam = null;
+        int maxLives = -1;
+        boolean isDraw = false;
+
+        for (Team team : game.getTeams().values()) {
+            if (team.color() == TeamColor.SPECTATOR) continue;
+
+            int totalLives = team.playerUUIDs().stream()
+                    .mapToInt(uuid -> game.getGamePlayer(uuid).currentLives())
+                    .sum();
+            if (totalLives > maxLives) {
+                maxLives = totalLives;
+                winningTeam = team;
+                isDraw = false;
+            } else if (totalLives == maxLives) {
+                isDraw = true;
+            }
+        }
+        return (isDraw || winningTeam == null) ? null : winningTeam;
+    }
+
+    /** Total kills for a team, including participants who have since left the game. */
+    public static int teamKills(Game game, TeamColor color) {
+        int total = 0;
+        for (GamePlayer gamePlayer : game.getGamePlayers().values()) {
+            if (gamePlayer.team() == color) total += gamePlayer.kills();
+        }
+        return total;
+    }
+
+    /** Team with the most kills, or null on a tie (KILL_TARGET timeout winner). */
+    public static TeamColor leadingTeamByKills(Game game) {
+        TeamColor leader = null;
+        int best = -1;
+        boolean tie = false;
+        for (TeamColor color : TeamColor.values()) {
+            if (color == TeamColor.SPECTATOR) continue;
+            int kills = teamKills(game, color);
+            if (kills > best) {
+                best = kills;
+                leader = color;
+                tie = false;
+            } else if (kills == best) {
+                tie = true;
+            }
+        }
+        return tie ? null : leader;
+    }
+
     private static List<Team> activeTeams(Game game) {
         return game.getTeams().values().stream()
                 .filter(t -> t.color() != TeamColor.SPECTATOR)
@@ -105,13 +155,12 @@ public enum WinCondition {
                 .toList();
     }
 
-    /** The first team at or past the kill limit, or null. No limit set (&lt;= 0) never triggers. */
     private static Team reachedKillTarget(Game game) {
         int limit = game.modeConfig().killLimit();
         if (limit <= 0) return null;
         for (Team team : game.getTeams().values()) {
             if (team.color() == TeamColor.SPECTATOR) continue;
-            if (game.teamKills(team.color()) >= limit) return team;
+            if (teamKills(game, team.color()) >= limit) return team;
         }
         return null;
     }

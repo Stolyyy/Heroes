@@ -1,27 +1,40 @@
 package me.stolyy.heroes.ability.template;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.ability.AbilityType;
 import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
+import me.stolyy.heroes.physics.Hitbox;
+import me.stolyy.heroes.physics.Homing;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.vfx.effect.AbstractDisplayBuilder;
 import me.stolyy.heroes.vfx.effect.VisualEffect;
-import me.stolyy.heroes.physics.Hitbox;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public abstract class Projectile extends RangedAbility {
+/**
+ * Tick-stepped projectile template supporting gravity, Velocity-Verlet stepping, homing steering,
+ * boomerangs, spinning item displays, and independent flight across owner elimination.
+ */
+public class Projectile extends RangedAbility {
     protected double speed;
     protected double gravity;
+    protected boolean returns;
+    protected double catchRadius;
+    protected double returnRangeMult;
+    protected double spinDegPerTick;
 
     /**
      * Hard ceiling on one instance's lifetime, in ticks. ceil(range/speed) is the shortest a flight
@@ -30,10 +43,10 @@ public abstract class Projectile extends RangedAbility {
      * comfortably above the slowest legitimate flight: a straight-up lob loiters an extra
      * ~speed/gravity ticks around its apex before it is back up to muzzle speed, ~25 for the
      * skullfire grenade against an ideal 38. Nothing the range test already expires can reach it;
-     * it exists for the subclasses that replace tick() with conditional exits (boomerang, saber,
-     * ricochet) and for degenerate launches such as Defecake's straight-down (0,-1,0) throw. The
-     * cast saturates, so a config with speed 0 yields Integer.MAX_VALUE — effectively no cap —
-     * rather than an overflowed negative one that would kill every shot on its first tick.
+     * it exists for the subclasses with conditional exits (boomerang, saber, ricochet) and for
+     * degenerate launches such as Defecake's straight-down (0,-1,0) throw. The cast saturates, so a
+     * config with speed 0 yields Integer.MAX_VALUE — effectively no cap — rather than an overflowed
+     * negative one that would kill every shot on its first tick.
      */
     protected final int maxLifetimeTicks;
 
@@ -42,34 +55,55 @@ public abstract class Projectile extends RangedAbility {
     protected final List<ProjectileInstance> activeProjectiles = new ArrayList<>();
 
     public Projectile(ConfigurationSection config, HeroSkin skin) {
-        super(config, skin);
-        this.speed = this.config.getDouble("speed", 1.0);
-        this.gravity = this.config.getDouble("gravity", 0.0);
-        this.maxLifetimeTicks = (int) (Math.ceil(range / speed) * 6 + 40);
-        this.projVisual = new VisualEffect(this.config.getConfigurationSection("visuals.projectile_visual"));
+        this(config, skin, null);
+    }
 
-        // Projectile's default trail_spacing is 2 ticks (vs RangedAbility's 1); override if not set.
+    public Projectile(ConfigurationSection config, HeroSkin skin, AbilityType explicitType) {
+        super(config, skin, explicitType);
+        this.speed = Configs.orTemplate(this.config, "speed", "projectile.speed");
+        this.gravity = Configs.orTemplate(this.config, "gravity", "projectile.gravity");
+        this.returns = Configs.orTemplateBoolean(this.config, "returns", "projectile.returns");
+        this.catchRadius = Configs.orTemplate(this.config, "catch_radius", "projectile.catch_radius");
+        this.returnRangeMult = Configs.orTemplate(this.config, "return_range_mult", "projectile.return_range_mult");
+        this.spinDegPerTick = Configs.orTemplate(this.config, "spin_deg_per_tick", "projectile.spin_deg_per_tick");
+        this.maxLifetimeTicks = (int) (Math.ceil(range / speed) * 6 + 40);
+        this.projVisual = VisualEffect.optional(this.config, "visuals.projectile_visual");
+
         if (!this.config.contains("visuals.trail_spacing")) {
-            this.trailSpacing = 2;
+            this.trailSpacing = Configs.orTemplate(this.config, "visuals.trail_spacing", "projectile.trail_spacing");
         }
     }
 
     @Override
+    protected ShotParams shotParamsFor(Hero hero) {
+        return new ShotParams(null, null, speed, fireSound, trailVisual, hitVisual);
+    }
+
+    protected ProjectileInstance createInstance(Hero hero, Location start, ShotParams shot) {
+        return new ProjectileInstance(hero, start, shot);
+    }
+
+    protected void onInstanceEnded(Hero hero, ProjectileInstance instance) {}
+
+    @Override
     protected void fireSingleShot(Hero hero) {
-        fireSound.play(hero.getController().getLocation(), hero.getController());
-        activeProjectiles.add(new ProjectileInstance(hero, getStartLocation(hero)));
+        ShotParams shot = shotParamsFor(hero);
+        shot.fireSound().play(hero.getController().getLocation(), hero.getController());
+        activeProjectiles.add(createInstance(hero, getStartLocation(hero), shot));
     }
 
     @Override
-    protected void onTick(Hero hero) {
-        super.onTick(hero);
+    protected final void onRangedTick(Hero hero) {
         // Iterate a snapshot: a detonation that scores the winning kill tears the game down
         // synchronously inside tick(), which reaches onOwnerLost -> activeProjectiles.clear().
         // A removeIf over the live list would blow up with ConcurrentModificationException.
         for (ProjectileInstance p : new ArrayList<>(activeProjectiles)) {
             if (p.tick()) activeProjectiles.remove(p);
         }
+        onProjectileTick(hero);
     }
+
+    protected void onProjectileTick(Hero hero) {}
 
     /** In-flight projectiles are detached world state — they keep ticking while the owner is dormant. */
     @Override
@@ -78,6 +112,7 @@ public abstract class Projectile extends RangedAbility {
     /** Owner reference lost (logout/game end): expire all in-flight instances and their displays. */
     @Override
     public void onOwnerLost(Hero hero) {
+        super.onOwnerLost(hero);
         for (ProjectileInstance p : new ArrayList<>(activeProjectiles)) {
             p.cleanup();
         }
@@ -86,6 +121,7 @@ public abstract class Projectile extends RangedAbility {
 
     protected class ProjectileInstance {
         protected final Hero hero;
+        protected final ShotParams shot;
         protected final Location currentLoc;
         protected final Vector velocity;
         protected double distanceTraveled = 0;
@@ -94,7 +130,11 @@ public abstract class Projectile extends RangedAbility {
         protected double distanceTrailAccumulator = 0;
         protected final Hitbox hitbox;
         protected boolean expired = false;
-        /** Ticks this instance has been alive, bounded by {@link Projectile#maxLifetimeTicks}. */
+        protected boolean returning = false;
+        protected double returnDistance = 0;
+        protected Homing returnHoming;
+        protected float spinRadians = 0;
+        /** Ticks this instance has been alive, bounded by {@link #maxLifetimeTicks()}. */
         protected int ticksAlive = 0;
         /**
          * Where the flight actually ended, when the segment just swept resolved a contact: the
@@ -107,9 +147,18 @@ public abstract class Projectile extends RangedAbility {
         protected final List<ItemDisplay> trailDisplays = new ArrayList<>();
 
         public ProjectileInstance(Hero hero, Location start) {
+            this(hero, start, shotParamsFor(hero));
+        }
+
+        public ProjectileInstance(Hero hero, Location start, ShotParams shot) {
+            this(hero, start, getDirection(start), shot);
+        }
+
+        public ProjectileInstance(Hero hero, Location start, Vector direction, ShotParams shot) {
             this.hero = hero;
+            this.shot = shot;
             this.currentLoc = start.clone();
-            this.velocity = getDirection(start).clone().multiply(speed);
+            this.velocity = direction.clone().normalize().multiply(shot.speed());
             this.hitbox = Hitbox.cylinder(start, velocity, radius, velocity.length())
                     .exclude(hero.getController().getEntity())
                     .excludeTeammates(hero.getController().getEntity())
@@ -119,29 +168,65 @@ public abstract class Projectile extends RangedAbility {
                     .onHit((victim, loc) -> {
                         lastHitDistance = distanceTraveled;
                         impactLocation = loc;
-                        onHit(hero, victim, loc);
-                    })
-                    .onHitWall(loc -> onHitWall(hero, loc));
+                        withActiveShot(shot, () -> {
+                            onHit(hero, victim, loc);
+                            onVictimHit(victim, loc);
+                        });
+                    });
+        }
+
+        protected int maxLifetimeTicks() { return maxLifetimeTicks; }
+        protected double flightRange() { return range; }
+        protected Location returnAnchor() { return hero.getController().getEyeLocation(); }
+        protected boolean returnPiercesWalls() { return piercesWalls; }
+        protected boolean clearHitsOnReturn() { return true; }
+        protected boolean shouldStartReturn() { return distanceTraveled >= flightRange(); }
+        protected boolean steer() { return true; }
+        protected boolean onBounce(@Nullable BlockFace face, Location wallLoc) { return false; }
+        protected void onReturnStart() {}
+        protected void onCaught() {}
+        protected void onVictimHit(LivingEntity victim, Location hitLoc) {}
+        public boolean isReturning() { return returning; }
+
+        public void startReturn() {
+            if (returning) return;
+            returning = true;
+            if (clearHitsOnReturn()) hitbox.clearHitHistory();
+            if (returnPiercesWalls()) hitbox.checkWalls(false);
+            returnHoming = new Homing(hero.getController().getEntity(), shot.speed(), () -> null);
+            onReturnStart();
         }
 
         public boolean tick() {
             if (expired) return true;
             if (overLifetime()) return true;
-            Location prevLoc = currentLoc.clone();
-            move();
+            if (returns && !returning && shouldStartReturn()) {
+                startReturn();
+            }
 
-            // Collisions resolve BEFORE the range test. With the two the other way round the final
-            // segment was never swept: the instance integrated past its budget, expired and tore
-            // itself down without ever asking what it had just flown through. That left a band
-            // roughly one step deep at maximum range where a shot passes through players and
-            // terrain and then detonates in mid-air on the far side of them.
+            Location prevLoc = currentLoc.clone();
+            if (!move()) {
+                if (!expired) {
+                    withActiveShot(shot, () -> onExpire(hero, currentLoc));
+                    finish(prevLoc);
+                }
+                return true;
+            }
+            if (returning && (currentLoc.distanceSquared(returnAnchor()) < catchRadius * catchRadius
+                    || returnDistance > flightRange() * returnRangeMult)) {
+                onCaught();
+                cleanup();
+                return true;
+            }
+
+            // Collisions resolve BEFORE the range test so the final segment is always swept.
             if (checkCollisions(prevLoc)) {
                 finish(prevLoc);
                 return true;
             }
 
-            if (distanceTraveled > range) {
-                onExpire(hero, currentLoc);
+            if (!returns && distanceTraveled > flightRange()) {
+                withActiveShot(shot, () -> onExpire(hero, currentLoc));
                 finish(prevLoc);
                 return true;
             }
@@ -151,19 +236,11 @@ public abstract class Projectile extends RangedAbility {
         }
 
         /**
-         * Hard lifetime backstop. The range budget is the only expiry the base tick has, and the
-         * subclasses that replace tick() outright trade it for conditional rules that are not
-         * guaranteed to fire — a ricochet that keeps acquiring fresh targets never starts its
-         * return leg. Terminates silently, exactly like those subclasses' own distance guards do:
-         * no onExpire, so nothing detonates on a technicality. Unreachable in normal play, see
-         * {@link Projectile#maxLifetimeTicks}.
-         *
-         * <p>Also the practice-range fence: the lobby arena is open-topped and wall-less in places,
-         * so a practicing owner's shot that leaves the arena box expires here, through the same
-         * silent teardown — every subclass that replaces tick() already routes through this.
+         * Hard lifetime backstop and practice-arena fence. Terminates silently without firing
+         * onExpire so conditional-exit projectiles never detonate on a lifetime cap.
          */
         protected boolean overLifetime() {
-            if (++ticksAlive <= maxLifetimeTicks && !leftPracticeArena()) return false;
+            if (++ticksAlive <= maxLifetimeTicks() && !leftPracticeArena()) return false;
             cleanup();
             return true;
         }
@@ -175,20 +252,18 @@ public abstract class Projectile extends RangedAbility {
         }
 
         /**
-         * Last visible frame, then teardown. cleanup() on its own removes the display while the
-         * client is still interpolating toward the PREVIOUS tick's position (teleportDuration is 1),
-         * so the model vanishes up to two steps short of where the flight actually ended — several
-         * blocks for a fast grenade. Put it on the resolved end point first and let the removal land
-         * a tick later: a teleport and a remove in the same tick never reach the client as a
-         * position at all, so removing immediately after the teleport would draw nothing.
+         * Last visible frame, then teardown. Places the display at the resolved endpoint first and
+         * removes it 2 ticks later so the client interpolation finishes on the actual impact point.
          */
         protected void finish(Location prevLoc) {
             Location end = impactLocation != null ? impactLocation : currentLoc;
             if (displayEntity != null && !displayEntity.isDead()) {
                 Vector heading = end.toVector().subtract(prevLoc.toVector());
-                displayEntity.teleport(AbstractDisplayBuilder.canonical(end));
-                if (heading.lengthSquared() > 1.0E-12) {
-                    AbstractDisplayBuilder.orient(displayEntity, heading, projVisual.modelBackOffset());
+                if (spinDegPerTick != 0) {
+                    spinRadians += (float) Math.toRadians(spinDegPerTick);
+                    AbstractDisplayBuilder.follow(displayEntity, end, heading, projVisual.modelBackOffset(), spinRadians);
+                } else {
+                    AbstractDisplayBuilder.follow(displayEntity, end, heading, projVisual.modelBackOffset());
                 }
                 ItemDisplay lastFrame = displayEntity;
                 displayEntity = null; // cleanup() must not undo the frame just drawn
@@ -197,74 +272,86 @@ public abstract class Projectile extends RangedAbility {
             cleanup();
         }
 
-        protected void move() {
-            // Velocity-Verlet: half a tick of gravity before the step, half after. Plain forward
-            // Euler (step first, then subtract the whole tick of gravity) gave the first step ZERO
-            // gravity and integrated every later step at its start-of-tick velocity, so the whole
-            // arc rode systematically ABOVE the true parabola — over a block high by expiry for the
-            // slower lobs, and reading in flight as gravity kicking in a tick late. Half-kicking is
-            // the same cost and lands on the exact parabola. Gravity-free projectiles are untouched:
-            // gravity/2 is 0.
+        protected boolean move() {
+            if (returning) {
+                Vector step = returnHoming.step(currentLoc);
+                if (step == null) {
+                    cleanup();
+                    return false;
+                }
+                velocity.copy(step);
+                currentLoc.add(step);
+                returnDistance += step.length();
+                distanceTraveled += Math.min(step.length(), shot.speed());
+                return true;
+            }
+            if (!steer()) return false;
+
+            // Velocity-Verlet: half a tick of gravity before the step, half after.
             velocity.setY(velocity.getY() - gravity / 2);
             currentLoc.add(velocity);
-            // Credit at most one tick of muzzle speed. distanceTraveled IS the range budget, and the
-            // raw step is the 3-D diagonal AFTER gravity has been stacking onto Y for the whole
-            // flight, so a lobbed shot burns its budget faster the steeper it is aimed: `range`
-            // stopped meaning blocks downrange and both reach and lifetime swung with aim pitch.
-            // Clamping to speed removes that dependence without moving the nominal numbers for a
-            // flat, gravity-free shot, which is every projectile that does not set `gravity`.
-            distanceTraveled += Math.min(velocity.length(), speed);
+            // Credit at most one tick of muzzle speed so lobbed shots don't burn range faster as gravity builds Y.
+            distanceTraveled += Math.min(velocity.length(), shot.speed());
             velocity.setY(velocity.getY() - gravity / 2);
+            return true;
         }
 
         protected boolean checkCollisions(Location prevLoc) {
-            // Sweep the segment ACTUALLY travelled this tick. Sizing the sweep from the spawn
-            // velocity (as this used to) goes stale the moment anything changes the step: gravity
-            // accelerates the projectile past its own hitbox length every tick, so an arcing shot
-            // leaves a widening gap in its path on the way down. Taking the delta also keeps
-            // subclasses that steer in move() (the homing return legs) correct for free.
             Vector step = currentLoc.toVector().subtract(prevLoc.toVector());
             double stepLength = step.length();
-            // Didn't move — no new segment to check, and rayTrace rejects a zero-length direction.
             if (stepLength < 1.0E-6) return false;
 
-            // Both are consumed by the callbacks hitbox.get() fires synchronously below, so both are
-            // written per segment. currentDirection feeds DIRECTION knockback and the trajectory the
-            // Aoe backs a buried blast center out along — the wall callback had no trajectory at all
-            // before this. Clearing impactLocation stops a piercing shot from carrying an old contact
-            // point forward to a later expiry.
             currentDirection = step.clone().normalize();
             impactLocation = null;
 
             hitbox.moveTo(prevLoc).reorient(step).resize(stepLength);
             Set<LivingEntity> hits = hitbox.get();
-            boolean hitWall = hitbox.getWallHitLocation() != null;
-            boolean hitPlayer = !hits.isEmpty();
-            // Victim contact wins when both resolve on one segment: the wall trace clamps the sweep's
-            // reach, so any victim it accepted is nearer than the wall.
-            if (impactLocation == null) impactLocation = hitbox.getWallHitLocation();
-            return (hitWall && !piercesWalls) || (hitPlayer && !piercesPlayers);
+            Location wallLoc = hitbox.getWallHitLocation();
+            BlockFace wallFace = hitbox.getWallHitFace();
+            if (impactLocation == null) impactLocation = wallLoc;
+
+            boolean stoppedByWall = false;
+            if (wallLoc != null && (hits.isEmpty() || piercesPlayers)) {
+                if (onBounce(wallFace, wallLoc)) {
+                    currentLoc.setX(wallLoc.getX());
+                    currentLoc.setY(wallLoc.getY());
+                    currentLoc.setZ(wallLoc.getZ());
+                } else {
+                    withActiveShot(shot, () -> onHitWall(hero, wallLoc));
+                    if (returns && !returning) {
+                        currentLoc.setX(wallLoc.getX());
+                        currentLoc.setY(wallLoc.getY());
+                        currentLoc.setZ(wallLoc.getZ());
+                        startReturn();
+                    } else if (!piercesWalls) {
+                        stoppedByWall = true;
+                    }
+                }
+            }
+            return stoppedByWall || (!hits.isEmpty() && !piercesPlayers);
         }
 
         protected void displayVisuals(Location prevLoc) {
-            // Aim the model down the segment it just flew, not down `velocity`: move() has already
-            // applied this tick's gravity, so the velocity field is the NEXT step's heading and the
-            // nose sat one step ahead of the model's own travel on every arcing shot.
             Vector heading = currentLoc.toVector().subtract(prevLoc.toVector());
             if (heading.lengthSquared() < 1.0E-12) heading = velocity;
 
             if (displayEntity == null) {
                 displayEntity = projVisual.spawnDisplay(currentLoc, hero.getSkin().getId());
                 if (displayEntity != null) {
-                    displayEntity.setInterpolationDelay(0);
-                    displayEntity.setTeleportDuration(1);
-                    AbstractDisplayBuilder.orient(displayEntity, heading, projVisual.modelBackOffset());
+                    if (spinDegPerTick != 0) {
+                        spinRadians = (float) Math.toRadians(spinDegPerTick);
+                        AbstractDisplayBuilder.orient(displayEntity, heading, projVisual.modelBackOffset(), spinRadians);
+                    } else {
+                        AbstractDisplayBuilder.orient(displayEntity, heading, projVisual.modelBackOffset());
+                    }
                 }
             } else {
-                displayEntity.teleport(AbstractDisplayBuilder.canonical(currentLoc));
-                // Re-orienting every tick also refreshes the back-offset translation, which has to
-                // follow the heading as gravity bends it.
-                AbstractDisplayBuilder.orient(displayEntity, heading, projVisual.modelBackOffset());
+                if (spinDegPerTick != 0) {
+                    spinRadians += (float) Math.toRadians(spinDegPerTick);
+                    AbstractDisplayBuilder.follow(displayEntity, currentLoc, heading, projVisual.modelBackOffset(), spinRadians);
+                } else {
+                    AbstractDisplayBuilder.follow(displayEntity, currentLoc, heading, projVisual.modelBackOffset());
+                }
             }
             // Fallback: if not an ITEM_DISPLAY type, play normally
             if (displayEntity == null) {
@@ -272,19 +359,17 @@ public abstract class Projectile extends RangedAbility {
             }
 
             if (trailSpacingDistance > 0) {
-                // Distance mode: emit at evenly-spaced sub-tick positions along the velocity vector.
-                // Walks back from currentLoc by the post-decrement accumulator so multiple emissions
-                // per fast tick land at correctly spaced points instead of stacking on currentLoc.
                 double velocityLength = velocity.length();
-                distanceTrailAccumulator += velocityLength;
-                while (distanceTrailAccumulator >= trailSpacingDistance) {
-                    distanceTrailAccumulator -= trailSpacingDistance;
-                    Vector backOffset = velocity.clone().multiply(distanceTrailAccumulator / velocityLength);
-                    Location emitLoc = currentLoc.clone().subtract(backOffset);
-                    emitTrail(emitLoc);
+                if (velocityLength > 1.0E-6) {
+                    distanceTrailAccumulator += velocityLength;
+                    while (distanceTrailAccumulator >= trailSpacingDistance) {
+                        distanceTrailAccumulator -= trailSpacingDistance;
+                        Vector backOffset = velocity.clone().multiply(distanceTrailAccumulator / velocityLength);
+                        Location emitLoc = currentLoc.clone().subtract(backOffset);
+                        emitTrail(emitLoc);
+                    }
                 }
             } else {
-                // Tick mode (default).
                 trailTickCounter++;
                 if (trailTickCounter >= trailSpacing) {
                     trailTickCounter = 0;
@@ -295,14 +380,16 @@ public abstract class Projectile extends RangedAbility {
 
         /** Emit a single trail sample. Respects {@code trailPersists} — persistent emissions are tracked for cleanup. */
         protected void emitTrail(Location loc) {
+            VisualEffect tv = shot.trailVisual();
             if (trailPersists) {
-                trailDisplays.addAll(trailVisual.playPersistent(loc, velocity, hero.getSkin().getId()));
+                trailDisplays.addAll(tv.playPersistent(loc, velocity, hero.getSkin().getId()));
             } else {
-                trailVisual.play(loc, velocity, hero.getSkin().getId());
+                tv.play(loc, velocity, hero.getSkin().getId());
             }
         }
 
         public void cleanup() {
+            if (expired) return;
             expired = true;
             if (displayEntity != null && !displayEntity.isDead()) {
                 displayEntity.remove();
@@ -311,9 +398,10 @@ public abstract class Projectile extends RangedAbility {
                 if (d != null && !d.isDead()) d.remove();
             }
             trailDisplays.clear();
+            onInstanceEnded(hero, this);
         }
 
-        public Location getLocation() { return currentLoc; }
         public boolean expired() { return expired; }
+        public Location getLocation() { return currentLoc; }
     }
 }

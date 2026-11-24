@@ -1,6 +1,7 @@
 package me.stolyy.heroes.progression;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.util.Configs;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -34,15 +35,15 @@ public class ProgressionConfig {
         return xpCurve.get(level);
     }
 
-    public static int getGameReward() { return config.getInt("xp.game-reward", 40); }
-    public static int getKillReward() { return config.getInt("xp.kill-reward", 20); }
-    public static int getWinReward() { return config.getInt("xp.win-reward", 40); }
-    public static int getAssistReward() { return config.getInt("xp.assist-reward", 0); }
-    public static double getCustomXpMultiplier() { return config.getDouble("xp.custom-multiplier", 0.5); }
+    public static int getGameReward() { return Configs.requireInt(config, "xp.game-reward"); }
+    public static int getKillReward() { return Configs.requireInt(config, "xp.kill-reward"); }
+    public static int getWinReward() { return Configs.requireInt(config, "xp.win-reward"); }
+    public static int getAssistReward() { return Configs.requireInt(config, "xp.assist-reward"); }
+    public static double getCustomXpMultiplier() { return Configs.requireDouble(config, "xp.custom-multiplier"); }
 
-    public static int getMasterSkinLevel() { return config.getInt("levels.master-skin-level", 20); }
-    public static int getTokenEveryNLevels() { return config.getInt("levels.token-every-n-levels", 5); }
+    public static int getMasterSkinLevel() { return Configs.requireInt(config, "levels.master-skin-level"); }
+    public static int getTokenEveryNLevels() { return Configs.requireInt(config, "levels.token-every-n-levels"); }
 
     public static List<String> getStartingHeroes() { return config.getStringList("unlocks.starting-heroes"); }
-    public static int getStartingTokens() { return config.getInt("unlocks.starting-tokens", 2); }
+    public static int getStartingTokens() { return Configs.requireInt(config, "unlocks.starting-tokens"); }
 }

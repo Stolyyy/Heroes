@@ -1,15 +1,26 @@
 package me.stolyy.heroes.ability.kit.bug;
 
-import me.stolyy.heroes.hero.Hero;
-import me.stolyy.heroes.hero.HeroManager;
 import me.stolyy.heroes.ability.Ability;
-import me.stolyy.heroes.ability.kit.bug.charms.*;
+import me.stolyy.heroes.ability.kit.bug.charms.Charm;
 import me.stolyy.heroes.ability.template.BaseAbility;
+import me.stolyy.heroes.control.Controller;
+import me.stolyy.heroes.hero.Hero;
+import me.stolyy.heroes.hero.HeroConfig;
+import me.stolyy.heroes.hero.HeroManager;
+import me.stolyy.heroes.util.Configs;
+import me.stolyy.heroes.vfx.cosmetic.CosmeticManager;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
+import me.stolyy.heroes.vfx.effect.ItemBuilder;
+import me.stolyy.heroes.vfx.ui.GuiText;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,16 +35,21 @@ public class BugCharms extends BaseAbility {
     private boolean ultimateActive = false;
     private boolean initialized = false;
 
-    private float baseSoulPerHit;
+    private final float baseSoulPerHit;
 
     public BugCharms(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
+        this.baseSoulPerHit = (float) Configs.requireDouble(this.config, "base_soul_per_hit");
+        for (Charms charm : Charms.values()) {
+            registry.put(charm, CharmConfig.createCharm(charm));
+        }
     }
 
     public static Set<Charms> rollRandomPreset() {
-        org.bukkit.configuration.file.YamlConfiguration cfg =
-                me.stolyy.heroes.hero.HeroConfig.getConfig("bug");
-        if (cfg == null) return Set.of();
+        YamlConfiguration cfg = HeroConfig.getConfig("bug");
+        if (cfg == null) {
+            throw new IllegalStateException("Missing loaded hero config 'bug' for charm presets");
+        }
         List<?> presets = cfg.getList("charm_presets");
         if (presets == null || presets.isEmpty()) return Set.of();
 
@@ -45,32 +61,10 @@ public class BugCharms extends BaseAbility {
         return result;
     }
 
-    @Override
-    public void initialize(Hero hero) {
-        this.baseSoulPerHit = (float) config.getDouble("base_soul_per_hit", 17.0);
-
-        registry.put(Charms.SPRINTMASTER,   new Sprintmaster(config.getConfigurationSection("sprintmaster")));
-        registry.put(Charms.STEADY_BODY,    new SteadyBody(config.getConfigurationSection("steady_body")));
-        registry.put(Charms.QUICK_SLASH,    new QuickSlash(config.getConfigurationSection("quick_slash")));
-        registry.put(Charms.STRENGTH,       new Strength(config.getConfigurationSection("strength")));
-        registry.put(Charms.MARK_OF_PRIDE,  new MarkOfPride(config.getConfigurationSection("mark_of_pride")));
-        registry.put(Charms.DASHMASTER,     new Dashmaster(config.getConfigurationSection("dashmaster")));
-        registry.put(Charms.SHARP_SHADOW,   new SharpShadow(config.getConfigurationSection("sharp_shadow")));
-        registry.put(Charms.SOUL_TWISTER,   new SoulTwister(config.getConfigurationSection("soul_twister")));
-        registry.put(Charms.SHAMAN_STONE,   new ShamanStone(config.getConfigurationSection("shaman_stone")));
-        registry.put(Charms.KINGSOUL,       new Kingsoul(config.getConfigurationSection("kingsoul")));
-        registry.put(Charms.WEAVERSONG,     new Weaversong(config.getConfigurationSection("weaversong")));
-        registry.put(Charms.SOUL_EATER,     new SoulEater(config.getConfigurationSection("soul_eater")));
-        registry.put(Charms.GRUBSONG,       new Grubsong(config.getConfigurationSection("grubsong")));
-        registry.put(Charms.NAIL_MASTER,    new NailMaster(config.getConfigurationSection("nail_master")));
-        registry.put(Charms.HEAVY_BLOW,     new HeavyBlow(config.getConfigurationSection("heavy_blow")));
-    }
-
     private void lateInitialize(Hero hero) {
         equipped.addAll(HeroManager.getEquippedCharms(hero.getController().getUniqueId()));
         for (Charms charm : equipped) {
-            Charm impl = registry.get(charm);
-            if (impl != null) impl.activate(hero);
+            registry.get(charm).activate(hero);
         }
     }
 
@@ -81,8 +75,6 @@ public class BugCharms extends BaseAbility {
         for (Charms charm : Charms.values()) {
             if (equipped.contains(charm)) continue;
             Charm impl = registry.get(charm);
-            if (impl == null) continue;
-
             if (active) impl.activate(hero);
             else impl.deactivate(hero);
         }
@@ -91,9 +83,10 @@ public class BugCharms extends BaseAbility {
     @Override
     public void onJabHit(Hero hero, LivingEntity victim) {
         double multiplier = 1.0;
-        Charm soulEater = registry.get(Charms.SOUL_EATER);
-        if (soulEater instanceof SoulEater se && se.isActive()) {
-            multiplier = se.getMultiplier();
+        for (Charm charm : registry.values()) {
+            if (charm.isActive()) {
+                multiplier *= charm.soulMultiplier();
+            }
         }
         hero.getEnergy().changeEnergy((float) (baseSoulPerHit * multiplier));
 
@@ -124,6 +117,55 @@ public class BugCharms extends BaseAbility {
         }
         for (Charm charm : registry.values()) {
             if (charm.isActive()) charm.tick(hero);
+        }
+    }
+
+    @Override
+    public void onDeath(Hero hero) {
+        super.onDeath(hero);
+        for (Charm charm : registry.values()) {
+            if (charm.isActive()) charm.onDeath(hero);
+        }
+    }
+
+    @Override
+    public void onOwnerLost(Hero hero) {
+        super.onOwnerLost(hero);
+        setUltimateActive(hero, false);
+        for (Charm charm : registry.values()) {
+            if (charm.isActive()) {
+                charm.onOwnerLost(hero);
+                charm.deactivate(hero);
+            }
+        }
+    }
+
+    @Override
+    public List<Component> passiveCardExtras(Controller controller) {
+        Set<Charms> equippedCharms = HeroManager.getEquippedCharms(controller.getUniqueId());
+        if (equippedCharms.isEmpty()) return List.of();
+
+        List<Component> lines = new ArrayList<>();
+        lines.add(GuiText.component("gui.charms.equipped-header"));
+        for (Charms charm : Charms.values()) {
+            if (equippedCharms.contains(charm)) {
+                lines.add(Component.text("\u2022 " + HeroConfig.formatName(charm.name()), NamedTextColor.WHITE));
+            }
+        }
+        return lines;
+    }
+
+    @Override
+    public void onCosmeticsApplied(Controller controller) {
+        Set<Charms> equippedCharms = HeroManager.getEquippedCharms(controller.getUniqueId());
+        int slot = CosmeticManager.INV_TOP_START;
+        for (Charms charm : Charms.values()) {
+            if (!equippedCharms.contains(charm) || slot > CosmeticManager.INV_TOP_END) continue;
+            controller.setInventoryItem(slot++, ItemBuilder.from(Material.PAPER)
+                    .name(GuiText.component("gui.charms.charm-name", "charm", HeroConfig.formatName(charm.name())))
+                    .lore(Component.text(CharmConfig.getDescription(charm), NamedTextColor.GRAY))
+                    .modelData("gui", "charms", CharmConfig.getTexture(charm))
+                    .build());
         }
     }
 

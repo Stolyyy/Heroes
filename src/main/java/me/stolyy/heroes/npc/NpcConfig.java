@@ -1,6 +1,8 @@
 package me.stolyy.heroes.npc;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.game.GameMode;
+import me.stolyy.heroes.util.Configs;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -40,11 +42,9 @@ public class NpcConfig {
         ConfigurationSection section = config.getConfigurationSection("announcer");
         if (section == null) return null;
 
-        String name = section.getString("name", "<gold>Lobby Menu</gold>");
-        Location location = parseLocation(section.getConfigurationSection("location"));
-        String skin = section.getString("skin", "MHF_Steve");
-
-        if (location == null) return null;
+        String name = Configs.requireString(section, "name");
+        Location location = parseLocation(Configs.requireSection(section, "location"));
+        String skin = Configs.requireString(section, "skin");
 
         return new AnnouncerData(name, location, skin);
     }
@@ -62,14 +62,9 @@ public class NpcConfig {
             ConfigurationSection section = heroesSection.getConfigurationSection(key);
             if (section == null) continue;
 
-            String name = section.getString("name", "<gold>" + key + "</gold>");
-            String hero = section.getString("hero", key);
-            Location location = parseLocation(section.getConfigurationSection("location"));
-
-            if (location == null) {
-                Heroes.getInstance().getLogger().warning("Invalid location for NPC: " + key);
-                continue;
-            }
+            String name = Configs.requireString(section, "name");
+            String hero = Configs.requireString(section, "hero");
+            Location location = parseLocation(Configs.requireSection(section, "location"));
 
             // Parse armor
             ArmorData armor = parseArmor(section.getConfigurationSection("armor"));
@@ -93,59 +88,62 @@ public class NpcConfig {
             ConfigurationSection section = root.getConfigurationSection(key);
             if (section == null) continue;
 
-            me.stolyy.heroes.game.GameMode mode = switch (key.toLowerCase()) {
-                case "1v1" -> me.stolyy.heroes.game.GameMode.ONE_V_ONE;
-                case "2v2" -> me.stolyy.heroes.game.GameMode.TWO_V_TWO;
-                case "custom" -> me.stolyy.heroes.game.GameMode.CUSTOM;
-                default -> null;
+            GameMode mode = switch (key.toLowerCase()) {
+                case "1v1" -> GameMode.ONE_V_ONE;
+                case "2v2" -> GameMode.TWO_V_TWO;
+                case "custom" -> GameMode.CUSTOM;
+                default -> throw new IllegalStateException("Unknown queue-npcs mode in lobby.yml: '" + key + "'");
             };
-            if (mode == null) {
-                Heroes.getInstance().getLogger().warning("Unknown queue NPC mode: " + key);
-                continue;
-            }
 
-            Location location = parseLocation(section.getConfigurationSection("location"));
-            if (location == null) {
-                Heroes.getInstance().getLogger().warning("Invalid location for queue NPC: " + key);
-                continue;
-            }
-
-            String name = section.getString("name", "<gold><bold>" + mode.displayName() + "</bold></gold>");
-            String skin = section.getString("skin");
+            Location location = parseLocation(Configs.requireSection(section, "location"));
+            String name = Configs.requireString(section, "name");
+            String skin = Configs.requireString(section, "skin");
             result.add(new QueueNpcData(mode, name, location, skin));
         }
 
         return result;
     }
 
-    public record QueueNpcData(me.stolyy.heroes.game.GameMode mode, String name,
+    public record QueueNpcData(GameMode mode, String name,
                                Location location, String skin) {}
 
     /**
-     * Parses a location from a configuration section.
+     * Gets the lobby spawn location from {@code lobby.spawn} in lobby.yml.
+     * Throws loudly if the section, coordinates, or world are missing.
      */
+    public static Location getLobbySpawn() {
+        ConfigurationSection section = Configs.requireSection(config, "lobby.spawn");
+        String worldName = Configs.requireString(section, "world");
+        World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            throw new IllegalStateException("Lobby spawn world not found: " + worldName);
+        }
+        double x = Configs.requireDouble(section, "x");
+        double y = Configs.requireDouble(section, "y");
+        double z = Configs.requireDouble(section, "z");
+        float yaw = (float) section.getDouble("yaw", 0);
+        float pitch = (float) section.getDouble("pitch", 0);
+        return new Location(world, x, y, z, yaw, pitch);
+    }
+
     private static Location parseLocation(ConfigurationSection section) {
         if (section == null) return null;
 
-        String worldName = section.getString("world", "world");
+        String worldName = Configs.requireString(section, "world");
         World world = Bukkit.getWorld(worldName);
         if (world == null) {
-            Heroes.getInstance().getLogger().warning("World not found: " + worldName);
-            return null;
+            throw new IllegalStateException("World not found for " + section.getCurrentPath() + ": " + worldName);
         }
 
-        double x = section.getDouble("x", 0);
-        double y = section.getDouble("y", 0);
-        double z = section.getDouble("z", 0);
+        double x = Configs.requireDouble(section, "x");
+        double y = Configs.requireDouble(section, "y");
+        double z = Configs.requireDouble(section, "z");
         float yaw = (float) section.getDouble("yaw", 0);
         float pitch = (float) section.getDouble("pitch", 0);
 
         return new Location(world, x, y, z, yaw, pitch);
     }
 
-    /**
-     * Parses armor data from a configuration section.
-     */
     private static ArmorData parseArmor(ConfigurationSection section) {
         if (section == null) return null;
 
@@ -162,27 +160,20 @@ public class NpcConfig {
 
         // Parse armor color
         Color color = null;
-        String colorStr = section.getString("color");
-        if (colorStr != null && colorStr.contains(",")) {
+        if (section.contains("color")) {
+            String colorStr = Configs.requireString(section, "color");
             String[] parts = colorStr.split(",");
-            if (parts.length == 3) {
-                try {
-                    int r = Integer.parseInt(parts[0].trim());
-                    int g = Integer.parseInt(parts[1].trim());
-                    int b = Integer.parseInt(parts[2].trim());
-                    color = Color.fromRGB(r, g, b);
-                } catch (NumberFormatException ignored) {}
+            if (parts.length != 3) {
+                throw new IllegalArgumentException("Invalid RGB armor color in lobby.yml at '"
+                        + section.getCurrentPath() + ".color': '" + colorStr + "'");
             }
+            int r = Integer.parseInt(parts[0].trim());
+            int g = Integer.parseInt(parts[1].trim());
+            int b = Integer.parseInt(parts[2].trim());
+            color = Color.fromRGB(r, g, b);
         }
 
         return new ArmorData(head, color);
-    }
-
-    /**
-     * Reloads the configuration.
-     */
-    public static void reload() {
-        load();
     }
 
     // Data classes

@@ -1,10 +1,10 @@
 package me.stolyy.heroes.hero;
 
+import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.ability.Ability;
 import me.stolyy.heroes.ability.AbilityType;
-import me.stolyy.heroes.ability.Cooldown;
-import me.stolyy.heroes.ability.Ammo;
 import me.stolyy.heroes.control.Controller;
+import me.stolyy.heroes.control.strategy.Strategy;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.hero.mechanics.DoubleJump;
 import me.stolyy.heroes.hero.minion.MinionHero;
@@ -22,8 +22,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.logging.Level;
 
 
+/**
+ * Factory and startup validator building {@link Hero} and {@link MinionHero} instances from
+ * hero YAML files using registered ability and mobility constructors.
+ */
 public class HeroBuilder {
     private static final Map<String, BiFunction<ConfigurationSection, HeroSkin, Ability>> abilityRegistry = new HashMap<>();
     private static final Map<String, MobilityFactory> mobilityRegistry = new HashMap<>();
@@ -46,34 +51,37 @@ public class HeroBuilder {
     }
 
     public static Hero buildHero(ConfigurationSection config, String skinId) {
-        String name = config.getString("name", "Unknown Hero");
+        return buildHero(config, skinId, null);
+    }
+
+    private static Hero buildHero(ConfigurationSection config, String skinId, List<String> abilityErrors) {
+        String name = Configs.requireString(config, "name");
 
         // --- Skin Loading ---
         HeroSkin skin = null;
         if (config.contains("skins." + skinId)) {
-            skin = new HeroSkin(skinId, config.getConfigurationSection("skins." + skinId));
+            skin = new HeroSkin(skinId, Configs.requireSection(config, "skins." + skinId));
         } else if (config.contains("skins.default")) {
-            skin = new HeroSkin("default", config.getConfigurationSection("skins.default"));
+            skin = new HeroSkin("default", Configs.requireSection(config, "skins.default"));
         }
 
         HeroStats stats = parseStats(config);
         DoubleJump mobility = parseMobility(config, stats.mobility(), skin);
 
-        Ability primary = loadAbility(config, "abilities.primary", skin);
-        Ability secondary = loadAbility(config, "abilities.secondary", skin);
-        Ability smash = loadAbility(config, "abilities.smash", skin);
-        if (smash == null) smash = loadAbility(config, "abilities.ultimate", skin);
+        Ability primary = loadAbility(name, config, "abilities.primary", skin, abilityErrors);
+        Ability secondary = loadAbility(name, config, "abilities.secondary", skin, abilityErrors);
+        Ability smash = loadAbility(name, config, "abilities.smash", skin, abilityErrors);
 
-        List<Ability> passives = parsePassives(config, skin);
+        List<Ability> passives = parsePassives(name, config, skin, abilityErrors);
 
         Hero hero = new Hero(name, stats, mobility, primary, secondary, smash, passives);
 
         ConfigurationSection hurtSec = config.getConfigurationSection("hurt_sound");
         if (hurtSec != null) {
             hero.configureHurtSound(new SoundEffect(hurtSec),
-                    (long) (hurtSec.getDouble("cooldown", 0.5) * 1000),
-                    hurtSec.getDouble("min_damage", 0),
-                    hurtSec.getDouble("chance", 1.0));
+                    (long) (Configs.requireDouble(hurtSec, "cooldown") * 1000),
+                    Configs.requireDouble(hurtSec, "min_damage"),
+                    Configs.requireDouble(hurtSec, "chance"));
         }
         hero.setSkin(skin);
 
@@ -89,8 +97,8 @@ public class HeroBuilder {
             SoundBuilder.of(painSoundKey).volume(1.0f).pitch(1.0f).play(controller.getLocation());
         });
 
-        // Kill sound: pulled from `visuals.kill_sound` in the hero's yml. No-op if unconfigured.
-        SoundEffect killSound = new SoundEffect(config.getConfigurationSection("visuals.kill_sound"));
+        // Kill sound: pulled from `visuals.kill_sound` in the hero's yml (inherited from default.yml).
+        SoundEffect killSound = new SoundEffect(statSection(config, "visuals.kill_sound"));
         hero.getEventBus().onKill(victim -> {
             if (hero.getController() != null) {
                 killSound.play(hero.getController().getLocation(), hero.getController());
@@ -98,8 +106,8 @@ public class HeroBuilder {
         });
 
         // Death sound: pulled from `visuals.death_sound`. Fires on every death (respawn and
-        // elimination both route through triggerDeath). No-op if unconfigured.
-        SoundEffect deathSound = new SoundEffect(config.getConfigurationSection("visuals.death_sound"));
+        // elimination both route through triggerDeath).
+        SoundEffect deathSound = new SoundEffect(statSection(config, "visuals.death_sound"));
         hero.getEventBus().onDeath(deathLocation -> {
             Controller controller = hero.getController();
             if (controller == null) return;
@@ -111,23 +119,22 @@ public class HeroBuilder {
 
         // Win sound: pulled from `visuals.win_sound`. Played at game end by Game via the
         // chosen winning player's hero (see Game.playWinSound).
-        hero.setWinSound(new SoundEffect(config.getConfigurationSection("visuals.win_sound")));
+        hero.setWinSound(new SoundEffect(statSection(config, "visuals.win_sound")));
 
         return hero;
     }
 
     public static MinionHero buildMinion(ConfigurationSection config, Hero owner) {
-        String name = config.getString("name", "Minion");
+        String name = Configs.requireString(config, "name");
 
         HeroStats stats = parseStats(config);
         DoubleJump mobility = parseMobility(config, stats.mobility(), null);
 
-        Ability primary = loadAbility(config, "abilities.primary", null);
-        Ability secondary = loadAbility(config, "abilities.secondary", null);
-        Ability smash = loadAbility(config, "abilities.smash", null);
-        if (smash == null) smash = loadAbility(config, "abilities.ultimate", null);
+        Ability primary = loadAbility(name, config, "abilities.primary", null, null);
+        Ability secondary = loadAbility(name, config, "abilities.secondary", null, null);
+        Ability smash = loadAbility(name, config, "abilities.smash", null, null);
 
-        List<Ability> passives = parsePassives(config, null);
+        List<Ability> passives = parsePassives(name, config, null, null);
 
         MinionHero minion = new MinionHero(name, stats, mobility, primary, secondary, smash, passives, owner);
 
@@ -153,7 +160,6 @@ public class HeroBuilder {
         // yml's defaults are matched by absolute path and don't apply to the nested subsection,
         // so the helpers below are what actually rescue gravity/jump_height/step_height etc.
         String typeStr = statString(config, "stats.type");
-        if (typeStr == null) typeStr = "HYBRID";
         HeroType type = HeroType.valueOf(typeStr.toUpperCase());
         HeroStats.AttributeStats attributes = new HeroStats.AttributeStats(type,
                 statDouble(config, "stats.weight"),
@@ -176,7 +182,7 @@ public class HeroBuilder {
                 statDouble(config, "combat.jab_range"),
                 statDouble(config, "combat.jab_radius"),
                 statBool(config, "combat.jab_pierce"),
-                statDouble(config, "combat.jab_cooldown"),
+                statDouble(config, "combat.jab_cooldown_ms"),
                 statDouble(config, "combat.jab_damage"),
                 statDouble(config, "combat.jab_knockback"),
                 new SoundEffect(statSection(config, "combat.swing_sound")),
@@ -197,94 +203,131 @@ public class HeroBuilder {
     // these fall through to the section. For nested minion subsections the section doesn't
     // inherit defaults at this nested path, so we consult default.yml directly.
 
-    private static double statDouble(ConfigurationSection config, String path) {
-        if (config.contains(path)) return config.getDouble(path);
+    private static YamlConfiguration requireDefaults() {
         YamlConfiguration defaults = HeroConfig.getConfig("default");
-        return defaults != null ? defaults.getDouble(path) : 0;
+        if (defaults == null) {
+            throw new IllegalStateException("heroes/default.yml is not loaded");
+        }
+        return defaults;
+    }
+
+    private static double statDouble(ConfigurationSection config, String path) {
+        if (config.contains(path)) return Configs.requireDouble(config, path);
+        return Configs.requireDouble(requireDefaults(), path);
     }
 
     private static int statInt(ConfigurationSection config, String path) {
-        if (config.contains(path)) return config.getInt(path);
-        YamlConfiguration defaults = HeroConfig.getConfig("default");
-        return defaults != null ? defaults.getInt(path) : 0;
+        if (config.contains(path)) return Configs.requireInt(config, path);
+        return Configs.requireInt(requireDefaults(), path);
     }
 
     private static String statString(ConfigurationSection config, String path) {
-        if (config.contains(path)) return config.getString(path);
-        YamlConfiguration defaults = HeroConfig.getConfig("default");
-        return defaults != null ? defaults.getString(path) : null;
+        if (config.contains(path)) return Configs.requireString(config, path);
+        return Configs.requireString(requireDefaults(), path);
     }
 
     private static boolean statBool(ConfigurationSection config, String path) {
-        if (config.contains(path)) return config.getBoolean(path);
-        YamlConfiguration defaults = HeroConfig.getConfig("default");
-        return defaults != null && defaults.getBoolean(path);
+        if (config.contains(path)) return Configs.requireBoolean(config, path);
+        return Configs.requireBoolean(requireDefaults(), path);
     }
 
     private static ConfigurationSection statSection(ConfigurationSection config, String path) {
         ConfigurationSection local = config.getConfigurationSection(path);
         if (local != null) return local;
-        YamlConfiguration defaults = HeroConfig.getConfig("default");
-        return defaults != null ? defaults.getConfigurationSection(path) : null;
+        return Configs.requireSection(requireDefaults(), path);
     }
 
     private static DoubleJump parseMobility(ConfigurationSection config, HeroStats.JumpStats jumpStats, HeroSkin skin) {
-        String mobilityKey = config.getString("mobility.type", "STANDARD");
-        if (mobilityRegistry.containsKey(mobilityKey.toLowerCase())) {
-            ConfigurationSection mobilityConfig = config.getConfigurationSection("mobility");
-            return mobilityRegistry.get(mobilityKey.toLowerCase()).create(jumpStats, mobilityConfig, skin);
+        String mobilityKey = statString(config, "mobility.type");
+        if (mobilityKey.equalsIgnoreCase("STANDARD")) {
+            return new DoubleJump(jumpStats);
         }
-        return new DoubleJump(jumpStats);
+        MobilityFactory factory = mobilityRegistry.get(mobilityKey.toLowerCase());
+        if (factory == null) {
+            throw new IllegalStateException("Unknown mobility.type '" + mobilityKey
+                    + "'. Register it in AbilityRegistry.registerAll() or use STANDARD.");
+        }
+        return factory.create(jumpStats, Configs.requireSection(config, "mobility"), skin);
     }
 
-    private static List<Ability> parsePassives(ConfigurationSection config, HeroSkin skin) {
+    private static List<Ability> parsePassives(String heroName, ConfigurationSection config,
+                                               HeroSkin skin, List<String> abilityErrors) {
         List<Ability> passives = new ArrayList<>();
-        if (config.contains("abilities.passives")) {
-            for (Object obj : config.getList("abilities.passives")) passives.add(parseAbilityObject(obj, skin));
+        if (!config.contains("abilities.passives")) return passives;
+
+        List<?> rawList = config.getList("abilities.passives");
+        if (rawList == null) {
+            throw new IllegalStateException("abilities.passives on '" + heroName + "' must be a list");
+        }
+        for (int i = 0; i < rawList.size(); i++) {
+            Object obj = rawList.get(i);
+            String label = "abilities.passives[" + i + "]";
+            try {
+                passives.add(parseAbilityObject(obj, skin));
+            } catch (Exception e) {
+                recordAbilityFailure(heroName, label, e, abilityErrors);
+            }
         }
         return passives;
     }
 
-    private static Ability loadAbility(ConfigurationSection config, String path, HeroSkin skin) {
-        AbilityType slotType = inferSlotType(path);
-        if (config.isConfigurationSection(path)) {
-            ConfigurationSection section = config.getConfigurationSection(path);
-            String registryKey = section.getString("type");
+    private static Ability loadAbility(String heroName, ConfigurationSection config, String path,
+                                       HeroSkin skin, List<String> abilityErrors) {
+        if (!config.contains(path)) return null;
+        try {
+            AbilityType slotType = inferSlotType(path);
+            ConfigurationSection section = Configs.requireSection(config, path);
+            String registryKey = Configs.requireString(section, "type");
             ConfigurationSection copy = copySection(section);
             if (slotType != null) copy.set("type", slotType.name());
             return createAbility(registryKey, copy, skin);
-        } else {
-            return createAbility(config.getString(path), null, skin);
+        } catch (Exception e) {
+            recordAbilityFailure(heroName, path, e, abilityErrors);
+            return null;
         }
+    }
+
+    private static void recordAbilityFailure(String heroName, String slotPath, Exception e,
+                                             List<String> abilityErrors) {
+        String msg = "Failed to build ability '" + slotPath + "' for hero '" + heroName
+                + "' — omitting ability: " + e.getMessage();
+        Heroes.getInstance().getLogger().log(Level.SEVERE, msg, e);
+        if (abilityErrors != null) abilityErrors.add(msg);
     }
 
     private static AbilityType inferSlotType(String path) {
         if (path.endsWith(".primary")) return AbilityType.PRIMARY;
         if (path.endsWith(".secondary")) return AbilityType.SECONDARY;
-        if (path.endsWith(".smash") || path.endsWith(".ultimate")) return AbilityType.SMASH;
+        if (path.endsWith(".smash")) return AbilityType.SMASH;
         return null;
     }
 
     private static Ability parseAbilityObject(Object obj, HeroSkin skin) {
-        if (obj instanceof String) return createAbility((String) obj, null, skin);
-        if (obj instanceof Map) {
-            MemoryConfiguration section = new MemoryConfiguration();
-            populateSection(section, (Map<?, ?>) obj);
-            String registryKey = section.getString("type");
-            String activation = section.getString("activation", "TICK");
-            AbilityType passiveType = switch (activation.toUpperCase()) {
+        if (!(obj instanceof Map<?, ?> map)) {
+            throw new IllegalStateException("Passive ability entry must be a YAML map, got: " + obj);
+        }
+        MemoryConfiguration section = new MemoryConfiguration();
+        populateSection(section, map);
+        String registryKey = Configs.requireString(section, "type");
+        AbilityType passiveType;
+        if (!section.contains("activation")) {
+            passiveType = AbilityType.PASSIVE;
+        } else {
+            String activation = Configs.requireString(section, "activation");
+            passiveType = switch (activation.toUpperCase()) {
+                case "TICK" -> AbilityType.PASSIVE;
                 case "SNEAK" -> AbilityType.PASSIVE_SNEAK;
                 case "DROP" -> AbilityType.PASSIVE_DROP;
                 case "SWAP" -> AbilityType.PASSIVE_SWAP;
-                default -> AbilityType.PASSIVE;
+                default -> throw new IllegalStateException("Unknown passive activation '" + activation
+                        + "' (expected TICK, SNEAK, DROP, or SWAP)");
             };
-            section.set("type", passiveType.name());
-            return createAbility(registryKey, section, skin);
         }
-        return createDummy("Invalid");
+        section.set("type", passiveType.name());
+        return createAbility(registryKey, section, skin);
     }
 
-    private static void populateSection(org.bukkit.configuration.ConfigurationSection section, Map<?, ?> map) {
+    private static void populateSection(ConfigurationSection section, Map<?, ?> map) {
         for (Map.Entry<?, ?> entry : map.entrySet()) {
             String key = entry.getKey().toString();
             Object value = entry.getValue();
@@ -297,39 +340,62 @@ public class HeroBuilder {
     }
 
     private static Ability createAbility(String key, ConfigurationSection config, HeroSkin skin) {
-        // An absent slot (no key at all) is a legitimate empty slot, e.g. a hero whose secondary is
-        // still unwritten. A key that names nothing in the registry is a wiring mistake and fails loudly.
-        if (key == null) return createDummy("Null");
-        if (!abilityRegistry.containsKey(key.toLowerCase())) {
+        BiFunction<ConfigurationSection, HeroSkin, Ability> factory = abilityRegistry.get(key.toLowerCase());
+        if (factory == null) {
             throw new IllegalStateException("No ability registered for type '" + key
                     + "'. Add it to AbilityRegistry.registerAll().");
         }
-        return abilityRegistry.get(key.toLowerCase()).apply(config, skin);
+        return factory.apply(config, skin);
     }
 
     /**
      * Builds every hero archetype (and every skin of it) once at startup so a missing or malformed
-     * yml key is a boot-time SEVERE naming the hero, not an exception when a player picks it.
+     * yml key is a boot-time SEVERE naming the hero, not a surprise when a player picks it.
      */
     public static void validateAll() {
         int failures = 0;
         for (String heroName : HeroConfig.getAvailableNames()) {
             ConfigurationSection config = HeroConfig.getConfig(heroName);
-            List<String> skinIds = new ArrayList<>(List.of("default"));
+            try {
+                validateBotConfig(heroName, config);
+            } catch (Exception e) {
+                failures++;
+                Heroes.getInstance().getLogger().log(Level.SEVERE,
+                        "Hero '" + heroName + "' bot config invalid: " + e.getMessage(), e);
+            }
+
+            List<String> skinIds = new ArrayList<>();
             ConfigurationSection skins = config.getConfigurationSection("skins");
-            if (skins != null) skinIds.addAll(skins.getKeys(false));
+            if (skins != null) {
+                skinIds.addAll(skins.getKeys(false));
+            }
+            if (!skinIds.contains("default")) {
+                skinIds.add(0, "default");
+            }
+
             for (String skinId : skinIds) {
+                List<String> abilityErrors = new ArrayList<>();
                 try {
-                    buildHero(config, skinId);
+                    buildHero(config, skinId, abilityErrors);
+                    failures += abilityErrors.size();
                 } catch (Exception e) {
                     failures++;
-                    me.stolyy.heroes.Heroes.getInstance().getLogger().log(java.util.logging.Level.SEVERE,
+                    Heroes.getInstance().getLogger().log(Level.SEVERE,
                             "Hero '" + heroName + "' (skin " + skinId + ") does not build: " + e.getMessage(), e);
                 }
             }
         }
-        me.stolyy.heroes.Heroes.getInstance().getLogger().info(
+        Heroes.getInstance().getLogger().info(
                 "Validated " + HeroConfig.getAvailableNames().size() + " heroes, " + failures + " failed");
+    }
+
+    private static void validateBotConfig(String heroName, ConfigurationSection config) {
+        String strategyType = Configs.requireString(config, "bot.strategy_type");
+        if (!Strategy.isKnownType(strategyType)) {
+            throw new IllegalStateException("Hero '" + heroName + "' has unknown bot.strategy_type '" + strategyType + "'");
+        }
+        Configs.requireSection(config, "ai");
+        Configs.requireSection(config, "strategy");
     }
 
     private static ConfigurationSection copySection(ConfigurationSection source) {
@@ -340,19 +406,5 @@ public class HeroBuilder {
             }
         }
         return copy;
-    }
-
-    private static Ability createDummy(String name) {
-        return new Ability() {
-            @Override public String getName() { return "Missing: " + name; }
-            @Override public String getDescription() { return ""; }
-            @Override public AbilityType getType() { return AbilityType.PASSIVE; }
-            @Override public long getCooldown() { return 0; }
-            @Override public int getEnergyCost() { return 0; }
-            @Override public Ammo getAmmo() { return null; }
-            @Override public Cooldown getCooldownObject() { return new Cooldown(0, 0, 0); }
-            @Override public boolean execute(Hero h) { return false; }
-            @Override public boolean canExecute(Hero hero) { return false; }
-        };
     }
 }

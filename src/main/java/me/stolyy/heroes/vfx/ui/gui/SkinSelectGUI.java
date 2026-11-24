@@ -4,38 +4,34 @@ import me.stolyy.heroes.hero.HeroConfig;
 import me.stolyy.heroes.progression.PlayerStats;
 import me.stolyy.heroes.progression.PlayerStatsManager;
 import me.stolyy.heroes.progression.ProgressionConfig;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import me.stolyy.heroes.vfx.effect.ItemBuilder;
 import me.stolyy.heroes.vfx.effect.SoundBuilder;
+import me.stolyy.heroes.vfx.ui.GuiText;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * One-row skin picker (R3-P12): one item per key under the hero's yml {@code skins:}
- * section. The master skin is level-gated (hero level >= master-skin-level); everything
- * else is freely selectable. First-ever skin UI — selection storage (PlayerStats
- * selected-skins) and application (CosmeticManager.apply) already existed.
- */
+/** One-row skin picker populated from non-hidden entries under the hero's {@code skins:} YML section. */
 public class SkinSelectGUI extends GUI {
     private static final int SLOT_BACK = 8;
 
     private final String heroName;
-    private final GUI returnTo;
+    private final @Nullable GUI returnTo;
     private final Map<Integer, String> slotToSkin = new HashMap<>();
     private final Set<Integer> lockedSlots = new HashSet<>();
 
-    public SkinSelectGUI(Player player, String heroName, GUI returnTo) {
-        super(player, 9, HeroConfig.formatName(heroName) + " Skins");
+    public SkinSelectGUI(Player player, String heroName, @Nullable GUI returnTo) {
+        super(player, 9, GuiText.raw("gui.skins.title", "hero", HeroConfig.formatName(heroName)));
         this.heroName = heroName;
         this.returnTo = returnTo;
     }
@@ -55,22 +51,22 @@ public class SkinSelectGUI extends GUI {
         if (skins != null) {
             for (String skinId : skins.getKeys(false)) {
                 if (slot >= SLOT_BACK) break;
-                // Ability-owned skins (Karakot's ult, Pochita's hell form) are transient swaps the
-                // kit applies and reverts itself. Listing them made them selectable, and a selected
-                // one persists — so it came back as the player's real skin from spawn, permanently.
-                if (skins.getConfigurationSection(skinId).getBoolean("hidden", false)) continue;
+                ConfigurationSection skinSec = skins.getConfigurationSection(skinId);
+                if (skinSec != null && skinSec.getBoolean("hidden", false)) continue;
+
                 boolean isMaster = skinId.equalsIgnoreCase("masterskin");
                 boolean owned = !isMaster || heroLevel >= masterLevel;
                 boolean isSelected = skinId.equalsIgnoreCase(selected);
 
                 Component statusLore = isSelected
-                        ? Component.text("Selected", NamedTextColor.GREEN)
+                        ? GuiText.component("gui.skins.selected-lore")
                         : owned
-                            ? Component.text("Click to select", NamedTextColor.YELLOW)
-                            : Component.text("Unlocks at hero level " + masterLevel, NamedTextColor.RED);
+                            ? GuiText.component("gui.skins.select-lore")
+                            : GuiText.component("gui.skins.locked-lore", "level", masterLevel);
 
                 ItemStack item = ItemBuilder.from(owned ? Material.SPONGE : Material.GRAY_DYE)
-                        .name((owned ? "<gold>" : "<gray>") + formatSkinName(skinId))
+                        .name(GuiText.component(owned ? "gui.skins.item-name-owned" : "gui.skins.item-name-locked",
+                                "skin", formatSkinName(skinId)))
                         .lore(statusLore)
                         .modelData(HeroConfig.assetKey(heroName), "head", skinId)
                         .build();
@@ -83,10 +79,7 @@ public class SkinSelectGUI extends GUI {
             }
         }
 
-        inventoryItems.put(SLOT_BACK, ItemBuilder.from(Material.PAPER)
-                .name("<white>Back")
-                .modelData("gui", "navigation", "back")
-                .build());
+        inventoryItems.put(SLOT_BACK, backItem());
     }
 
     @Override
@@ -101,20 +94,21 @@ public class SkinSelectGUI extends GUI {
         String skinId = slotToSkin.get(slot);
         if (skinId == null) return;
         if (lockedSlots.contains(slot)) {
-            SoundBuilder.of(Sound.BLOCK_NOTE_BLOCK_BASS).pitch(0.7f).play(player);
+            playError();
             return;
         }
 
         PlayerStatsManager.getStats(player).setSkinForHero(heroName, skinId);
-        player.sendMessage(Component.text(HeroConfig.formatName(heroName) + " skin set to "
-                + formatSkinName(skinId) + ".", NamedTextColor.GREEN));
+        player.sendMessage(GuiText.component("gui.skins.changed",
+                "hero", HeroConfig.formatName(heroName),
+                "skin", formatSkinName(skinId)));
         SoundBuilder.of(Sound.ENTITY_PLAYER_LEVELUP).pitch(1.2f).play(player);
         populate();
         update();
     }
 
     private String formatSkinName(String skinId) {
-        if (skinId.equalsIgnoreCase("masterskin")) return "Master Skin";
+        if (skinId.equalsIgnoreCase("masterskin")) return GuiText.raw("gui.skins.master-name");
         return skinId.substring(0, 1).toUpperCase() + skinId.substring(1).toLowerCase();
     }
 

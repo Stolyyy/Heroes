@@ -2,25 +2,25 @@ package me.stolyy.heroes.ability;
 
 import me.stolyy.heroes.control.Controller;
 import me.stolyy.heroes.hero.Hero;
+import me.stolyy.heroes.util.ModifierStack;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 public class Cooldown {
-    private long cooldownDuration; // ms (the actual wait time)
+    private long baseCooldownDuration; // ms (configured wait time)
     private long lastUsed; // When the cooldown *started* ticking
     private long activeUntil; // ms (when the active phase ends)
-    // Per-ability cooldown scaling (A2.4): 1.0 = normal, <1.0 = faster (buff), >1.0 = slower
-    // (debuff). Applied via effectiveDuration() in getTimeRemaining/getVisualProgress; the raw
-    // cooldownDuration (and getCooldownDuration()) stay unscaled. Fresh Cooldown objects are
-    // built for every game's heroes, so buffs can't leak across games.
-    private double cooldownMultiplier = 1.0;
+    private final ModifierStack durationMods = new ModifierStack();
 
-    private int energyCost;
+    private int baseEnergyCost;
+    private final ModifierStack energyCostMods = new ModifierStack();
     private int chargesRequired;
     private int chargesCurrent;
     private long lastNotReadyMessage = 0;
 
     public Cooldown(long cooldownDuration, int energyCost, int chargesRequired) {
-        this.cooldownDuration = cooldownDuration;
-        this.energyCost = energyCost;
+        this.baseCooldownDuration = cooldownDuration;
+        this.baseEnergyCost = energyCost;
         this.chargesRequired = chargesRequired;
         this.lastUsed = 0;
         this.activeUntil = 0;
@@ -80,7 +80,8 @@ public class Cooldown {
         if (isInUse()) return false;
         if (getTimeRemaining() > 0) return false;
         if (chargesRequired > 0 && chargesCurrent > 0) return false;
-        if (energyCost > 0 && currentEnergy < energyCost) return false;
+        int cost = getEnergyCost();
+        if (cost > 0 && currentEnergy < cost) return false;
         return true;
     }
 
@@ -88,14 +89,15 @@ public class Cooldown {
         return System.currentTimeMillis() < activeUntil;
     }
 
-    /** The multiplier-scaled wait time — every internal duration read goes through this. */
+    // Modifier-scaled wait time — every internal duration read goes through this.
     private long effectiveDuration() {
-        return (long) (cooldownDuration * cooldownMultiplier);
+        return Math.max(0L, Math.round(durationMods.evaluate(baseCooldownDuration, 0.0)));
     }
 
     public long getTimeRemaining() {
-        if (cooldownDuration <= 0) return 0;
-        return Math.max(0, (lastUsed + effectiveDuration()) - System.currentTimeMillis());
+        long effective = effectiveDuration();
+        if (effective <= 0) return 0;
+        return Math.max(0, (lastUsed + effective) - System.currentTimeMillis());
     }
 
     public float getVisualProgress(int currentEnergy) {
@@ -111,15 +113,16 @@ public class Cooldown {
         if (chargesRequired > 0) {
             chargeProg = (float) chargesCurrent / chargesRequired;
         }
-        
+
         float energyProg = 0f;
-        if (energyCost > 0 && currentEnergy < energyCost) {
-            energyProg = 1.0f - ((float) currentEnergy / energyCost);
+        int cost = getEnergyCost();
+        if (cost > 0 && currentEnergy < cost) {
+            energyProg = 1.0f - ((float) currentEnergy / cost);
         }
 
         return Math.max(timeProg, Math.max(chargeProg, energyProg));
     }
-    
+
     public void reset() {
         this.lastUsed = System.currentTimeMillis();
         this.activeUntil = 0;
@@ -134,16 +137,25 @@ public class Cooldown {
         }
     }
 
-    public void setCooldownDuration(long duration) { this.cooldownDuration = duration; }
-    public void setCooldownMultiplier(double multiplier) { this.cooldownMultiplier = multiplier; }
-    public double getCooldownMultiplier() { return cooldownMultiplier; }
-    public void setEnergyCost(int energyCost) { this.energyCost = energyCost; }
-    public void setChargesRequired(int chargesRequired) { this.chargesRequired = chargesRequired; }
-    
-    public int getEnergyCost() { return energyCost; }
-    public long getCooldownDuration() { return cooldownDuration; }
+    public void addDurationMultiplier(Object key, double mult) { durationMods.putMult(key, mult); }
+    public void addDurationFlat(Object key, double deltaMs) { durationMods.putFlat(key, deltaMs); }
+    public void removeDurationModifier(Object key) { durationMods.remove(key); }
+
+    public void addEnergyCostMultiplier(Object key, double mult) { energyCostMods.putMult(key, mult); }
+    public void addEnergyCostFlat(Object key, double delta) { energyCostMods.putFlat(key, delta); }
+    public void removeEnergyCostModifier(Object key) { energyCostMods.remove(key); }
+
+    public void clearModifiers() {
+        durationMods.clear();
+        energyCostMods.clear();
+    }
+
+    public int getEnergyCost() { return (int) Math.max(0L, Math.round(energyCostMods.evaluate(baseEnergyCost, 0.0))); }
+    public int getBaseEnergyCost() { return baseEnergyCost; }
+    public long getCooldownDuration() { return effectiveDuration(); }
+    public long getBaseCooldownDuration() { return baseCooldownDuration; }
     public long getActiveTimeRemaining() { return Math.max(0, activeUntil - System.currentTimeMillis()); }
-    
+
     public void sendNotReadyVisuals(Hero hero, String abilityName) {
         long now = System.currentTimeMillis();
         if (now - lastNotReadyMessage < 1000) return;
@@ -153,24 +165,25 @@ public class Cooldown {
         if (controller == null) return;
 
         int currentEnergy = (int) hero.getEnergy().getCurrentEnergy();
+        int cost = getEnergyCost();
 
         if (isInUse()) {
-            controller.sendMessage(net.kyori.adventure.text.Component.text(
-                abilityName + " is currently active!", 
-                net.kyori.adventure.text.format.NamedTextColor.YELLOW));
+            controller.sendMessage(Component.text(
+                abilityName + " is currently active!",
+                NamedTextColor.YELLOW));
         } else if (getTimeRemaining() > 0) {
             double seconds = getTimeRemaining() / 1000.0;
-            controller.sendMessage(net.kyori.adventure.text.Component.text(
-                abilityName + " is on cooldown! (" + String.format("%.1f", seconds) + "s)", 
-                net.kyori.adventure.text.format.NamedTextColor.RED));
-        } else if (energyCost > 0 && currentEnergy < energyCost) {
-            controller.sendMessage(net.kyori.adventure.text.Component.text(
-                "Not enough energy to use " + abilityName + "!", 
-                net.kyori.adventure.text.format.NamedTextColor.YELLOW));
+            controller.sendMessage(Component.text(
+                abilityName + " is on cooldown! (" + String.format("%.1f", seconds) + "s)",
+                NamedTextColor.RED));
+        } else if (cost > 0 && currentEnergy < cost) {
+            controller.sendMessage(Component.text(
+                "Not enough energy to use " + abilityName + "!",
+                NamedTextColor.YELLOW));
         } else if (chargesRequired > 0 && chargesCurrent > 0) {
-            controller.sendMessage(net.kyori.adventure.text.Component.text(
-                abilityName + " needs " + chargesCurrent + " more charges!", 
-                net.kyori.adventure.text.format.NamedTextColor.RED));
+            controller.sendMessage(Component.text(
+                abilityName + " needs " + chargesCurrent + " more charges!",
+                NamedTextColor.RED));
         }
     }
 }

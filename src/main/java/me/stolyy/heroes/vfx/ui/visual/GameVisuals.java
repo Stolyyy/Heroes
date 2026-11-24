@@ -3,13 +3,15 @@ package me.stolyy.heroes.vfx.ui.visual;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.util.GameConfigManager;
 import me.stolyy.heroes.game.Game;
-import me.stolyy.heroes.game.GameEndReason;
 import me.stolyy.heroes.game.GamePlayer;
 import me.stolyy.heroes.game.Team;
 import me.stolyy.heroes.game.TeamColor;
-import me.stolyy.heroes.game.rules.GameModePreset;
+import me.stolyy.heroes.game.rules.WinCondition;
 import me.stolyy.heroes.hero.HeroConfig;
+import me.stolyy.heroes.hero.minion.MinionHero;
+import me.stolyy.heroes.vfx.effect.ParticleBuilder;
 import me.stolyy.heroes.vfx.effect.SoundBuilder;
+import me.stolyy.heroes.vfx.ui.GuiText;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
@@ -21,15 +23,21 @@ import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.scoreboard.*;
+import org.bukkit.scoreboard.Criteria;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public class GameVisuals {
     private final Game game;
@@ -39,8 +47,6 @@ public class GameVisuals {
     private final Objective belowNameHealth;
 
     private BukkitTask countdownTask;
-    private BukkitTask timerTask;
-    private int timeLeft;
 
     public GameVisuals(Game game) {
         this.game = game;
@@ -48,13 +54,15 @@ public class GameVisuals {
         ScoreboardManager manager = Bukkit.getScoreboardManager();
         scoreboard = manager.getNewScoreboard();
 
-        this.sidebar = scoreboard.registerNewObjective("GameInfo", Criteria.DUMMY, Component.text("SMASH HEROES 4", NamedTextColor.GOLD));
+        this.sidebar = scoreboard.registerNewObjective(
+                "GameInfo", Criteria.DUMMY, GuiText.component("scoreboard.game.title"));
         this.sidebar.setDisplaySlot(DisplaySlot.SIDEBAR);
 
-        this.tabHealth = scoreboard.registerNewObjective("tabHealth", Criteria.DUMMY, Component.text("❤"));
+        Component healthSymbol = GuiText.component("scoreboard.game.health-symbol");
+        this.tabHealth = scoreboard.registerNewObjective("tabHealth", Criteria.DUMMY, healthSymbol);
         this.tabHealth.setDisplaySlot(DisplaySlot.PLAYER_LIST);
 
-        this.belowNameHealth = scoreboard.registerNewObjective("belowNameHealth", Criteria.DUMMY, Component.text("❤"));
+        this.belowNameHealth = scoreboard.registerNewObjective("belowNameHealth", Criteria.DUMMY, healthSymbol);
         this.belowNameHealth.setDisplaySlot(DisplaySlot.BELOW_NAME);
     }
 
@@ -74,58 +82,34 @@ public class GameVisuals {
     public void showCountdown() {
         if (countdownTask != null) countdownTask.cancel();
         final int start = GameConfigManager.getCountdownTime();
-        final Title.Times times = Title.Times.times(
-                Duration.ofMillis(250),  // Fade in: 5 ticks
-                Duration.ofMillis(1000), // Stay: 20 ticks
-                Duration.ofMillis(250)   // Fade out: 5 ticks
-        );
 
         countdownTask = new BukkitRunnable() {
             int time = start;
             @Override
             public void run() {
-                if(time == 5) {
-                    for(Player p : game.onlinePlayers()) {
+                if (time == 5) {
+                    for (Player p : game.onlinePlayers()) {
                         SoundBuilder.of("announcer.startgame").volume(1).pitch(1).play(p);
                     }
                 }
                 if (time > 0) {
-                    Component mainTitle = Component.text(String.valueOf(time), NamedTextColor.YELLOW);
-                    Component subtitle = Component.empty();
-                    Title title = Title.title(mainTitle, subtitle, times);
-
+                    Title title = Titles.of(
+                            Component.text(String.valueOf(time), NamedTextColor.YELLOW),
+                            Component.empty(),
+                            Titles.SHORT);
                     for (Player p : game.onlinePlayers()) {
                         p.showTitle(title);
                     }
                     time--;
                 } else {
-                    Component mainTitle = Component.text("GO!", NamedTextColor.GREEN);
-                    Component subtitle = Component.text("Match Started");
-                    Title title = Title.title(mainTitle, subtitle, times);
-
+                    Title title = Titles.of(
+                            GuiText.component("scoreboard.game.countdown-go"),
+                            GuiText.component("scoreboard.game.countdown-started"),
+                            Titles.SHORT);
                     for (Player p : game.onlinePlayers()) {
                         p.showTitle(title);
                     }
                     cancel();
-                }
-            }
-        }.runTaskTimer(Heroes.getInstance(), 0L, 20L);
-    }
-
-    public void startTimer() {
-        if (timerTask != null) timerTask.cancel();
-        timeLeft = game.settings().timer();
-        sidebar.getScore(formatTime(timeLeft)).setScore(timeLeft + 1);
-        timerTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (timeLeft <= 0) {
-                    game.end(GameEndReason.TIMEOUT);
-                    cancel();
-                    reset();
-                } else {
-                    update();
-                    timeLeft--;
                 }
             }
         }.runTaskTimer(Heroes.getInstance(), 0L, 20L);
@@ -152,8 +136,6 @@ public class GameVisuals {
         sidebar.getScore(scoreText).setScore(1);
         applyScoreboardToAll();
 
-        final Title.Times endTimes = Title.Times.times(
-                Duration.ofMillis(500), Duration.ofMillis(3000), Duration.ofMillis(500));
         for (Player p : game.onlinePlayers()) {
             // Eliminated players sit on SPECTATOR by now — judge them by their original team
             // so a dead player whose teammate clinched the win still sees VICTORY.
@@ -161,18 +143,21 @@ public class GameVisuals {
             if (color == null) color = game.playerColor(p.getUniqueId());
             Team playerTeam = game.getTeams().get(color);
             if (playerTeam == team) {
-                p.showTitle(Title.title(
-                        Component.text("VICTORY!", NamedTextColor.GOLD), Component.empty(), endTimes));
+                p.showTitle(Titles.of(
+                        GuiText.component("scoreboard.game.victory-title"), Component.empty(), Titles.END));
                 // Celebration burst at each winner. Particles rather than a real firework —
                 // firework explosions deal vanilla damage and could kill low-HP players.
-                p.getWorld().spawnParticle(Particle.FIREWORK, p.getLocation().add(0, 1, 0),
-                        60, 0.5, 1.0, 0.5, 0.1);
+                ParticleBuilder.of(Particle.FIREWORK)
+                        .count(60)
+                        .offset(0.5, 1.0, 0.5)
+                        .extra(0.1)
+                        .spawn(p.getLocation().add(0, 1, 0));
                 for (Component line : GameConfigManager.getMessageList("end.victory.chat", placeholders)) {
                     p.sendMessage(line);
                 }
             } else {
-                p.showTitle(Title.title(
-                        Component.text("DEFEAT", NamedTextColor.RED), Component.empty(), endTimes));
+                p.showTitle(Titles.of(
+                        GuiText.component("scoreboard.game.defeat-title"), Component.empty(), Titles.END));
                 p.sendMessage(GameConfigManager.getMessage("end.defeat.title", placeholders));
             }
         }
@@ -236,20 +221,15 @@ public class GameVisuals {
      * seconds > 0 shows "Respawning in N", 0 shows the welcome-back title.
      */
     public void showRespawnTick(Player player, int seconds) {
-        final Title.Times times = Title.Times.times(
-                Duration.ofMillis(250),  // Fade in: 5 ticks
-                Duration.ofMillis(1000), // Stay: 20 ticks
-                Duration.ofMillis(250)   // Fade out: 5 ticks
-        );
         if (seconds > 0) {
-            player.showTitle(Title.title(
-                    Component.text("Respawning in ", NamedTextColor.RED)
-                            .append(Component.text(seconds, NamedTextColor.WHITE)),
-                    Component.empty(), times));
+            player.showTitle(Titles.of(
+                    GuiText.component("scoreboard.game.respawn-countdown", "seconds", seconds),
+                    Component.empty(), Titles.SHORT));
         } else {
-            player.showTitle(Title.title(
-                    Component.text("Welcome Back!", NamedTextColor.YELLOW),
-                    Component.text("Go!", NamedTextColor.GREEN), times));
+            player.showTitle(Titles.of(
+                    GuiText.component("scoreboard.game.respawn-done-title"),
+                    GuiText.component("scoreboard.game.respawn-done-subtitle"),
+                    Titles.SHORT));
         }
     }
 
@@ -260,19 +240,18 @@ public class GameVisuals {
             sidebar.getScore(entry).resetScore();
         }
 
-        String timeStr = formatTime(timeLeft);
-        Component timeComponent = Component.text("Time: " + timeStr, NamedTextColor.YELLOW);
+        String timeStr = formatTime(game.secondsLeft());
+        Component timeComponent = GuiText.component("scoreboard.game.time-line", "time", timeStr);
         String timeScoreText = LegacyComponentSerializer.legacySection().serialize(timeComponent);
         sidebar.getScore(timeScoreText).setScore(game.settings().timer());
 
         // Roster count, not onlinePlayers — bot NPCs get sidebar lines too.
-        int line = game.getTeams().values().stream()
-                .mapToInt(t -> t.playerUUIDs().size()).sum() + 1;
+        int line = game.rosterSize() + 1;
 
         line = switch (game.gameModePreset()) {
             case TDM -> renderTeamKillLines(line);
             case EVOLUTION -> renderEvolutionLines(line);
-            default -> renderLivesLines(line);
+            case DEFAULT, SERIES, NUZLOCKE, IRONMAN, BOSS -> renderLivesLines(line);
         };
 
         List<Player> spectators = game.onlinePlayers().stream()
@@ -280,12 +259,12 @@ public class GameVisuals {
                 .toList();
 
         if (!spectators.isEmpty()) {
-            sidebar.getScore("§f").setScore(--line); // Spacer
-            Component spectatorsHeader = Component.text("Spectators", NamedTextColor.GRAY);
+            sidebar.getScore("§f").setScore(--line);
+            Component spectatorsHeader = GuiText.component("scoreboard.game.spectators-header");
             sidebar.getScore(LegacyComponentSerializer.legacySection().serialize(spectatorsHeader)).setScore(--line);
 
             for (Player p : spectators) {
-                Component spectatorComponent = Component.text("- " + p.getName(), NamedTextColor.DARK_GRAY);
+                Component spectatorComponent = GuiText.component("scoreboard.game.spectator-entry", "player", p.getName());
                 String spectatorScoreText = LegacyComponentSerializer.legacySection().serialize(spectatorComponent);
                 sidebar.getScore(spectatorScoreText).setScore(--line);
             }
@@ -294,12 +273,10 @@ public class GameVisuals {
         applyScoreboardToAll();
     }
 
-    /**
-     * Scoreboard teams give nametags and tab-list names their team color (players AND bot
-     * NPCs — both are name-keyed entries). Memberships are re-derived from game state on
-     * every update() — cheaper than hooking every join/leave/team-change path individually,
-     * since update() already runs on all of them.
-     */
+    // Scoreboard teams give nametags and tab-list names their team color (players AND bot
+    // NPCs — both are name-keyed entries). Memberships are re-derived from game state on
+    // every update() — cheaper than hooking every join/leave/team-change path individually,
+    // since update() already runs on all of them.
     private void syncScoreboardTeams() {
         for (TeamColor color : TeamColor.values()) {
             org.bukkit.scoreboard.Team sbTeam = scoreboard.getTeam("hg_" + color.name());
@@ -308,17 +285,15 @@ public class GameVisuals {
                 sbTeam.color(color == TeamColor.SPECTATOR ? NamedTextColor.GRAY : color.textColor());
             }
 
-            java.util.Set<String> current = new java.util.HashSet<>();
-            for (java.util.UUID uuid : game.getTeams().get(color).playerUUIDs()) {
-                String name = entityName(uuid);
+            Set<String> current = new HashSet<>();
+            for (UUID uuid : game.members(color)) {
+                String name = game.liveEntityName(uuid);
                 if (name != null) current.add(name);
             }
             // Team-owned minions ride along: the teammate outline colour resolves from team
             // membership client-side, so the minion's NPC (name entry) AND its body display
             // (uuid entry — non-player entities are team-keyed by UUID string) must be members.
-            for (me.stolyy.heroes.hero.minion.MinionHero minion
-                    : me.stolyy.heroes.hero.minion.MinionManager.getActiveMinions()) {
-                if (minion.getGame() != game || minion.getTeamColor() != color) continue;
+            for (MinionHero minion : game.minionsOf(color)) {
                 if (minion.getController() != null && minion.getController().getEntity() != null) {
                     current.add(minion.getController().getEntity().getName());
                 }
@@ -326,7 +301,7 @@ public class GameVisuals {
                     current.add(minion.getBodyDisplay().getDisplay().getUniqueId().toString());
                 }
             }
-            for (String entry : new java.util.HashSet<>(sbTeam.getEntries())) {
+            for (String entry : new HashSet<>(sbTeam.getEntries())) {
                 if (!current.contains(entry)) sbTeam.removeEntry(entry);
             }
             for (String name : current) {
@@ -335,35 +310,26 @@ public class GameVisuals {
         }
     }
 
-    private String entityName(java.util.UUID uuid) {
-        Player p = Bukkit.getPlayer(uuid);
-        if (p != null) return p.getName();
-        org.bukkit.entity.Entity e = Bukkit.getEntity(uuid); // bot NPC entity
-        return e != null ? e.getName() : null;
-    }
-
-    /**
-     * Default sidebar: per-participant lines with remaining lives, grouped by team. Iterates the
-     * team ROSTERS (name-resolved like syncScoreboardTeams), not onlinePlayers — bot NPCs are
-     * participants with lives and were invisible on the old player-only sidebar.
-     */
+    // Default sidebar: per-participant lines with remaining lives, grouped by team. Iterates the
+    // team ROSTERS (name-resolved like syncScoreboardTeams), not onlinePlayers — bot NPCs are
+    // participants with lives and were invisible on the old player-only sidebar.
     private int renderLivesLines(int line) {
         for (TeamColor color : TeamColor.values()) {
             if (color == TeamColor.SPECTATOR) continue;
 
             // Go by life count
-            List<java.util.UUID> members = game.getTeams().get(color).playerUUIDs().stream()
-                    .filter(uuid -> entityName(uuid) != null)
-                    .sorted(Comparator.<java.util.UUID>comparingInt(uuid -> game.lives(uuid)).reversed())
+            List<UUID> members = game.members(color).stream()
+                    .filter(uuid -> game.liveEntityName(uuid) != null)
+                    .sorted(Comparator.<UUID>comparingInt(uuid -> game.getGamePlayer(uuid).currentLives()).reversed())
                     .toList();
 
             if (!members.isEmpty()) {
                 sidebar.getScore("§" + color.ordinal()).setScore(--line);
-                for (java.util.UUID uuid : members) {
-                    String livesStr = " ♥" + game.lives(uuid);
+                for (UUID uuid : members) {
+                    String livesStr = " ♥" + game.getGamePlayer(uuid).currentLives();
                     String killsStr = " ⚔" + game.getGamePlayer(uuid).kills();
-                    Component playerComponent = Component.text(entityName(uuid))
-                            .color(color.chatColor())
+                    Component playerComponent = Component.text(game.liveEntityName(uuid))
+                            .color(color.textColor())
                             .append(Component.text(livesStr, NamedTextColor.WHITE))
                             .append(Component.text(killsStr, NamedTextColor.GRAY));
                     String playerScoreText = LegacyComponentSerializer.legacySection().serialize(playerComponent);
@@ -374,41 +340,39 @@ public class GameVisuals {
         return line;
     }
 
-    /** TDM sidebar: one kills line per team with players, e.g. "Red 5/20" ("/limit" omitted when off). */
     private int renderTeamKillLines(int line) {
         int killLimit = game.modeConfig().killLimit();
         for (TeamColor color : TeamColor.values()) {
             if (color == TeamColor.SPECTATOR) continue;
 
             // Roster-based: a team of only bots still plays and still scores.
-            if (game.getTeams().get(color).playerUUIDs().isEmpty()) continue;
+            if (game.members(color).isEmpty()) continue;
 
+            int killsCount = WinCondition.teamKills(game, color);
             String kills = killLimit > 0
-                    ? game.teamKills(color) + "/" + killLimit
-                    : String.valueOf(game.teamKills(color));
-            Component teamLine = Component.text(color.displayName() + " " + kills).color(color.chatColor());
+                    ? killsCount + "/" + killLimit
+                    : String.valueOf(killsCount);
+            Component teamLine = Component.text(color.displayName() + " " + kills).color(color.textColor());
             sidebar.getScore(LegacyComponentSerializer.legacySection().serialize(teamLine)).setScore(--line);
         }
         return line;
     }
 
-    /** Evolution sidebar: per-player hero progression "name — Hero (i/total)", grouped by team.
-     *  The total respects an active kill limit — you only need that many kills to win. */
     private int renderEvolutionLines(int line) {
         int killLimit = game.modeConfig().killLimit();
         for (TeamColor color : TeamColor.values()) {
             if (color == TeamColor.SPECTATOR) continue;
 
             // Roster-based like renderLivesLines — bots evolve through hero orders too.
-            List<java.util.UUID> members = game.getTeams().get(color).playerUUIDs().stream()
-                    .filter(uuid -> entityName(uuid) != null)
+            List<UUID> members = game.members(color).stream()
+                    .filter(uuid -> game.liveEntityName(uuid) != null)
                     .toList();
             if (members.isEmpty()) continue;
 
             sidebar.getScore("§" + color.ordinal()).setScore(--line);
-            for (java.util.UUID uuid : members) {
+            for (UUID uuid : members) {
                 GamePlayer gamePlayer = game.getGamePlayer(uuid);
-                String name = entityName(uuid);
+                String name = game.liveEntityName(uuid);
                 List<String> heroOrder = gamePlayer.heroOrder();
                 String text;
                 if (heroOrder == null || heroOrder.isEmpty()) {
@@ -419,7 +383,7 @@ public class GameVisuals {
                             + " (" + (gamePlayer.heroIndex() + 1) + "/" + total + ")";
                 }
                 if (text.length() > 40) text = text.substring(0, 40); // scoreboard line length limit
-                Component playerComponent = Component.text(text).color(color.chatColor());
+                Component playerComponent = Component.text(text).color(color.textColor());
                 sidebar.getScore(LegacyComponentSerializer.legacySection().serialize(playerComponent)).setScore(--line);
             }
         }
@@ -428,15 +392,14 @@ public class GameVisuals {
 
     public void cancelTasks() {
         if (countdownTask != null) countdownTask.cancel();
-        if (timerTask != null) timerTask.cancel();
     }
 
     private void applyScoreboardToAll() {
+        Component header = GuiText.component("scoreboard.game.tab-header");
+        Component footer = Component.text(LocalDate.now().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")), NamedTextColor.GRAY);
         for (Player p : game.onlinePlayers()) {
             p.setScoreboard(scoreboard);
-            p.sendPlayerListHeaderAndFooter(
-                    Component.text("SMASH HEROES 4", NamedTextColor.GOLD),
-                    Component.text(LocalDate.now().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")), NamedTextColor.GRAY));
+            p.sendPlayerListHeaderAndFooter(header, footer);
         }
     }
 

@@ -1,41 +1,57 @@
 package me.stolyy.heroes.vfx.ui.prompt;
 
+import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.vfx.ui.GuiText;
 import me.stolyy.heroes.vfx.ui.gui.GUIManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 
 /**
- * One-shot input facade for GUIs (A5). Call sites never know the input mechanism — the
- * current implementation intercepts the player's next chat message ({@link PromptListener});
- * swapping to a sign/anvil input later only changes the listener internals.
- *
- * <p>Flow: {@code prompt*} closes the player's open GUI and registers a pending prompt; the
- * next chat message is consumed (never broadcast) and parsed on the main thread. Invalid
- * numeric input re-prompts; typing "cancel" aborts via the onCancel callback (typically
- * "reopen the GUI I came from").
+ * One-shot input facade for GUIs. Currently backed by {@link PromptListener} intercepting the
+ * player's next chat message; swapping to sign or anvil input later only changes the listener.
  */
 public final class PromptManager {
 
-    record PendingPrompt(int min, int max, IntConsumer onInt, Consumer<String> onText, Runnable onCancel) {}
+    record PendingPrompt(
+            int minInt, int maxInt, IntConsumer onInt,
+            double minDouble, double maxDouble, DoubleConsumer onDouble,
+            Consumer<String> onText,
+            Runnable onCancel) {}
 
-    private static final Map<UUID, PendingPrompt> pending = new HashMap<>();
+    // Concurrent: PromptListener.onChat reads on the async chat thread to cancel broadcast.
+    private static final Map<UUID, PendingPrompt> pending = new ConcurrentHashMap<>();
 
     private PromptManager() {}
 
-    /** Prompts for an integer; out-of-range answers are clamped to [min, max]. */
+    public static void initialize() {
+        Bukkit.getPluginManager().registerEvents(new PromptListener(), Heroes.getInstance());
+    }
+
+    /** Prompts for an integer; out-of-range answers are clamped to {@code [min, max]}. */
     public static void promptInt(Player player, String message, int min, int max,
                                  IntConsumer onValue, Runnable onCancel) {
         GUIManager.close(player);
         player.sendMessage(Component.text(message, NamedTextColor.GOLD));
-        player.sendMessage(Component.text("Type a number in chat, or 'cancel' to go back.", NamedTextColor.GRAY));
-        pending.put(player.getUniqueId(), new PendingPrompt(min, max, onValue, null, onCancel));
+        player.sendMessage(GuiText.component("prompt.int-hint"));
+        pending.put(player.getUniqueId(), new PendingPrompt(min, max, onValue, 0, 0, null, null, onCancel));
+    }
+
+    /** Prompts for a decimal value; out-of-range answers are clamped to {@code [min, max]}. */
+    public static void promptDouble(Player player, String message, double min, double max,
+                                    DoubleConsumer onValue, Runnable onCancel) {
+        GUIManager.close(player);
+        player.sendMessage(Component.text(message, NamedTextColor.GOLD));
+        player.sendMessage(GuiText.component("prompt.double-hint"));
+        pending.put(player.getUniqueId(), new PendingPrompt(0, 0, null, min, max, onValue, null, onCancel));
     }
 
     /** Prompts for free text. */
@@ -43,8 +59,8 @@ public final class PromptManager {
                                   Consumer<String> onValue, Runnable onCancel) {
         GUIManager.close(player);
         player.sendMessage(Component.text(message, NamedTextColor.GOLD));
-        player.sendMessage(Component.text("Type your answer in chat, or 'cancel' to go back.", NamedTextColor.GRAY));
-        pending.put(player.getUniqueId(), new PendingPrompt(0, 0, null, onValue, onCancel));
+        player.sendMessage(GuiText.component("prompt.text-hint"));
+        pending.put(player.getUniqueId(), new PendingPrompt(0, 0, null, 0, 0, null, onValue, onCancel));
     }
 
     /** Aborts any pending prompt without firing callbacks (e.g. on quit). */

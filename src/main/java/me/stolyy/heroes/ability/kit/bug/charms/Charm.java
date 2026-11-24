@@ -40,8 +40,12 @@ public abstract class Charm {
     protected abstract void onActivate(Hero hero);
     protected abstract void onDeactivate(Hero hero);
 
+    public double soulMultiplier() { return 1.0; }
+
     public void onJabHit(Hero hero, LivingEntity victim) {}
     public void onAbilityHit(Hero hero, Ability ability, LivingEntity victim) {}
     public void onDamageTaken(Hero hero, Entity source, double amount) {}
+    public void onDeath(Hero hero) {}
+    public void onOwnerLost(Hero hero) {}
     public void tick(Hero hero) {}
 }

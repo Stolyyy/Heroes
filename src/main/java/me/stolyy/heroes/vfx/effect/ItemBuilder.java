@@ -8,7 +8,6 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Color;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -16,8 +15,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.inventory.meta.Damageable;
-import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +44,7 @@ public class ItemBuilder {
 
     public ItemBuilder name(Component name) {
         if (meta != null) {
-            meta.displayName(name.decoration(TextDecoration.ITALIC, false));
+            meta.displayName(name.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
         }
         return this;
     }
@@ -61,17 +58,18 @@ public class ItemBuilder {
         return this;
     }
 
-    /**
-     * Modern 1.21.11 way to set max stack size
-     */
-    public ItemBuilder stackCount(int count) {
-        componentModifiers.add(i -> i.setData(DataComponentTypes.MAX_STACK_SIZE, count));
-        item.setAmount(count);
-        return this;
+    public ItemBuilder lore(Component... lines) {
+        return lore(Arrays.asList(lines));
     }
 
-    public ItemBuilder lore(Component... lines) {
-        if (meta != null) meta.lore(Arrays.asList(lines));
+    public ItemBuilder lore(List<Component> lines) {
+        if (meta != null) {
+            List<Component> stripped = new ArrayList<>(lines.size());
+            for (Component line : lines) {
+                stripped.add(line.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
+            }
+            meta.lore(stripped);
+        }
         return this;
     }
 
@@ -104,17 +102,13 @@ public class ItemBuilder {
         return this;
     }
 
-    public ItemBuilder durability(int currentDurability) {
-        if (meta instanceof Damageable damageable) {
-            int max = damageable.hasMaxDamage() ? damageable.getMaxDamage() : item.getType().getMaxDurability();
-            damageable.setDamage(Math.max(0, max - currentDurability));
-        }
-        return this;
-    }
-
     public ItemBuilder enchantGlint(boolean enchantGlint){
         componentModifiers.add(i -> i.setData(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, enchantGlint));
         return this;
+    }
+
+    public ItemBuilder modelData(ModelRef ref, String liveSkin) {
+        return modelData(ref.hero(), ref.texture(), ref.resolveSkin(liveSkin));
     }
 
     public ItemBuilder modelData(String hero, String texture, String skin) {
@@ -131,13 +125,6 @@ public class ItemBuilder {
     public ItemBuilder color(Color color) {
         if (meta instanceof LeatherArmorMeta leather) leather.setColor(color);
         else if (meta instanceof PotionMeta potion) potion.setColor(color);
-        return this;
-    }
-
-    public <T, Z> ItemBuilder pdc(JavaPlugin plugin, String key, PersistentDataType<T, Z> type, Z value) {
-        if (meta != null) {
-            meta.getPersistentDataContainer().set(new NamespacedKey(plugin, key), type, value);
-        }
         return this;
     }
 
@@ -163,22 +150,6 @@ public class ItemBuilder {
                 .addString(rawKey.toLowerCase())
                 .build();
         item.setData(DataComponentTypes.CUSTOM_MODEL_DATA, modelData);
-    }
-
-    public static void applyName(ItemStack item, Component name) {
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.displayName(name.decoration(TextDecoration.ITALIC, false));
-            item.setItemMeta(meta);
-        }
-    }
-
-    public static void applyLore(ItemStack item, Component... lines) {
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.lore(Arrays.asList(lines));
-            item.setItemMeta(meta);
-        }
     }
 
     public static void applyDamage(ItemStack item, int damage) {

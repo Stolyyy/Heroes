@@ -4,12 +4,14 @@ import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.Game;
 import me.stolyy.heroes.game.Team;
 import me.stolyy.heroes.game.TeamColor;
+import me.stolyy.heroes.hero.Hero;
+import me.stolyy.heroes.hero.HeroManager;
 import me.stolyy.heroes.hero.minion.MinionHero;
-import me.stolyy.heroes.hero.minion.MinionManager;
 import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.util.GameConfigManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -39,7 +41,7 @@ import java.util.UUID;
  *   <li>{@link #initialize()} in {@code Heroes#onEnable}, after {@code GameConfigManager.reload()} —
  *       the config toggle is read here.</li>
  *   <li>{@link #shutdown()} in {@code Heroes#onDisable}.</li>
- *   <li>{@link #refreshTeams(Map)} whenever a game's roster changes: round start (after the scoreboard
+ *   <li>{@link #refreshTeams(Game)} whenever a game's roster changes: round start (after the scoreboard
  *       teams exist), elimination, hero swap that respawns the entity, bot spawn, player join/leave.</li>
  *   <li>{@link #clearFor(Player)} wherever a player stops being a participant — the two
  *       {@code setScoreboard(getMainScoreboard())} sites in {@code Game}, and game end.</li>
@@ -50,13 +52,11 @@ import java.util.UUID;
  * <p><b>Respawning teammates.</b> {@code Game}'s respawn path hides the dead player from everyone with
  * {@code Player#hidePlayer}, which destroys the entity on every other client — there is nothing left to
  * outline, so no glow call can reach it. Outlining a respawning teammate therefore requires the respawn
- * hide loop to skip that player's own team; once it does, {@link #glow(Entity, Player)} works
+ * hide loop to skip that player's own team; once it does, {@link #refresh(Player, Collection)} works
  * on them normally (they stay alive, in ADVENTURE mode, standing frozen at the respawn point). See
  * {@link #isRespawnGlowEnabled()}.
  */
 public final class TeamGlow {
-
-    private TeamGlow() {}
 
     // viewer uuid -> entity ids currently outlined for that viewer. The backend is fire-and-forget
     // packets with no readable state, so this map is the only record of what has to be undone later.
@@ -65,10 +65,12 @@ public final class TeamGlow {
     private static boolean respawnGlow;
     private static boolean initialized;
 
+    private TeamGlow() {}
+
     public static void initialize() {
         if (initialized) return;
         respawnGlow = Configs.requireBoolean(GameConfigManager.getGameConfig(), "teammate-glow.show-respawning");
-        GlowServiceProvider.get();
+        GlowServiceProvider.initialize();
         Bukkit.getPluginManager().registerEvents(new QuitListener(), Heroes.getInstance());
         initialized = true;
     }
@@ -101,21 +103,26 @@ public final class TeamGlow {
         if (!GlowServiceProvider.isAvailable()) return;
 
         // Per-team combatant lists (roster + that team's minions), plus the union for spectators.
-        // Targets come from allLivingEntities() so bots glow too; viewers from onlinePlayers()
+        // Targets resolve live entities so bots glow too; viewers from onlinePlayers()
         // (Bukkit.getPlayer resolves real connections only, so bot NPCs are never handed packets).
         Map<TeamColor, List<Entity>> combatants = new HashMap<>();
         List<Entity> everyone = new ArrayList<>();
         for (Map.Entry<TeamColor, Team> entry : game.getTeams().entrySet()) {
-            if (entry.getKey() == TeamColor.SPECTATOR) continue;
-            List<Entity> members = new ArrayList<>(entry.getValue().allLivingEntities());
-            for (MinionHero minion : MinionManager.getActiveMinions()) {
-                if (minion.getGame() != game || minion.getTeamColor() != entry.getKey()) continue;
+            TeamColor color = entry.getKey();
+            if (color == TeamColor.SPECTATOR) continue;
+            List<Entity> members = new ArrayList<>();
+            for (UUID uuid : game.members(color)) {
+                Hero h = HeroManager.getHero(uuid);
+                LivingEntity le = h != null ? h.getController().getEntity() : Bukkit.getPlayer(uuid);
+                if (le != null) members.add(le);
+            }
+            for (MinionHero minion : game.minionsOf(color)) {
                 Entity glowTarget = minion.getBodyDisplay() != null
                         ? minion.getBodyDisplay().getDisplay()
                         : (minion.getController() != null ? minion.getController().getEntity() : null);
                 if (glowTarget != null) members.add(glowTarget);
             }
-            combatants.put(entry.getKey(), members);
+            combatants.put(color, members);
             everyone.addAll(members);
         }
 
@@ -161,35 +168,12 @@ public final class TeamGlow {
     }
 
     /**
-     * Outlines a single entity for a single viewer, outside the roster flow. Tracked like any other
-     * outline, so {@link #clearFor(Player)} still undoes it — but the next {@link #refresh} for this
-     * viewer removes it unless the entity is one of their teammates.
-     */
-    public static void glow(Entity target, Player viewer) {
-        if (!GlowServiceProvider.isAvailable()) return;
-        GlowServiceProvider.get().glow(target, viewer);
-        outlined.computeIfAbsent(viewer.getUniqueId(), uuid -> new HashSet<>()).add(target.getEntityId());
-    }
-
-    /**
-     * Removes one entity's outline for one viewer.
-     */
-    public static void clear(Entity target, Player viewer) {
-        if (!GlowServiceProvider.isAvailable()) return;
-        GlowServiceProvider.get().clear(target.getEntityId(), viewer);
-        outlined.computeIfPresent(viewer.getUniqueId(), (uuid, ids) -> {
-            ids.remove(target.getEntityId());
-            return ids.isEmpty() ? null : ids;
-        });
-    }
-
-    /**
      * Removes every outline a viewer holds: game end, leaving. (Becoming a spectator no longer
      * clears — spectators get the everyone-view through the next refresh instead.)
      */
     public static void clearFor(Player viewer) {
         Set<Integer> ids = outlined.remove(viewer.getUniqueId());
-        if (ids == null) return;
+        if (ids == null || !GlowServiceProvider.isAvailable()) return;
         GlowService service = GlowServiceProvider.get();
         for (int entityId : ids) {
             service.clear(entityId, viewer);

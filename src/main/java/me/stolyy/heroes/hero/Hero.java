@@ -14,13 +14,17 @@ import me.stolyy.heroes.hero.mechanics.Jab;
 import me.stolyy.heroes.hero.minion.MinionHero;
 import me.stolyy.heroes.util.TemplateConfig;
 import me.stolyy.heroes.game.GameManager;
+import me.stolyy.heroes.game.SpawnProtection;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class Hero {
     private final String name;
@@ -42,14 +46,33 @@ public class Hero {
 
     private final HeroEventBus eventBus;
 
-    // From the hero yml root `visuals.win_sound`; played to everyone at game end via Game (B9).
+    // From the hero yml root `visuals.win_sound`; played to everyone at game end via Game.
     // Kill/death jingles are wired onto the event bus in HeroBuilder and need no field here.
     private SoundEffect winSound;
 
-    // A1 lifecycle: an eliminated hero goes DORMANT — it stays registered and keeps ticking
+    // Hurt sound (yml `hurt_sound:` block): played to the controller on damage taken,
+    // gated by a cooldown, a minimum damage, and a play chance.
+    private SoundEffect hurtSound;
+    private long hurtSoundCooldownMs;
+    private double hurtSoundMinDamage;
+    private double hurtSoundChance;
+    private long lastHurtSoundAt;
+
+    // Lifecycle: an eliminated hero goes DORMANT — it stays registered and keeps ticking
     // its independent abilities (in-flight projectiles, minion reapers) but stops all normal
     // per-tick machinery. Full teardown happens only via cleanup() (logout / game end).
     private boolean eliminated;
+
+    private Runnable primaryOverride;
+    // Full input lock (Mr. Monster's grab holds BOTH participants in it): every ability
+    // input and jab is dead while set. The one exception is a pending primary override —
+    // deliberately, because the override IS the grab's throw input.
+    private boolean actionsLocked;
+    // Post-override input absorption: consuming a primary override (the grab's throw) unlocks
+    // actions, but the SAME physical click keeps generating use inputs for a few ticks (the
+    // held-fire sampler, the paired interact events) — which fired the real primary right on
+    // top of the throw. The override consumer stamps a short lockout to swallow that residue.
+    private int primarySuppressedUntilTick = Integer.MIN_VALUE;
 
     public Hero(String name, HeroStats stats, DoubleJump mobility,
                 Ability primary, Ability secondary, Ability smash, List<Ability> passives) {
@@ -158,6 +181,7 @@ public class Hero {
             for (Ability a : allAbilities()) {
                 if (a.isIndependent()) a.tick(this);
             }
+            mobility.tickDormant(this);
             return;
         }
         energy.tick(controller);
@@ -178,37 +202,29 @@ public class Hero {
         // Any successful ability use forfeits spawn protection — this is the single point every
         // active cast (primary/secondary/smash/passive activations) already flows through.
         if (controller != null && controller.getUniqueId() != null) {
-            me.stolyy.heroes.game.SpawnProtection.breakFor(controller.getUniqueId());
+            SpawnProtection.breakFor(controller.getUniqueId());
         }
         eventBus.triggerAbilityUse(ability);
     }
     public void triggerJabHit(LivingEntity victim) { eventBus.triggerJabHit(victim); }
     public void triggerAbilityHit(Ability ability, LivingEntity victim) { eventBus.triggerAbilityHit(ability, victim); }
-    public void triggerDamageTaken(org.bukkit.entity.Entity source, double amount) { eventBus.triggerDamageTaken(source, amount); }
+    public void triggerDamageTaken(Entity source, double amount) { eventBus.triggerDamageTaken(source, amount); }
 
-    // Hurt sound (yml `hurt_sound:` block): played to the controller on damage taken,
-    // gated by a cooldown, a minimum damage, and a play chance.
-    private me.stolyy.heroes.vfx.effect.SoundEffect hurtSound;
-    private long hurtSoundCooldownMs;
-    private double hurtSoundMinDamage;
-    private double hurtSoundChance;
-    private long lastHurtSoundAt;
-
-    public void configureHurtSound(me.stolyy.heroes.vfx.effect.SoundEffect sound, long cooldownMs, double minDamage, double chance) {
+    public void configureHurtSound(SoundEffect sound, long cooldownMs, double minDamage, double chance) {
         this.hurtSound = sound;
         this.hurtSoundCooldownMs = cooldownMs;
         this.hurtSoundMinDamage = minDamage;
         this.hurtSoundChance = chance;
     }
-    public void triggerKnockbackTaken(org.bukkit.entity.Entity source, Vector knockback) { eventBus.triggerKnockbackTaken(source, knockback); }
+    public void triggerKnockbackTaken(Entity source, Vector knockback) { eventBus.triggerKnockbackTaken(source, knockback); }
     // Land/jump passives (e.g. Bulk's slam) must not fire off the respawn teleport —
     // gated like usePrimary/useSecondary/onSneak below.
     public void triggerLand() { if (!isRespawning()) eventBus.triggerLand(); }
     public void triggerDoubleJump() { if (!isRespawning()) eventBus.triggerDoubleJump(); }
-    public void triggerDeath(Location deathLocation) { eventBus.triggerDeath(deathLocation); }
-    /** Convenience for callers with no death location to hand over; the controller has already
-     *  moved by then, so this is a best-effort stand-in rather than the real death point. */
-    public void triggerDeath() { triggerDeath(controller != null ? controller.getLocation() : null); }
+    public void triggerDeath(Location deathLocation) {
+        mobility.onDeath(this);
+        eventBus.triggerDeath(deathLocation);
+    }
     public void triggerKill(LivingEntity victim) { eventBus.triggerKill(victim); }
 
     public HeroEventBus getEventBus() { return eventBus; }
@@ -220,7 +236,8 @@ public class Hero {
             case PRIMARY -> primaryAbility;
             case SECONDARY -> secondaryAbility;
             case SMASH -> smashAbility;
-            default -> null;
+            case PASSIVE, PASSIVE_SNEAK, PASSIVE_DROP, PASSIVE_SWAP ->
+                    throw new IllegalArgumentException("Cannot reduce cooldown for non-slot type: " + type);
         };
         
         if (ability != null) {
@@ -232,7 +249,6 @@ public class Hero {
 
     public void resetStats(Controller controller) {
         attributes.apply(baseStats.attributes());
-        attributes.resetMultipliers(); // apply() only restores stat-backed values
         attributes.applyAttributes(controller);
         mobility.apply(baseStats.mobility());
         mobility.resetJumps();
@@ -250,7 +266,6 @@ public class Hero {
     public DoubleJump getMobility() { return mobility; }
     public Jab getCombat() { return combat; }
     public Energy getEnergy() { return energy; }
-    public CooldownManager getCooldowns() { return cooldowns; }
 
     public String getName() { return name; }
     public HeroStats getBaseStats() { return baseStats; }
@@ -265,10 +280,23 @@ public class Hero {
     public Ability getSecondaryAbility() { return secondaryAbility; }
     public Ability getSmashAbility() { return smashAbility; }
     public List<Ability> getPassiveAbilities() { return passiveAbilities; }
+    public List<Ability> getAbilities() { return allAbilities(); }
+
+    public <T extends Ability> Optional<T> findAbility(Class<T> type) {
+        for (Ability ability : allAbilities()) {
+            if (type.isInstance(ability)) return Optional.of(type.cast(ability));
+        }
+        return Optional.empty();
+    }
+
+    public <T extends Ability> T requireAbility(Class<T> type) {
+        return findAbility(type).orElseThrow(() -> new IllegalStateException(
+                "Hero '" + name + "' is missing required ability " + type.getSimpleName()));
+    }
 
     // --- Lifecycle Methods ---
     //
-    // A1 lifecycle contract:
+    // Lifecycle contract:
     //  - death/respawn      -> triggerDeath() only (onDeath fires; bus + detached state live)
     //  - elimination        -> eliminate(): dormant flag then triggerDeath() (NO teardown —
     //                          projectiles/minions persist, bus stays live for kill credit)
@@ -285,7 +313,12 @@ public class Hero {
             a.onDeath(this);      // stop character-bound actives (dashes, vehicles, duration ults)
             a.onOwnerLost(this);  // expire detached state (in-flight projectiles, planted objects)
         }
+        mobility.onDeath(this);
+        mobility.onOwnerLost(this);
         eventBus.clear();
+        attributes.clearModifiers();
+        energy.clearModifiers();
+        combat.clearModifiers();
         if (controller != null && controller.getEntity() != null) {
             resetStats(controller);
         }
@@ -301,33 +334,17 @@ public class Hero {
         triggerDeath(deathLocation);
     }
 
-    /** Convenience overload; see {@link #triggerDeath()} for the location caveat. */
-    public void eliminate() { eliminate(controller != null ? controller.getLocation() : null); }
-
     public boolean isEliminated() { return eliminated; }
-
-    private Runnable primaryOverride;
 
     /** Arms a one-shot replacement for the next primary input; consumed on use. */
     public void setPrimaryOverride(Runnable action) { this.primaryOverride = action; }
     public void clearPrimaryOverride() { this.primaryOverride = null; }
 
-    // Full input lock (Mr. Monster's grab holds BOTH participants in it): every ability
-    // input and jab is dead while set. The one exception is a pending primary override —
-    // deliberately, because the override IS the grab's throw input.
-    private boolean actionsLocked;
-
     public boolean actionsLocked() { return actionsLocked; }
     public void setActionsLocked(boolean locked) { this.actionsLocked = locked; }
 
-    // Post-override input absorption: consuming a primary override (the grab's throw) unlocks
-    // actions, but the SAME physical click keeps generating use inputs for a few ticks (the
-    // held-fire sampler, the paired interact events) — which fired the real primary right on
-    // top of the throw. The override consumer stamps a short lockout to swallow that residue.
-    private int primarySuppressedUntilTick = Integer.MIN_VALUE;
-
     public void suppressPrimary(int ticks) {
-        primarySuppressedUntilTick = org.bukkit.Bukkit.getCurrentTick() + ticks;
+        primarySuppressedUntilTick = Bukkit.getCurrentTick() + ticks;
     }
 
     public void usePrimary() {
@@ -342,7 +359,7 @@ public class Hero {
             return;
         }
         if (actionsLocked) return;
-        if (org.bukkit.Bukkit.getCurrentTick() < primarySuppressedUntilTick) return;
+        if (Bukkit.getCurrentTick() < primarySuppressedUntilTick) return;
         if (primaryAbility != null && primaryAbility.execute(this)) triggerAbilityUse(primaryAbility);
     }
     public void useSecondary() { if (!isRespawning() && !actionsLocked && secondaryAbility != null && secondaryAbility.execute(this)) triggerAbilityUse(secondaryAbility); }
@@ -375,8 +392,9 @@ public class Hero {
     private void triggerPassives(AbilityType type) {
         for (Ability passive : passiveAbilities) {
             if (passive.getType() == type) {
-                passive.execute(this);
-                triggerAbilityUse(passive);
+                if (passive.execute(this)) {
+                    triggerAbilityUse(passive);
+                }
             }
         }
     }

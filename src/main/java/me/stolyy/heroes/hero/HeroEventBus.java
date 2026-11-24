@@ -2,6 +2,7 @@ package me.stolyy.heroes.hero;
 
 import me.stolyy.heroes.ability.Ability;
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
@@ -10,6 +11,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+/**
+ * Per-hero event dispatcher connecting ability triggers, damage/knockback callbacks, and death
+ * hooks. Uses {@link CopyOnWriteArrayList} so listeners can register or tear down safely during
+ * 20 Hz tick and death dispatch; cleared only from {@link Hero#cleanup()}.
+ */
 public class HeroEventBus {
 
     // Copy-on-write throughout: dispatch runs 20Hz per hero and listeners routinely register or
@@ -24,8 +30,8 @@ public class HeroEventBus {
     private final List<Consumer<Void>> onDoubleJumpListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<Location>> onDeathListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<LivingEntity>> onKillListeners = new CopyOnWriteArrayList<>();
-    private final List<BiConsumer<org.bukkit.entity.Entity, Double>> onDamageTakenListeners = new CopyOnWriteArrayList<>();
-    private final List<BiConsumer<org.bukkit.entity.Entity, Vector>> onKnockbackTakenListeners = new CopyOnWriteArrayList<>();
+    private final List<BiConsumer<Entity, Double>> onDamageTakenListeners = new CopyOnWriteArrayList<>();
+    private final List<BiConsumer<Entity, Vector>> onKnockbackTakenListeners = new CopyOnWriteArrayList<>();
 
     // --- Registration Methods ---
 
@@ -38,8 +44,8 @@ public class HeroEventBus {
     /** The callback receives the location the hero died at, which may be null when unknown. */
     public void onDeath(Consumer<Location> callback) { onDeathListeners.add(callback); }
     public void onKill(Consumer<LivingEntity> callback) { onKillListeners.add(callback); }
-    public void onDamageTaken(BiConsumer<org.bukkit.entity.Entity, Double> callback) { onDamageTakenListeners.add(callback); }
-    public void onKnockbackTaken(BiConsumer<org.bukkit.entity.Entity, Vector> callback) { onKnockbackTakenListeners.add(callback); }
+    public void onDamageTaken(BiConsumer<Entity, Double> callback) { onDamageTakenListeners.add(callback); }
+    public void onKnockbackTaken(BiConsumer<Entity, Vector> callback) { onKnockbackTakenListeners.add(callback); }
 
     // --- Trigger Methods ---
 
@@ -55,11 +61,11 @@ public class HeroEventBus {
         onAbilityHitListeners.forEach(c -> c.accept(ability, victim));
     }
 
-    public void triggerDamageTaken(org.bukkit.entity.Entity source, double amount) {
+    public void triggerDamageTaken(Entity source, double amount) {
         onDamageTakenListeners.forEach(c -> c.accept(source, amount));
     }
 
-    public void triggerKnockbackTaken(org.bukkit.entity.Entity source, Vector knockback) {
+    public void triggerKnockbackTaken(Entity source, Vector knockback) {
         onKnockbackTakenListeners.forEach(c -> c.accept(source, knockback));
     }
 
@@ -90,7 +96,7 @@ public class HeroEventBus {
     // --- Lifecycle ---
 
     /**
-     * A1 lifecycle contract: clear() may only run on reference-lost / game-end teardown
+     * Lifecycle contract: clear() may only run on reference-lost / game-end teardown
      * (i.e. from {@link Hero#cleanup()}), AFTER the ability teardown hooks have fired.
      * Death, respawn, and ELIMINATION must never clear the bus — an eliminated hero's
      * independent abilities (in-flight projectiles) keep using it for hit/kill triggers.

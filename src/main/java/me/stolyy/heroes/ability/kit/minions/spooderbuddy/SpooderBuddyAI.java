@@ -1,16 +1,16 @@
 package me.stolyy.heroes.ability.kit.minions.spooderbuddy;
 
-import me.stolyy.heroes.hero.Hero;
-import me.stolyy.heroes.ability.Ability;
+import me.stolyy.heroes.ability.kit.spooderman.SpooderClimb;
 import me.stolyy.heroes.control.BotController;
 import me.stolyy.heroes.control.ai.MinionBotAI;
-import me.stolyy.heroes.control.strategy.Aggressive;
+import me.stolyy.heroes.hero.Hero;
+import me.stolyy.heroes.physics.WallDetection;
+import me.stolyy.heroes.util.Configs;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.LivingEntity;
 
 public class SpooderBuddyAI extends MinionBotAI {
-    private SpooderBuddyClimb climbAbility;
+    private SpooderClimb climbAbility;
 
     private Location lastCheckLocation;
     private int stuckCounter;
@@ -24,21 +24,16 @@ public class SpooderBuddyAI extends MinionBotAI {
     private final int stuckCounterThreshold;
 
     public SpooderBuddyAI(ConfigurationSection config) {
-        super(config, new Aggressive(config.getConfigurationSection("strategy")));
-        this.heightThreshold = config.getDouble("ai.climb_height_threshold", 2.0);
-        this.stuckCheckInterval = config.getInt("ai.stuck_check_interval", 20);
-        this.stuckMoveThreshold = config.getDouble("ai.stuck_move_threshold", 1.0);
-        this.stuckCounterThreshold = config.getInt("ai.stuck_counter_threshold", 2);
+        super(config);
+        this.heightThreshold = Configs.requireDouble(config, "ai.climb_height_threshold");
+        this.stuckCheckInterval = Configs.requireInt(config, "ai.stuck_check_interval");
+        this.stuckMoveThreshold = Configs.requireDouble(config, "ai.stuck_move_threshold");
+        this.stuckCounterThreshold = Configs.requireInt(config, "ai.stuck_counter_threshold");
     }
 
     @Override
     public void onSpawn(Hero hero, BotController controller) {
-        for (Ability passive : hero.getPassiveAbilities()) {
-            if (passive instanceof SpooderBuddyClimb climb) {
-                this.climbAbility = climb;
-                break;
-            }
-        }
+        hero.findAbility(SpooderClimb.class).ifPresent(climb -> this.climbAbility = climb);
     }
 
     @Override
@@ -55,7 +50,7 @@ public class SpooderBuddyAI extends MinionBotAI {
 
         if (target != null) {
             Location botLoc = controller.getLocation();
-            boolean nearWall = climbAbility.isNearWall(botLoc);
+            boolean nearWall = WallDetection.isAdjacentToSolidWall(botLoc);
 
             double heightDiff = target.getLocation().getY() - botLoc.getY();
             if (heightDiff > heightThreshold && nearWall) {
@@ -90,17 +85,12 @@ public class SpooderBuddyAI extends MinionBotAI {
             }
         }
 
-        LivingEntity entity = controller.getEntity();
-        if (entity != null) {
-            entity.setSneaking(shouldClimb);
-        }
+        controller.setSneaking(shouldClimb);
     }
 
     @Override
     protected void onIdle(Hero hero, BotController controller) {
-        LivingEntity entity = controller.getEntity();
-        if (entity != null) entity.setSneaking(false);
-
+        controller.setSneaking(false);
         super.onIdle(hero, controller);
     }
 

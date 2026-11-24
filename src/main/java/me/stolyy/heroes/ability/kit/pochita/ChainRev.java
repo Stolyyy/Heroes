@@ -3,9 +3,9 @@ package me.stolyy.heroes.ability.kit.pochita;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.Ability;
 import me.stolyy.heroes.ability.template.BaseAbility;
-import me.stolyy.heroes.listener.AbilityListener;
 import me.stolyy.heroes.physics.Hitbox;
 import me.stolyy.heroes.physics.Interactions;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.vfx.effect.SoundEffect;
 import me.stolyy.heroes.vfx.effect.VisualEffect;
@@ -35,8 +35,6 @@ public class ChainRev extends BaseAbility {
     private final double damageTakenMult;
     private long lastDamageDealtMs;
     private boolean damageWindowOpen;
-    private double baseDamageTakenMult;
-    private double appliedDamageTakenMult;
     private final SoundEffect activationSound;
     private final SoundEffect activeSound;
     private final SoundEffect hitSound;
@@ -48,29 +46,28 @@ public class ChainRev extends BaseAbility {
 
     public ChainRev(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        this.hitIntervalMs = me.stolyy.heroes.util.Configs.requireInt(this.config, "hit_interval") * 50L;
-        this.speed = me.stolyy.heroes.util.Configs.requireDouble(this.config, "speed");
-        this.groundedSpeed = me.stolyy.heroes.util.Configs.requireDouble(this.config, "grounded_speed");
-        this.energyCostPerTick = me.stolyy.heroes.util.Configs.requireDouble(this.config, "energy_cost_per_tick");
-        this.energyCostPerTickHitting = me.stolyy.heroes.util.Configs.requireDouble(this.config, "energy_cost_per_tick_hitting");
-        this.hitDiscountWindowMs = (long) (me.stolyy.heroes.util.Configs.requireDouble(this.config, "hit_discount_window") * 1000);
-        this.groundedKnockback = me.stolyy.heroes.util.Configs.requireDouble(this.config, "grounded_knockback");
-        this.groundedKnockbackY = me.stolyy.heroes.util.Configs.requireDouble(this.config, "grounded_knockback_y");
-        this.airbornePitch = me.stolyy.heroes.util.Configs.requireDouble(this.config, "airborne_pitch");
-        this.damageWindowMs = me.stolyy.heroes.util.Configs.requireLong(this.config, "damage_window_ms");
-        this.energyDrainMult = me.stolyy.heroes.util.Configs.requireDouble(this.config, "energy_drain_mult");
-        this.damageTakenMult = me.stolyy.heroes.util.Configs.requireDouble(this.config, "damage_taken_mult");
-        this.loopSoundInterval = this.config.getInt("loop_sound_interval", 8);
-        this.activationSound = new SoundEffect(this.config.getConfigurationSection("visuals.activation_sound"));
-        this.activeSound = new SoundEffect(this.config.getConfigurationSection("visuals.active_sound"));
-        this.hitSound = new SoundEffect(this.config.getConfigurationSection("visuals.hit_sound"));
-        this.trailVisual = new VisualEffect(this.config.getConfigurationSection("visuals.trail_visual"));
+        this.hitIntervalMs = Configs.requireInt(this.config, "hit_interval") * 50L;
+        this.speed = Configs.requireDouble(this.config, "speed");
+        this.groundedSpeed = Configs.requireDouble(this.config, "grounded_speed");
+        this.energyCostPerTick = Configs.requireDouble(this.config, "energy_cost_per_tick");
+        this.energyCostPerTickHitting = Configs.requireDouble(this.config, "energy_cost_per_tick_hitting");
+        this.hitDiscountWindowMs = (long) (Configs.requireDouble(this.config, "hit_discount_window") * 1000);
+        this.groundedKnockback = Configs.requireDouble(this.config, "grounded_knockback");
+        this.groundedKnockbackY = Configs.requireDouble(this.config, "grounded_knockback_y");
+        this.airbornePitch = Configs.requireDouble(this.config, "airborne_pitch");
+        this.damageWindowMs = Configs.requireLong(this.config, "damage_window_ms");
+        this.energyDrainMult = Configs.requireDouble(this.config, "energy_drain_mult");
+        this.damageTakenMult = Configs.requireDouble(this.config, "damage_taken_mult");
+        this.loopSoundInterval = Configs.requireInt(this.config, "loop_sound_interval");
+        this.activationSound = new SoundEffect(Configs.requireSection(this.config, "visuals.activation_sound"));
+        this.activeSound = new SoundEffect(Configs.requireSection(this.config, "visuals.active_sound"));
+        this.hitSound = new SoundEffect(Configs.requireSection(this.config, "visuals.hit_sound"));
+        this.trailVisual = new VisualEffect(Configs.requireSection(this.config, "visuals.trail_visual"));
     }
 
     @Override
-    public boolean canExecute(Hero hero) {
-        if (revActive) return false;
-        return super.canExecute(hero);
+    protected boolean canUse(Hero hero) {
+        return !revActive;
     }
 
     @Override
@@ -86,26 +83,19 @@ public class ChainRev extends BaseAbility {
                 .trackHits(hitIntervalMs)
                 .onHit(victim -> {
                     hitSound.play(victim.getEyeLocation(), hero.getController());
-                    onHit(hero, victim);
                     lastHitMs = System.currentTimeMillis();
+                    Interactions.InteractionBuilder interaction = hit(hero, victim)
+                            .damage(damage)
+                            .staticKnockback();
                     if (hero.getController().isOnGround()) {
-                        Interactions.on(self, victim)
-                                .abilityName(getName())
-                                .damage(damage)
-                                .knockback(groundedKnockback)
+                        interaction.knockback(groundedKnockback)
                                 .verticalKnockback(groundedKnockbackY)
                                 .direction(travelDirection(hero))
-                                .staticKnockback()
-                                .additive(true)
-                                .execute();
+                                .additive(true);
                     } else {
-                        Interactions.on(self, victim)
-                                .abilityName(getName())
-                                .damage(damage)
-                                .knockback(knockback)
-                                .staticKnockback()
-                                .execute();
+                        interaction.knockback(knockback);
                     }
+                    interaction.execute();
                 });
     }
 
@@ -123,18 +113,13 @@ public class ChainRev extends BaseAbility {
         lastDamageDealtMs = System.currentTimeMillis();
         if (damageWindowOpen) return;
         damageWindowOpen = true;
-        baseDamageTakenMult = hero.getAttributes().getDamageMultiplier();
-        appliedDamageTakenMult = baseDamageTakenMult * damageTakenMult;
-        hero.getAttributes().setDamageMultiplier(appliedDamageTakenMult);
+        hero.getAttributes().addDamageTakenMultiplier(this, damageTakenMult);
     }
 
-    // Restores only if nothing else (Hero Of Hell) has rewritten the multiplier since we applied ours.
     private void closeDamageWindow(Hero hero) {
         if (!damageWindowOpen) return;
         damageWindowOpen = false;
-        if (hero.getAttributes().getDamageMultiplier() == appliedDamageTakenMult) {
-            hero.getAttributes().setDamageMultiplier(baseDamageTakenMult);
-        }
+        hero.getAttributes().removeDamageTakenModifier(this);
     }
 
     @Override
@@ -149,8 +134,7 @@ public class ChainRev extends BaseAbility {
             return;
         }
 
-        if (hero.getController().isPlayer()
-                && !AbilityListener.isUseHeld(hero.getController().getUniqueId())) {
+        if (!hero.getController().isUseHeld()) {
             cancelRev(hero);
             return;
         }
@@ -163,7 +147,7 @@ public class ChainRev extends BaseAbility {
             return;
         }
 
-        hero.getController().getEntity().setVelocity(moveDirection(hero));
+        hero.getController().setVelocity(moveDirection(hero));
         hitbox.moveTo(hero.getController().getCenter()).check();
 
         ticksSinceLoopSound++;
@@ -206,9 +190,16 @@ public class ChainRev extends BaseAbility {
         closeDamageWindow(hero);
         if (revActive) {
             revActive = false;
-            if (hero.getController() != null && hero.getController().getEntity() != null) {
-                hero.getController().getEntity().setVelocity(new Vector(0, 0, 0));
+            if (hero.getController() != null) {
+                hero.getController().setVelocity(new Vector(0, 0, 0));
             }
         }
+    }
+
+    @Override
+    public void onOwnerLost(Hero hero) {
+        super.onOwnerLost(hero);
+        closeDamageWindow(hero);
+        revActive = false;
     }
 }

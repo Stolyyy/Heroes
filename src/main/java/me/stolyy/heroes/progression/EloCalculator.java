@@ -76,7 +76,6 @@ public class EloCalculator {
         return ratings.stream().mapToInt(Integer::intValue).average().orElseThrow();
     }
 
-    /** Widest rating distance inside one team; 0 for a solo side. */
     private static int spread(List<Integer> ratings) {
         return Collections.max(ratings) - Collections.min(ratings);
     }

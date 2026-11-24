@@ -16,22 +16,14 @@ public class NoOpGlowService implements GlowService {
     }
 
     @Override
-    public void enable() {
-        // No-op
-    }
+    public void enable() {}
 
     @Override
-    public void disable() {
-        // No-op
-    }
+    public void disable() {}
 
     @Override
-    public void glow(Entity target, Player viewer) {
-        // No-op
-    }
+    public void glow(Entity target, Player viewer) {}
 
     @Override
-    public void clear(int entityId, Player viewer) {
-        // No-op
-    }
+    public void clear(int entityId, Player viewer) {}
 }

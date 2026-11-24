@@ -2,12 +2,14 @@ package me.stolyy.heroes.ability.kit.railgunner;
 
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.Projectile;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.CosmeticManager;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.vfx.effect.SoundEffect;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.util.Vector;
 
 public class Clusterbuck extends Projectile {
     private final SoundEffect activationSound;
@@ -22,11 +24,11 @@ public class Clusterbuck extends Projectile {
 
     public Clusterbuck(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        this.activationSound = new SoundEffect(this.config.getConfigurationSection("visuals.activation_sound"));
-        this.armedItemTexture = me.stolyy.heroes.util.Configs.requireString(this.config, "armed_item_texture");
-        this.armedItemSkin = me.stolyy.heroes.util.Configs.requireString(this.config, "armed_item_skin");
-        this.kick = me.stolyy.heroes.util.Configs.requireDouble(this.config, "kick");
-        this.kickY = me.stolyy.heroes.util.Configs.requireDouble(this.config, "kick_y");
+        this.activationSound = new SoundEffect(Configs.requireSection(this.config, "visuals.activation_sound"));
+        this.armedItemTexture = Configs.requireString(this.config, "armed_item_texture");
+        this.armedItemSkin = Configs.requireString(this.config, "armed_item_skin");
+        this.kick = Configs.requireDouble(this.config, "kick");
+        this.kickY = Configs.requireDouble(this.config, "kick_y");
     }
 
     @Override
@@ -42,22 +44,20 @@ public class Clusterbuck extends Projectile {
     private void fire(Hero hero) {
         if (!armed) return;
         armed = false;
+        cooldown.reset();
         restoreHeldModel(hero);
         super.perform(hero);
         applyKick(hero);
     }
 
     private void applyKick(Hero hero) {
-        org.bukkit.entity.LivingEntity self = hero.getController().getEntity();
-        org.bukkit.util.Vector back = hero.getController().getEyeLocation().getDirection().multiply(-kick);
+        Vector back = hero.getController().getEyeLocation().getDirection().multiply(-kick);
         back.setY(back.getY() + kickY);
-        self.setVelocity(self.getVelocity().add(back));
+        hero.getController().setVelocity(hero.getController().getVelocity().add(back));
     }
 
     @Override
-    protected void onTick(Hero hero) {
-        super.onTick(hero);
-
+    protected void onProjectileTick(Hero hero) {
         if (armed && !getCooldownObject().isInUse()) {
             armed = false;
             restoreHeldModel(hero);

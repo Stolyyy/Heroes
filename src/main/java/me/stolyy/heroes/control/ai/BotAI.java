@@ -12,7 +12,4 @@ public interface BotAI {
 
     LivingEntity getTarget();
     void setTarget(LivingEntity target);
-
-    /** What the bot currently thinks it is doing — one word, cheap to log, easy to debug. */
-    default BotTask getTask() { return BotTask.FIGHT; }
 }

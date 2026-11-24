@@ -23,11 +23,9 @@ public class PlayerJoinListener implements Listener {
         sendOnboarding(player, firstJoin);
     }
 
-    /**
-     * Chat primer from messages.yml: {@code onboarding.first-join} for a fresh account, the shorter
-     * {@code onboarding.every-join} after that. Delayed a second so it lands under the vanilla join
-     * line and the resource-pack prompt instead of scrolling off behind them.
-     */
+    // Chat primer from messages.yml: onboarding.first-join for a fresh account, the shorter
+    // onboarding.every-join after that. Delayed a second so it lands under the vanilla join line
+    // and the resource-pack prompt instead of scrolling off behind them.
     private static void sendOnboarding(Player player, boolean firstJoin) {
         String path = firstJoin ? "onboarding.first-join" : "onboarding.every-join";
         List<Component> lines = GameConfigManager.getMessageList(path, Map.of("player", player.getName()));

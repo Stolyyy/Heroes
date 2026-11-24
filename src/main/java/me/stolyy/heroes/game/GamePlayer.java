@@ -1,7 +1,6 @@
 package me.stolyy.heroes.game;
 
 import me.stolyy.heroes.game.settings.PlayerSettings;
-import me.stolyy.heroes.hero.HeroConfig;
 import me.stolyy.heroes.hero.HeroManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -14,9 +13,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Per-participant state for a single game: an independent {@link PlayerSettings} copy,
- * lives (max vs. current), kills, hero override, and lifecycle flags. Entries are created
- * when a player or bot enters the game and are never removed — leavers are marked via
- * {@link #markLeft()} so end-of-game stats (top killers etc.) survive the departure.
+ * remaining lives, kills, hero override, and lifecycle flags. Entries are created when a player
+ * or bot enters the game and are never removed — leavers are marked via {@link #markLeft()} so
+ * end-of-game stats (top killers etc.) survive departure.
  */
 public class GamePlayer {
     private final UUID uuid;
@@ -24,7 +23,6 @@ public class GamePlayer {
     private final GameBot bot; // non-null for bots
 
     private TeamColor team;
-    private int maxLives;
     private int currentLives;
     private String heroOverride;
     private int kills;
@@ -34,13 +32,13 @@ public class GamePlayer {
     private double voidDamageDealt;
     private double voidDamageTaken;
     private boolean respawning;
+    // Tick-driven respawn countdown (decremented in Respawns.tick; paused while re-pick GUI is open).
+    private int respawnTicksLeft;
     private boolean leftGame;
 
-    // The config key of the hero currently being played (set at start, updated on swap).
+    // Config key of the hero currently being played (set at start, updated on swap).
     private String currentHeroName;
-    // Mode state (A4 design: mode-specific per-player state lives here, nullable when unused).
-    // (Boss HP now writes settings().setHealth directly — settings are the single start-time
-    // source of truth, so per-player GUI edits always win.)
+    // Mode-specific per-player state (settings().setHealth is the authoritative start-time HP source).
     private String pendingHero;        // TDM: picked during the respawn countdown, applied at respawn
     private List<String> heroOrder;    // Evolution: per-player hero sequence
     private boolean evolutionComplete; // Evolution: got a kill on the final hero
@@ -54,27 +52,26 @@ public class GamePlayer {
         seedLives();
     }
 
-    /** Re-seeds max and current lives from this participant's own settings (game start). */
+    /** Re-seeds remaining lives from this participant's settings at game start. */
     public void seedLives() {
-        this.maxLives = settings.lives();
-        this.currentLives = maxLives;
+        this.currentLives = settings.lives();
     }
 
     /**
-     * The hero this participant plays: bots resolve via their {@link GameBot}; players use
-     * the override if set, else a random pick when their settings say randomize, else their
-     * persistent lobby selection. Override always wins over randomize.
+     * Resolves the hero this participant plays: bots via their {@link GameBot}; players use
+     * their override if set, else an eligible random pick when randomize is on, else their
+     * persistent lobby selection. Override wins over randomize.
      */
     public String resolveHeroName() {
         if (bot != null) return bot.getHeroName();
         if (heroOverride != null) return heroOverride;
+        Player p = Bukkit.getPlayer(uuid);
         if (settings.randomizeHeroes()) {
-            List<String> available = HeroConfig.getAvailableNames();
+            List<String> available = MatchHeroes.eligibleRandomHeroes(p);
             if (!available.isEmpty()) {
                 return available.get(ThreadLocalRandom.current().nextInt(available.size()));
             }
         }
-        Player p = Bukkit.getPlayer(uuid);
         return p != null ? HeroManager.getHeroName(p) : null;
     }
 
@@ -86,10 +83,7 @@ public class GamePlayer {
     public TeamColor team() { return team; }
     public void setTeam(TeamColor team) { this.team = team; }
 
-    public int maxLives() { return maxLives; }
-    public void setMaxLives(int maxLives) { this.maxLives = maxLives; }
     public int currentLives() { return currentLives; }
-    public void setCurrentLives(int currentLives) { this.currentLives = currentLives; }
     public void subtractLife() { currentLives--; }
 
     public int kills() { return kills; }
@@ -118,9 +112,6 @@ public class GamePlayer {
     public boolean respawning() { return respawning; }
     public void setRespawning(boolean respawning) { this.respawning = respawning; }
 
-    // Tick-driven respawn countdown (decremented in Game.gameTick; paused while the
-    // TDM re-pick GUI is open). 0 = no countdown running.
-    private int respawnTicksLeft;
     public int respawnTicksLeft() { return respawnTicksLeft; }
     public void setRespawnTicksLeft(int respawnTicksLeft) { this.respawnTicksLeft = respawnTicksLeft; }
 

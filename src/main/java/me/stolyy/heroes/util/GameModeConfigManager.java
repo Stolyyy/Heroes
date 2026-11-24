@@ -1,6 +1,8 @@
 package me.stolyy.heroes.util;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.game.map.MapPool;
+import me.stolyy.heroes.game.rules.GameModePreset;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -24,35 +26,34 @@ public class GameModeConfigManager {
     }
 
     // Boss
-    public static int getBossNonBossLives() { return config.getInt("boss.non-boss-lives", 1); }
-    public static double getBossNonBossHp() { return config.getDouble("boss.non-boss-hp", 100.0); }
+    public static int getBossNonBossLives() { return Configs.requireInt(config, "boss.non-boss-lives"); }
+    public static double getBossNonBossHp() { return Configs.requireDouble(config, "boss.non-boss-hp"); }
     /** Decimal multiplier: boss lives = round(enemy count x this), min 1 (see BossSetup.bossLives). */
-    public static double getBossLivesPerEnemy() { return config.getDouble("boss.boss-lives-per-enemy", 1.0); }
+    public static double getBossLivesPerEnemy() { return Configs.requireDouble(config, "boss.boss-lives-per-enemy"); }
     /** Absolute starting/max HP the boss respawns with on every one of its lives. */
-    public static double getBossHpPerLife() { return config.getDouble("boss.boss-hp-per-life", 100.0); }
-    public static boolean getBossUltimatesEnabled() { return config.getBoolean("boss.ultimates-enabled", true); }
+    public static double getBossHpPerLife() { return Configs.requireDouble(config, "boss.boss-hp-per-life"); }
+    public static boolean getBossUltimatesEnabled() { return Configs.requireBoolean(config, "boss.ultimates-enabled"); }
 
     // TDM
-    public static int getTdmKillLimit() { return config.getInt("tdm.kill-limit", 20); }
-    public static double getTdmStartHp() { return config.getDouble("tdm.start-hp", 50.0); }
-    public static boolean getTdmChangeHeroOnRespawn() { return config.getBoolean("tdm.change-hero-on-respawn", true); }
-    public static boolean getTdmUltCarryover() { return config.getBoolean("tdm.ult-carryover", true); }
+    public static int getTdmKillLimit() { return Configs.requireInt(config, "tdm.kill-limit"); }
+    public static double getTdmStartHp() { return Configs.requireDouble(config, "tdm.start-hp"); }
+    public static boolean getTdmChangeHeroOnRespawn() { return Configs.requireBoolean(config, "tdm.change-hero-on-respawn"); }
+    public static boolean getTdmUltCarryover() { return Configs.requireBoolean(config, "tdm.ult-carryover"); }
 
     // Evolution
-    public static int getEvolutionKillLimit() { return config.getInt("evolution.kill-limit", 0); }
-    public static double getEvolutionStartHp() { return config.getDouble("evolution.start-hp", 50.0); }
-    public static boolean getEvolutionRandomizeOrder() { return config.getBoolean("evolution.randomize-order", true); }
-    public static boolean getEvolutionSharedOrder() { return config.getBoolean("evolution.shared-order", false); }
-    public static boolean getEvolutionUltCarryover() { return config.getBoolean("evolution.ult-carryover", true); }
-    public static boolean getEvolutionTeamAdvance() { return config.getBoolean("evolution.team-advance", false); }
-    public static boolean getEvolutionWinRequiresAll() { return config.getBoolean("evolution.win-requires-all", false); }
+    public static int getEvolutionKillLimit() { return Configs.requireInt(config, "evolution.kill-limit"); }
+    public static double getEvolutionStartHp() { return Configs.requireDouble(config, "evolution.start-hp"); }
+    public static boolean getEvolutionRandomizeOrder() { return Configs.requireBoolean(config, "evolution.randomize-order"); }
+    public static boolean getEvolutionSharedOrder() { return Configs.requireBoolean(config, "evolution.shared-order"); }
+    public static boolean getEvolutionUltCarryover() { return Configs.requireBoolean(config, "evolution.ult-carryover"); }
+    public static boolean getEvolutionTeamAdvance() { return Configs.requireBoolean(config, "evolution.team-advance"); }
+    public static boolean getEvolutionWinRequiresAll() { return Configs.requireBoolean(config, "evolution.win-requires-all"); }
 
     /**
      * Per-preset map-pool selector ({@code <preset>.map-pool}). DEFAULT has no pool (null —
-     * the custom lobby keeps whatever map it has); series-family presets default to BOTH
-     * (maps supporting 1v1 AND 2v2), the rest to ALL.
+     * the custom lobby keeps whatever map it has).
      */
-    public static me.stolyy.heroes.game.map.MapPool getMapPool(me.stolyy.heroes.game.rules.GameModePreset preset) {
+    public static MapPool getMapPool(GameModePreset preset) {
         String key = switch (preset) {
             case DEFAULT -> null;
             case BOSS -> "boss";
@@ -63,24 +64,23 @@ public class GameModeConfigManager {
             case IRONMAN -> "ironman";
         };
         if (key == null) return null;
-        String fallback = preset.isSeries() ? "BOTH" : "ALL";
-        return me.stolyy.heroes.game.map.MapPool.valueOf(
-                config.getString(key + ".map-pool", fallback).trim().toUpperCase().replace('-', '_'));
+        return MapPool.valueOf(
+                Configs.requireString(config, key + ".map-pool").trim().toUpperCase().replace('-', '_'));
     }
 
     // Series (plain best-of-X)
-    public static int getSeriesBestOf() { return config.getInt("series.best-of", 3); }
-    public static boolean getSeriesRepickBetweenRounds() { return config.getBoolean("series.repick-between-rounds", true); }
+    public static int getSeriesBestOf() { return Configs.requireInt(config, "series.best-of"); }
+    public static boolean getSeriesRepickBetweenRounds() { return Configs.requireBoolean(config, "series.repick-between-rounds"); }
 
     // Nuzlocke
-    public static int getNuzlockeStocksPerGame() { return config.getInt("nuzlocke.stocks-per-game", 1); }
-    public static boolean getNuzlockeHpCarryover() { return config.getBoolean("nuzlocke.hp-carryover", true); }
-    public static boolean getNuzlockeLockIn() { return config.getBoolean("nuzlocke.lockin", true); }
-    public static String getNuzlockeHeroesToEliminate() { return config.getString("nuzlocke.heroes-to-eliminate", "all"); }
-    public static boolean getNuzlockeTeamScope() { return config.getBoolean("nuzlocke.team-scope", false); }
+    public static int getNuzlockeStocksPerGame() { return Configs.requireInt(config, "nuzlocke.stocks-per-game"); }
+    public static boolean getNuzlockeHpCarryover() { return Configs.requireBoolean(config, "nuzlocke.hp-carryover"); }
+    public static boolean getNuzlockeLockIn() { return Configs.requireBoolean(config, "nuzlocke.lockin"); }
+    public static String getNuzlockeHeroesToEliminate() { return Configs.requireString(config, "nuzlocke.heroes-to-eliminate"); }
+    public static boolean getNuzlockeTeamScope() { return Configs.requireBoolean(config, "nuzlocke.team-scope"); }
 
     // Ironman
-    public static int getIronmanStocksPerGame() { return config.getInt("ironman.stocks-per-game", 1); }
-    public static String getIronmanHeroesToClear() { return config.getString("ironman.heroes-to-clear", "all"); }
-    public static boolean getIronmanTeamScope() { return config.getBoolean("ironman.team-scope", false); }
+    public static int getIronmanStocksPerGame() { return Configs.requireInt(config, "ironman.stocks-per-game"); }
+    public static String getIronmanHeroesToClear() { return Configs.requireString(config, "ironman.heroes-to-clear"); }
+    public static boolean getIronmanTeamScope() { return Configs.requireBoolean(config, "ironman.team-scope"); }
 }

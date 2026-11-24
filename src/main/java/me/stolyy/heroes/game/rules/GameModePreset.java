@@ -2,11 +2,14 @@ package me.stolyy.heroes.game.rules;
 
 import me.stolyy.heroes.util.GameModeConfigManager;
 
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+
 /**
- * The selectable gamemode presets. Each builds its {@link GameModeConfig} from the
- * gamemodes.yml defaults at selection time (B13.7 GUI calls Game.setGameModePreset).
- * Preset-specific setup beyond the config — boss lives math, Evolution hero orders —
- * lives with each preset's B13.x task, not here.
+ * Selectable gamemode presets. Each builds its {@link GameModeConfig} from {@code gamemodes.yml}
+ * defaults at selection time; preset-specific setup such as Boss lives/HP and Evolution hero orders
+ * lives alongside those features.
  */
 public enum GameModePreset {
     DEFAULT("Default"),
@@ -16,6 +19,9 @@ public enum GameModePreset {
     SERIES("Series"),
     NUZLOCKE("Nuzlocke"),
     IRONMAN("Ironman");
+
+    private static final List<String> COMMAND_TOKENS = List.of(
+            "tdm", "evolution", "series", "nuzlocke", "ironman", "boss");
 
     private final String displayName;
 
@@ -27,6 +33,24 @@ public enum GameModePreset {
         return displayName;
     }
 
+    /** Preset tokens accepted by commands ({@code /join}, {@code /party ready}). */
+    public static List<String> commandTokens() {
+        return COMMAND_TOKENS;
+    }
+
+    public static Optional<GameModePreset> fromToken(String input) {
+        if (input == null) return Optional.empty();
+        return switch (input.toLowerCase(Locale.ROOT)) {
+            case "tdm" -> Optional.of(TDM);
+            case "evolution", "evo" -> Optional.of(EVOLUTION);
+            case "series" -> Optional.of(SERIES);
+            case "nuzlocke" -> Optional.of(NUZLOCKE);
+            case "ironman" -> Optional.of(IRONMAN);
+            case "boss" -> Optional.of(BOSS);
+            default -> Optional.empty();
+        };
+    }
+
     /** Series presets run as a MatchSeries of rounds instead of a single game. */
     public boolean isSeries() {
         return this == SERIES || this == NUZLOCKE || this == IRONMAN;
@@ -34,66 +58,51 @@ public enum GameModePreset {
 
     public GameModeConfig buildConfig() {
         return switch (this) {
-            case DEFAULT -> GameModeConfig.CLASSIC;
+            case DEFAULT, BOSS -> GameModeConfig.CLASSIC;
 
-            // Boss numbers (boss lives = enemies * lives-per-enemy, non-boss lives/HP) are
-            // per-player state applied by applyBossSetup (B13.2), not config-record fields.
-            case BOSS -> new GameModeConfig(
-                    WinCondition.LAST_TEAM_STANDING, DeathOutcome.LIVES_BASED,
-                    OnKillAction.NONE, RespawnAction.NONE,
-                    0, 0, 3,
-                    GameModeConfigManager.getBossUltimatesEnabled(),
-                    false, false, "all", 3, true, false, false, false, false, false);
+            case TDM -> GameModeConfig.builder()
+                    .winCondition(WinCondition.KILL_TARGET)
+                    .deathOutcome(DeathOutcome.ALWAYS_RESPAWN)
+                    .onRespawn(GameModeConfigManager.getTdmChangeHeroOnRespawn()
+                            ? RespawnAction.OPEN_HERO_SELECT : RespawnAction.NONE)
+                    .killLimit(GameModeConfigManager.getTdmKillLimit())
+                    .startHp(GameModeConfigManager.getTdmStartHp())
+                    .stocks(0)
+                    .ultChargeCarryover(GameModeConfigManager.getTdmUltCarryover())
+                    .build();
 
-            case TDM -> new GameModeConfig(
-                    WinCondition.KILL_TARGET, DeathOutcome.ALWAYS_RESPAWN,
-                    OnKillAction.NONE,
-                    GameModeConfigManager.getTdmChangeHeroOnRespawn()
-                            ? RespawnAction.OPEN_HERO_SELECT : RespawnAction.NONE,
-                    GameModeConfigManager.getTdmKillLimit(),
-                    GameModeConfigManager.getTdmStartHp(),
-                    0, true, false, false, "all", 3, true, false,
-                    GameModeConfigManager.getTdmUltCarryover(), false, false, false);
+            case EVOLUTION -> GameModeConfig.builder()
+                    .winCondition(WinCondition.HERO_EXHAUSTION)
+                    .deathOutcome(DeathOutcome.ALWAYS_RESPAWN)
+                    .onKill(OnKillAction.ADVANCE_HERO)
+                    .killLimit(GameModeConfigManager.getEvolutionKillLimit())
+                    .startHp(GameModeConfigManager.getEvolutionStartHp())
+                    .stocks(0)
+                    .sharedEvolutionOrder(GameModeConfigManager.getEvolutionSharedOrder())
+                    .ultChargeCarryover(GameModeConfigManager.getEvolutionUltCarryover())
+                    .evolutionTeamAdvance(GameModeConfigManager.getEvolutionTeamAdvance())
+                    .evolutionWinRequiresAll(GameModeConfigManager.getEvolutionWinRequiresAll())
+                    .build();
 
-            case EVOLUTION -> new GameModeConfig(
-                    WinCondition.HERO_EXHAUSTION, DeathOutcome.ALWAYS_RESPAWN,
-                    OnKillAction.ADVANCE_HERO, RespawnAction.NONE,
-                    GameModeConfigManager.getEvolutionKillLimit(),
-                    GameModeConfigManager.getEvolutionStartHp(),
-                    0, true, false, false, "all", 3, true,
-                    GameModeConfigManager.getEvolutionSharedOrder(),
-                    GameModeConfigManager.getEvolutionUltCarryover(),
-                    GameModeConfigManager.getEvolutionTeamAdvance(),
-                    GameModeConfigManager.getEvolutionWinRequiresAll(), false);
+            case SERIES -> GameModeConfig.builder()
+                    .stocks(0)
+                    .bestOf(GameModeConfigManager.getSeriesBestOf())
+                    .repickBetweenRounds(GameModeConfigManager.getSeriesRepickBetweenRounds())
+                    .build();
 
-            // Plain best-of-X: classic rules per round, no hero elimination; stocks 0 keeps
-            // each player's own lives setting.
-            case SERIES -> new GameModeConfig(
-                    WinCondition.LAST_TEAM_STANDING, DeathOutcome.LIVES_BASED,
-                    OnKillAction.NONE, RespawnAction.NONE,
-                    0, 0, 0, true, false, false, "all",
-                    GameModeConfigManager.getSeriesBestOf(),
-                    GameModeConfigManager.getSeriesRepickBetweenRounds(), false, false, false, false, false);
+            case NUZLOCKE -> GameModeConfig.builder()
+                    .stocks(GameModeConfigManager.getNuzlockeStocksPerGame())
+                    .hpCarryover(GameModeConfigManager.getNuzlockeHpCarryover())
+                    .lockIn(GameModeConfigManager.getNuzlockeLockIn())
+                    .heroesToEliminate(GameModeConfigManager.getNuzlockeHeroesToEliminate())
+                    .seriesTeamScope(GameModeConfigManager.getNuzlockeTeamScope())
+                    .build();
 
-            case NUZLOCKE -> new GameModeConfig(
-                    WinCondition.LAST_TEAM_STANDING, DeathOutcome.LIVES_BASED,
-                    OnKillAction.NONE, RespawnAction.NONE,
-                    0, 0,
-                    GameModeConfigManager.getNuzlockeStocksPerGame(),
-                    true,
-                    GameModeConfigManager.getNuzlockeHpCarryover(),
-                    GameModeConfigManager.getNuzlockeLockIn(),
-                    GameModeConfigManager.getNuzlockeHeroesToEliminate(), 3, true, false, false, false, false,
-                    GameModeConfigManager.getNuzlockeTeamScope());
-
-            case IRONMAN -> new GameModeConfig(
-                    WinCondition.LAST_TEAM_STANDING, DeathOutcome.LIVES_BASED,
-                    OnKillAction.NONE, RespawnAction.NONE,
-                    0, 0,
-                    GameModeConfigManager.getIronmanStocksPerGame(),
-                    true, false, false,
-                    GameModeConfigManager.getIronmanHeroesToClear(), 3, true, false, false, false, false,
-                    GameModeConfigManager.getIronmanTeamScope());
+            case IRONMAN -> GameModeConfig.builder()
+                    .stocks(GameModeConfigManager.getIronmanStocksPerGame())
+                    .heroesToEliminate(GameModeConfigManager.getIronmanHeroesToClear())
+                    .seriesTeamScope(GameModeConfigManager.getIronmanTeamScope())
+                    .build();
         };
     }
 }

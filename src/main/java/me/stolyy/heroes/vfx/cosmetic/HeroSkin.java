@@ -1,6 +1,10 @@
 package me.stolyy.heroes.vfx.cosmetic;
 
+import me.stolyy.heroes.vfx.effect.ItemBuilder;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,8 +12,7 @@ public class HeroSkin {
     private final String id;
     private final ConfigurationSection config;
     private final Map<String, ConfigurationSection> abilityOverrides = new HashMap<>();
-    // B21.1: named per-piece cosmetic slots (piece_visuals: { spooderbuddy: { head: ... } })
-    // so sub-entities re-texture with the skin without touching the hero's own pieces.
+    // Named per-piece cosmetic slots so sub-entities re-texture with the owner's skin.
     private final Map<String, ConfigurationSection> pieceOverrides = new HashMap<>();
 
     public HeroSkin(String id, ConfigurationSection config) {
@@ -32,7 +35,6 @@ public class HeroSkin {
     }
 
     public String getId() { return id; }
-    public ConfigurationSection getConfig() { return config; }
 
     public ConfigurationSection getAbilityOverride(String abilityName) {
         return abilityOverrides.get(abilityName.toLowerCase());
@@ -42,11 +44,33 @@ public class HeroSkin {
         return pieceOverrides.get(pieceName.toLowerCase());
     }
 
-    // Helpers for specific items
-    // Returns null if no override — caller defaults to (heroName, "head"/"hand", skinId)
     public ConfigurationSection getArmor() { return config.getConfigurationSection("armor"); }
     public ConfigurationSection getHeadOverride() { return config.getConfigurationSection("head"); }
     public ConfigurationSection getHandOverride() { return config.getConfigurationSection("hand"); }
-    /** Minion full-body display config (MinionBodyDisplay); null keeps the worn-helmet path. */
+    /** Minion full-body display config; null keeps the worn-helmet path. */
     public ConfigurationSection getBodyOverride() { return config.getConfigurationSection("body"); }
+
+    /**
+     * Builds an unbreakable custom-modeled item from an optional YML override block
+     * ({@code material}, {@code hero}, {@code texture}, {@code skin}), falling back to the given defaults.
+     */
+    public static ItemBuilder modelItem(@Nullable ConfigurationSection override, Material defaultMaterial,
+                                        String defaultHero, String defaultTexture, String defaultSkin) {
+        Material material = defaultMaterial;
+        String hero = defaultHero;
+        String texture = defaultTexture;
+        String skin = defaultSkin;
+        if (override != null) {
+            String matName = override.getString("material");
+            if (matName != null) {
+                material = Material.valueOf(matName.toUpperCase());
+            }
+            hero = override.getString("hero", defaultHero);
+            texture = override.getString("texture", defaultTexture);
+            skin = override.getString("skin", defaultSkin);
+        }
+        return ItemBuilder.from(material)
+                .unbreakable(true)
+                .modelData(hero, texture, skin);
+    }
 }

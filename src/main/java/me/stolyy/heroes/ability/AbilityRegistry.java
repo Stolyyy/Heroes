@@ -13,7 +13,6 @@ import me.stolyy.heroes.ability.kit.karakot.*;
 import me.stolyy.heroes.ability.kit.marauder.*;
 import me.stolyy.heroes.ability.kit.minions.basher.Bash;
 import me.stolyy.heroes.ability.kit.minions.princess.Sing;
-import me.stolyy.heroes.ability.kit.minions.spooderbuddy.SpooderBuddyClimb;
 import me.stolyy.heroes.ability.kit.pochita.*;
 import me.stolyy.heroes.ability.kit.pug.*;
 import me.stolyy.heroes.ability.kit.punishgers.*;
@@ -35,9 +34,9 @@ public final class AbilityRegistry {
      * annotation magic: an ability class that isn't registered here does not exist as far
      * as hero ymls are concerned.
      *
-     * <p><b>Failure mode:</b> a yml referencing an unregistered {@code type:} key gets a
-     * "Missing: &lt;key&gt;" dummy ability (inert, never executes). HeroBuilder logs a
-     * warning at hero build time — watch the console after adding a hero.
+     * <p><b>Failure mode:</b> a yml referencing an unregistered {@code type:} key fails
+     * loudly in {@link HeroBuilder} (logged at SEVERE and omitted from the hero so it cannot
+     * be instantiated).
      *
      * <p><b>Adding a new ability:</b>
      * <ol>
@@ -82,12 +81,8 @@ public final class AbilityRegistry {
         HeroBuilder.registerAbility("cryomancerfrostaura", CryomancerFrostAura::new);
 
         // --- Green Hood ---
-        HeroBuilder.registerAbility("arrow", Arrow::new);
+        HeroBuilder.registerAbility("arrow", GreenHoodBow::new);
         HeroBuilder.registerAbility("ballista", Ballista::new);
-        // greenhoodswap + ropedarrow are unused by Green Hood's R7 kit but stay registered:
-        // the upcoming crossbow hero inherits barrage and the grapple.
-        HeroBuilder.registerAbility("greenhoodswap", GreenHoodSwap::new);
-        HeroBuilder.registerAbility("ropedarrow", RopedArrow::new);
         HeroBuilder.registerAbility("tripminearrow", TripmineArrow::new);
         HeroBuilder.registerAbility("pearlarrow", PearlArrow::new);
         HeroBuilder.registerAbility("deathsgrasp", DeathsGrasp::new);
@@ -132,9 +127,7 @@ public final class AbilityRegistry {
         // --- Railgunner ---
         HeroBuilder.registerAbility("railgun", Railgun::new);
         HeroBuilder.registerAbility("satchel", Satchel::new);
-        HeroBuilder.registerAbility("rayofdoom", RayOfDoom::new); // superseded by clusterbuck; kept as fallback
         HeroBuilder.registerAbility("clusterbuck", Clusterbuck::new);
-        HeroBuilder.registerAbility("headhunter", HeadHunter::new);
 
         // --- Sgt Shield ---
         HeroBuilder.registerAbility("parry", Parry::new);
@@ -176,7 +169,7 @@ public final class AbilityRegistry {
         // --- Minions ---
         HeroBuilder.registerAbility("bash", Bash::new);
         HeroBuilder.registerAbility("sing", Sing::new);
-        HeroBuilder.registerAbility("spooderbuddyclimb", SpooderBuddyClimb::new);
+        HeroBuilder.registerAbility("spooderbuddyclimb", SpooderClimb::new);
         HeroBuilder.registerAbility("tether", Tether::new);
 
         // --- Mobility ---
@@ -184,5 +177,8 @@ public final class AbilityRegistry {
         HeroBuilder.registerMobility("botglide", (stats, config, skin) -> new Botglide(stats, config));
         HeroBuilder.registerMobility("defecake", Defecake::new);
         HeroBuilder.registerMobility("marauderdarkjump", (stats, config, skin) -> new MarauderDarkJump(stats, config));
+
+        GreenHoodListener.initialize();
+        MonsterGrab.initialize();
     }
 }

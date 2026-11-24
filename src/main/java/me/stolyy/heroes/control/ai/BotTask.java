@@ -2,7 +2,7 @@ package me.stolyy.heroes.control.ai;
 
 /**
  * What a bot currently thinks it is doing. Evaluated as a priority ladder at the top of
- * {@link BaseBotAI#tick}: the highest satisfied condition OWNS the tick — a recovering bot
+ * {@link HeroBotAI#tick}: the highest satisfied condition OWNS the tick — a recovering bot
  * does not navigate to targets, take combat actions, or run strategy movement. Future
  * behaviors (retreat, regroup...) are one condition + one handler each, slotted by priority.
  */

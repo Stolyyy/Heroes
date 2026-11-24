@@ -4,174 +4,180 @@ import me.stolyy.heroes.hero.HeroStats;
 import me.stolyy.heroes.hero.HeroType;
 import me.stolyy.heroes.control.Controller;
 import me.stolyy.heroes.control.PlayerController;
+import me.stolyy.heroes.util.ModifierStack;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.entity.LivingEntity;
 
 public class Attributes {
     private HeroType type;
-    private double weight;
-    private double maxHealth;
+    private double baseWeight;
     private double baseMaxHealth;
-    private double movementSpeed;
     private double baseMovementSpeed;
-    private double jumpHeight;
     private double baseJumpHeight;
-    private double gravity;
     private double baseGravity;
-    private double stepHeight;
     private double baseStepHeight;
-    private double scale;
     private double baseScale;
-    private double damageMultiplier = 1.0;
-    private double damageDealtMultiplier = 1.0;
-    private double knockbackMultiplier = 1.0;
-    // Attacker-side counterpart to knockbackMultiplier (kb taken): scales all knockback this
-    // hero DEALS. Applied in Interactions.applyKnockback.
-    private double knockbackDealtMultiplier = 1.0;
-    // Layered on top of movementSpeed in setMovementSpeed (effective = speed * multiplier) —
-    // an easier tuning lever for buffs/slows than juggling the raw attribute values.
-    private double speedMultiplier = 1.0;
+
+    private final ModifierStack weightMods = new ModifierStack();
+    private final ModifierStack movementSpeedMods = new ModifierStack();
+    private final ModifierStack gravityMods = new ModifierStack();
+    private final ModifierStack stepHeightMods = new ModifierStack();
+    private final ModifierStack damageTakenMods = new ModifierStack();
+    private final ModifierStack damageDealtMods = new ModifierStack();
+    private final ModifierStack knockbackTakenMods = new ModifierStack();
+    // Attacker-side counterpart to knockbackTakenMods: scales all knockback this hero DEALS.
+    private final ModifierStack knockbackDealtMods = new ModifierStack();
 
     public Attributes(HeroStats.AttributeStats stats) {
         apply(stats);
     }
 
+    /** Updates base attribute values without discarding active keyed modifier stacks. */
     public void apply(HeroStats.AttributeStats stats) {
         this.type = stats.type();
-        this.weight = stats.weight();
-        this.maxHealth = stats.maxHealth();
+        this.baseWeight = stats.weight();
         this.baseMaxHealth = stats.maxHealth();
-        this.movementSpeed = stats.movementSpeed();
         this.baseMovementSpeed = stats.movementSpeed();
-        this.jumpHeight = stats.jumpHeight();
         this.baseJumpHeight = stats.jumpHeight();
-        this.gravity = stats.gravity();
         this.baseGravity = stats.gravity();
-        this.stepHeight = stats.stepHeight();
         this.baseStepHeight = stats.stepHeight();
-        this.scale = stats.scale();
         this.baseScale = stats.scale();
     }
 
     /**
-     * Applies all current attribute values to the controller's entity.
+     * Applies all effective attribute values to the controller's entity.
      */
     public void applyAttributes(Controller controller) {
-        setMaxHealth(controller, maxHealth);
-        setMovementSpeed(controller, movementSpeed);
-        setJumpHeight(controller, jumpHeight);
-        setGravity(controller, gravity);
-        setStepHeight(controller, stepHeight);
-        setScale(controller, scale);
+        writeBase(controller, Attribute.MAX_HEALTH, baseMaxHealth);
+        if (controller != null && controller.isPlayer() && controller instanceof PlayerController pc
+                && controller.getEntity() != null) {
+            pc.getPlayer().setHealthScale(20.0);
+            pc.getPlayer().setHealthScaled(true);
+        }
+        syncSpeed(controller);
+        writeBase(controller, Attribute.JUMP_STRENGTH, baseJumpHeight);
+        syncGravity(controller);
+        syncStepHeight(controller);
+        writeBase(controller, Attribute.SCALE, baseScale);
     }
 
     public HeroType getType() { return type; }
     public void setType(HeroType type) { this.type = type; }
 
-    public double getWeight() { return weight; }
-    public void setWeight(double weight) { this.weight = weight; }
+    public double getWeight() { return weightMods.evaluate(baseWeight, 0.0); }
+    public double getBaseWeight() { return baseWeight; }
+    public void addWeightMultiplier(Object key, double mult) { weightMods.putMult(key, mult); }
+    public void addWeightFlat(Object key, double delta) { weightMods.putFlat(key, delta); }
+    public void removeWeightModifier(Object key) { weightMods.remove(key); }
 
-    public double getMaxHealth() { return maxHealth; }
-    public void setMaxHealth(Controller controller, double maxHealth) { 
-        this.maxHealth = maxHealth;
-        AttributeInstance healthAttr = controller.getEntity().getAttribute(Attribute.MAX_HEALTH);
-        if (healthAttr != null) healthAttr.setBaseValue(maxHealth);
-        
-        if (controller.isPlayer() && controller instanceof PlayerController pc) {
-            pc.getPlayer().setHealthScale(20.0);
-            pc.getPlayer().setHealthScaled(true);
-        }
-    }
-
-    public double getMovementSpeed() { return movementSpeed; }
-    public void setMovementSpeed(Controller controller, double movementSpeed) {
-        this.movementSpeed = movementSpeed;
-
-        AttributeInstance speedAttr = controller.getEntity().getAttribute(Attribute.MOVEMENT_SPEED);
-        if (speedAttr != null) speedAttr.setBaseValue(movementSpeed * speedMultiplier);
-    }
-
-    /** Sets the speed multiplier and immediately re-applies the effective speed to the entity. */
-    public void setSpeedMultiplier(Controller controller, double multiplier) {
-        this.speedMultiplier = multiplier;
-        setMovementSpeed(controller, movementSpeed);
-    }
-    public double getSpeedMultiplier() { return speedMultiplier; }
-
-    public double getJumpHeight() { return jumpHeight; }
-    public void setJumpHeight(Controller controller, double jumpHeight) { 
-        this.jumpHeight = jumpHeight;
-        AttributeInstance jumpAttr = controller.getEntity().getAttribute(Attribute.JUMP_STRENGTH);
-        if (jumpAttr != null) jumpAttr.setBaseValue(jumpHeight);
-    }
-
-    public double getGravity() { return gravity; }
-    public void setGravity(Controller controller, double gravity) { 
-        this.gravity = gravity;
-        AttributeInstance gravityAttr = controller.getEntity().getAttribute(Attribute.GRAVITY);
-        if (gravityAttr != null) gravityAttr.setBaseValue(gravity);
-    }
-
-    public double getStepHeight() { return stepHeight; }
-    public void setStepHeight(Controller controller, double stepHeight) {
-        this.stepHeight = stepHeight;
-        AttributeInstance stepAttr = controller.getEntity().getAttribute(Attribute.STEP_HEIGHT);
-        if (stepAttr != null) stepAttr.setBaseValue(stepHeight);
-    }
-
-    public double getScale() { return scale; }
-    public void setScale(Controller controller, double scale) {
-        this.scale = scale;
-        AttributeInstance scaleAttr = controller.getEntity().getAttribute(Attribute.SCALE);
-        if (scaleAttr != null) scaleAttr.setBaseValue(scale);
-    }
-
-    public void resetMaxHealth(Controller controller) { setMaxHealth(controller, baseMaxHealth); }
-    public void resetMovementSpeed(Controller controller) { setMovementSpeed(controller, baseMovementSpeed); }
-    public void resetJumpHeight(Controller controller) { setJumpHeight(controller, baseJumpHeight); }
-    public void resetGravity(Controller controller) { setGravity(controller, baseGravity); }
-    public void resetStepHeight(Controller controller) { setStepHeight(controller, baseStepHeight); }
-    public void resetScale(Controller controller) { setScale(controller, baseScale); }
-    public void resetDamageMultiplier() { this.damageMultiplier = 1.0; }
-    public void resetDamageDealtMultiplier() { this.damageDealtMultiplier = 1.0; }
-    public void resetKnockbackMultiplier() { this.knockbackMultiplier = 1.0; }
-    public void resetKnockbackDealtMultiplier() { this.knockbackDealtMultiplier = 1.0; }
-
-    /**
-     * Resets every combat/speed multiplier to 1.0. Called from Hero.resetStats (game start)
-     * because Attributes.apply() only restores stat-backed values — without this, buff
-     * multipliers would drift across games. Buffs (charms, ults) activate after resetStats.
-     */
-    public void resetMultipliers() {
-        this.damageMultiplier = 1.0;
-        this.damageDealtMultiplier = 1.0;
-        this.knockbackMultiplier = 1.0;
-        this.knockbackDealtMultiplier = 1.0;
-        this.speedMultiplier = 1.0;
-    }
-
+    public double getMaxHealth() { return baseMaxHealth; }
     public double getBaseMaxHealth() { return baseMaxHealth; }
+
+    public double getMovementSpeed() { return movementSpeedMods.evaluate(baseMovementSpeed, 0.0); }
     public double getBaseMovementSpeed() { return baseMovementSpeed; }
+
+    public void addSpeedMultiplier(Controller controller, Object key, double mult) {
+        movementSpeedMods.putMult(key, mult);
+        syncSpeed(controller);
+    }
+
+    public void addSpeedFlat(Controller controller, Object key, double delta) {
+        movementSpeedMods.putFlat(key, delta);
+        syncSpeed(controller);
+    }
+
+    public void removeSpeedModifier(Controller controller, Object key) {
+        movementSpeedMods.remove(key);
+        syncSpeed(controller);
+    }
+
+    private void syncSpeed(Controller controller) {
+        writeBase(controller, Attribute.MOVEMENT_SPEED, getMovementSpeed());
+    }
+
+    public double getJumpHeight() { return baseJumpHeight; }
     public double getBaseJumpHeight() { return baseJumpHeight; }
+
+    public double getGravity() { return gravityMods.evaluate(baseGravity, 0.0); }
     public double getBaseGravity() { return baseGravity; }
+
+    public void addGravityMultiplier(Controller controller, Object key, double mult) {
+        gravityMods.putMult(key, mult);
+        syncGravity(controller);
+    }
+
+    public void addGravityFlat(Controller controller, Object key, double delta) {
+        gravityMods.putFlat(key, delta);
+        syncGravity(controller);
+    }
+
+    public void removeGravityModifier(Controller controller, Object key) {
+        gravityMods.remove(key);
+        syncGravity(controller);
+    }
+
+    private void syncGravity(Controller controller) {
+        writeBase(controller, Attribute.GRAVITY, getGravity());
+    }
+
+    public double getStepHeight() { return stepHeightMods.evaluate(baseStepHeight, 0.0); }
     public double getBaseStepHeight() { return baseStepHeight; }
+
+    public void addStepHeightMultiplier(Controller controller, Object key, double mult) {
+        stepHeightMods.putMult(key, mult);
+        syncStepHeight(controller);
+    }
+
+    public void addStepHeightFlat(Controller controller, Object key, double delta) {
+        stepHeightMods.putFlat(key, delta);
+        syncStepHeight(controller);
+    }
+
+    public void removeStepHeightModifier(Controller controller, Object key) {
+        stepHeightMods.remove(key);
+        syncStepHeight(controller);
+    }
+
+    private void syncStepHeight(Controller controller) {
+        writeBase(controller, Attribute.STEP_HEIGHT, getStepHeight());
+    }
+
+    public double getScale() { return baseScale; }
     public double getBaseScale() { return baseScale; }
 
-    public double getDamageMultiplier() { return damageMultiplier; }
-    public void setDamageMultiplier(double multiplier) { this.damageMultiplier = multiplier; }
+    private static void writeBase(Controller controller, Attribute attribute, double value) {
+        if (controller == null) return;
+        LivingEntity entity = controller.getEntity();
+        if (entity == null) return;
+        AttributeInstance instance = entity.getAttribute(attribute);
+        if (instance != null) instance.setBaseValue(value);
+    }
 
-    public double getDamageDealtMultiplier() { return damageDealtMultiplier; }
+    public double getDamageMultiplier() { return damageTakenMods.product(); }
+    public void addDamageTakenMultiplier(Object key, double mult) { damageTakenMods.putMult(key, mult); }
+    public void removeDamageTakenModifier(Object key) { damageTakenMods.remove(key); }
 
-    public void setDamageDealtMultiplier(double multiplier) { this.damageDealtMultiplier = multiplier; }
+    public double getDamageDealtMultiplier() { return damageDealtMods.product(); }
+    public void addDamageDealtMultiplier(Object key, double mult) { damageDealtMods.putMult(key, mult); }
+    public void removeDamageDealtModifier(Object key) { damageDealtMods.remove(key); }
 
-    public double getKnockbackMultiplier() { return knockbackMultiplier; }
+    public double getKnockbackMultiplier() { return knockbackTakenMods.product(); }
+    public void addKnockbackTakenMultiplier(Object key, double mult) { knockbackTakenMods.putMult(key, mult); }
+    public void removeKnockbackTakenModifier(Object key) { knockbackTakenMods.remove(key); }
 
+    public double getKnockbackDealtMultiplier() { return knockbackDealtMods.product(); }
+    public void addKnockbackDealtMultiplier(Object key, double mult) { knockbackDealtMods.putMult(key, mult); }
+    public void removeKnockbackDealtModifier(Object key) { knockbackDealtMods.remove(key); }
 
-    public void setKnockbackMultiplier(double multiplier) { this.knockbackMultiplier = multiplier; }
-
-    public double getKnockbackDealtMultiplier() { return knockbackDealtMultiplier; }
-    public void setKnockbackDealtMultiplier(double multiplier) { this.knockbackDealtMultiplier = multiplier; }
-
+    public void clearModifiers() {
+        weightMods.clear();
+        movementSpeedMods.clear();
+        gravityMods.clear();
+        stepHeightMods.clear();
+        damageTakenMods.clear();
+        damageDealtMods.clear();
+        knockbackTakenMods.clear();
+        knockbackDealtMods.clear();
+    }
 }
-
-    

@@ -9,9 +9,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.util.Vector;
 
 public class PugPounce extends BaseAbility {
-    private double basePrimaryDamage;
     private boolean isCharging = false;
-    private float originalRegen;
     private final float chargingRegen;
     private final double damagePerEnergy;
     private final double baseStrength;
@@ -19,46 +17,32 @@ public class PugPounce extends BaseAbility {
     private final long buffDuration;
     private long buffEndTime;
     private float energyAtStart;
-    private final float upfrontCost;
 
     protected SoundEffect fireSound;
     protected SoundEffect activationSound;
 
     public PugPounce(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        this.chargingRegen = (float) config.getDouble("charging_regen", -2.0);
-        this.damagePerEnergy = config.getDouble("damage_per_energy", 0.1);
-        this.baseStrength = Configs.requireDouble(config, "base_strength");
-        this.strengthPerEnergy = Configs.requireDouble(config, "strength_per_energy");
-        this.buffDuration = config.getLong("buff_duration_ms", 3000);
-        this.upfrontCost = (float) config.getDouble("energy_cost", 30.0);
+        this.chargingRegen = (float) Configs.requireDouble(this.config, "charging_regen");
+        this.damagePerEnergy = Configs.requireDouble(this.config, "damage_per_energy");
+        this.baseStrength = Configs.requireDouble(this.config, "base_strength");
+        this.strengthPerEnergy = Configs.requireDouble(this.config, "strength_per_energy");
+        this.buffDuration = Configs.requireLong(this.config, "buff_duration_ms");
 
-        this.fireSound = new SoundEffect(config.getConfigurationSection("fire_sound"));
-        this.activationSound = new SoundEffect(this.config.getConfigurationSection("visuals.activation_sound"));
+        this.fireSound = new SoundEffect(Configs.requireSection(this.config, "fire_sound"));
+        this.activationSound = new SoundEffect(Configs.requireSection(this.config, "activation_sound"));
     }
 
     @Override
-    public void initialize(Hero hero) {
-        if (hero.getPrimaryAbility() != null) {
-            this.basePrimaryDamage = hero.getPrimaryAbility().getDamage();
-        }
-        this.originalRegen = hero.getEnergy().getRegenPerTick();
-    }
-
-    @Override
-    public boolean execute(Hero hero) {
-        if (isCharging || !canExecute(hero)) return false;
-        
-        perform(hero);
-        return true;
+    protected boolean canUse(Hero hero) {
+        return !isCharging;
     }
 
     @Override
     public void perform(Hero hero) {
         energyAtStart = hero.getEnergy().getCurrentEnergy();
-        hero.getEnergy().tryConsume(hero.getController(), upfrontCost);
         isCharging = true;
-        hero.getEnergy().setRegenPerTick(chargingRegen);
+        hero.getEnergy().setRegenOverride(this, chargingRegen);
         activationSound.play(hero.getController());
     }
 
@@ -80,32 +64,29 @@ public class PugPounce extends BaseAbility {
 
     private void pounce(Hero hero) {
         isCharging = false;
-        hero.getEnergy().setRegenPerTick(originalRegen);
+        hero.getEnergy().removeRegenOverride(this);
 
-        float energyUsed = energyAtStart - hero.getEnergy().getCurrentEnergy();
-        if (energyUsed < 0) energyUsed = 0;
+        float energyUsed = Math.max(0, energyAtStart - hero.getEnergy().getCurrentEnergy());
 
         Vector dir = hero.getController().getLocation().getDirection();
-        // energyUsed is measured from before the upfront cost is spent, so an instantly-released
-        // pounce already reads as upfrontCost of drain. Subtracting it makes strength_per_energy
-        // and damage_per_energy measure only the energy burned while holding sneak — an uncharged
-        // tap gives exactly base_strength and zero bonus damage.
-        double vel = baseStrength + ((energyUsed - upfrontCost) * strengthPerEnergy);
+        // BaseAbility already consumed energy_cost before perform(), so energyUsed measures only
+        // energy burned while holding sneak; an uncharged tap gives base_strength and zero bonus damage.
+        double vel = baseStrength + (energyUsed * strengthPerEnergy);
         hero.getController().setVelocity(dir.multiply(vel));
 
-        double bonusDamage = Math.max(0, energyUsed - upfrontCost) * damagePerEnergy;
+        double bonusDamage = energyUsed * damagePerEnergy;
         if (hero.getPrimaryAbility() != null) {
-            hero.getPrimaryAbility().setDamage(basePrimaryDamage + bonusDamage);
+            hero.getPrimaryAbility().addDamageFlat(this, bonusDamage);
         }
-        
+
         buffEndTime = System.currentTimeMillis() + buffDuration;
-        
+
         fireSound.play(hero.getController());
     }
 
     private void resetBuff(Hero hero) {
         if (hero.getPrimaryAbility() != null) {
-            hero.getPrimaryAbility().setDamage(basePrimaryDamage);
+            hero.getPrimaryAbility().removeDamageModifier(this);
         }
         buffEndTime = 0;
     }
@@ -113,8 +94,18 @@ public class PugPounce extends BaseAbility {
     @Override
     public void onDeath(Hero hero) {
         super.onDeath(hero);
+        clearState(hero);
+    }
+
+    @Override
+    public void onOwnerLost(Hero hero) {
+        super.onOwnerLost(hero);
+        clearState(hero);
+    }
+
+    private void clearState(Hero hero) {
         if (isCharging) {
-            hero.getEnergy().setRegenPerTick(originalRegen);
+            hero.getEnergy().removeRegenOverride(this);
             isCharging = false;
         }
         if (buffEndTime > 0) {

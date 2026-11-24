@@ -16,9 +16,11 @@ import me.stolyy.heroes.game.Team;
 import me.stolyy.heroes.game.TeamColor;
 import me.stolyy.heroes.npc.NpcHandle;
 import me.stolyy.heroes.npc.NpcServiceProvider;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
-import org.bukkit.Sound;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -28,7 +30,7 @@ import java.util.UUID;
 /**
  * A minion is a mostly-independent "mini hero": it owns its own controller, AI, and per-tick
  * behaviour, and resolves its game/team from fields the owner injects ONCE at {@link #spawn}.
- * It keeps a reference to its owner only for relationship behaviour (following, sounds), not for
+ * It keeps a reference to its owner only for relationship behaviour (following), not for
  * re-deriving game/team membership on every lookup.
  */
 public class MinionHero extends Hero {
@@ -84,7 +86,7 @@ public class MinionHero extends Hero {
         // dereference the entity (Attributes.setMaxHealth -> controller.getEntity().getAttribute),
         // so an unusable body throws there instead of reaching a later null check.
         LivingEntity entity = controller.getEntity();
-        if (!(entity instanceof org.bukkit.entity.Player minionPlayer)) {
+        if (!(entity instanceof Player minionPlayer)) {
             Heroes.getInstance().getLogger().severe(
                     "Minion '" + getName() + "' spawned without a usable player body; removing NPC.");
             NpcServiceProvider.get().remove(handle.id());
@@ -109,16 +111,16 @@ public class MinionHero extends Hero {
         // Hitbox.isValidTarget only accepts Player victims in ADVENTURE (the same rule
         // GameBotNpc.spawn and PracticeManager's dummies satisfy) — Citizens force-spawns NPCs
         // in the server default mode, which is why no hitbox could ever land on a minion.
-        minionPlayer.setGameMode(org.bukkit.GameMode.ADVENTURE);
+        minionPlayer.setGameMode(GameMode.ADVENTURE);
 
         // Apply equipment from skin if configured; the piece name (minion name, normalized)
-        // lets the owner's skin re-texture this specific piece (B21.2).
+        // lets the owner's skin re-texture this specific piece.
         String pieceName = getName().toLowerCase().replace(" ", "");
         CosmeticManager.applyMinion(controller, this, pieceName);
 
         // Full-body display (yml body: opt-in): applyMinion skipped the helmet for these; the
         // model rides the NPC as an ITEM_DISPLAY passenger instead (scale/anchor/yaw from yml).
-        org.bukkit.configuration.ConfigurationSection bodyConfig =
+        ConfigurationSection bodyConfig =
                 CosmeticManager.resolveMinionBody(this, pieceName);
         if (bodyConfig != null) {
             bodyDisplay = new MinionBodyDisplay(minionPlayer, bodyConfig, getName());
@@ -165,9 +167,9 @@ public class MinionHero extends Hero {
         // i-frames. Gamemode is the change detector — all four revert together, so the normal path
         // costs one comparison.
         BotController controller = (BotController) getController();
-        if (controller.getEntity() instanceof org.bukkit.entity.Player minionPlayer
-                && minionPlayer.getGameMode() != org.bukkit.GameMode.ADVENTURE) {
-            minionPlayer.setGameMode(org.bukkit.GameMode.ADVENTURE);
+        if (controller.getEntity() instanceof Player minionPlayer
+                && minionPlayer.getGameMode() != GameMode.ADVENTURE) {
+            minionPlayer.setGameMode(GameMode.ADVENTURE);
             minionPlayer.addPotionEffect(new PotionEffect(
                     PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, false, false, false));
             minionPlayer.setMaximumNoDamageTicks(1);
@@ -226,12 +228,6 @@ public class MinionHero extends Hero {
      * practice-range fallback, where there is no game to ask.
      */
     public TeamColor getTeamColor() { return game != null ? game.combatColor(ownerId) : teamColor; }
-
-    public void playSoundToOwner(Sound sound, float volume, float pitch) {
-        if (owner != null && owner.getController() != null && owner.getController().isPlayer()) {
-            owner.getController().playSound(sound, volume, pitch);
-        }
-    }
 
     public void setInvincible(boolean invincible) { this.invincible = invincible; }
     public boolean isInvincible() { return invincible; }

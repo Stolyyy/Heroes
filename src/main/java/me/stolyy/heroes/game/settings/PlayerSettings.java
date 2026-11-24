@@ -1,14 +1,15 @@
 package me.stolyy.heroes.game.settings;
 
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.util.GameConfigManager;
 
 public class PlayerSettings {
-    private int lives = GameConfigManager.getInt("defaults.team.lives", 3);
+    private int lives = Configs.requireInt(GameConfigManager.getGameConfig(), "defaults.team.lives");
     // Absolute starting/max health (not a bonus on top of the hero base). Range 0-1000.
-    private double health = GameConfigManager.getGameConfig().getDouble("defaults.team.health", 100.0);
-    private boolean friendlyFire = GameConfigManager.getBoolean("defaults.team.friendly-fire");
-    private boolean ultimatesEnabled = GameConfigManager.getGameConfig().getBoolean("defaults.team.ultimates-enabled", true);
-    private boolean randomizeHeroes = GameConfigManager.getBoolean("defaults.team.randomize-heroes");
+    private double health = Configs.requireDouble(GameConfigManager.getGameConfig(), "defaults.team.health");
+    private boolean friendlyFire = Configs.requireBoolean(GameConfigManager.getGameConfig(), "defaults.team.friendly-fire");
+    private boolean ultimatesEnabled = Configs.requireBoolean(GameConfigManager.getGameConfig(), "defaults.team.ultimates-enabled");
+    private boolean randomizeHeroes = Configs.requireBoolean(GameConfigManager.getGameConfig(), "defaults.team.randomize-heroes");
 
     public PlayerSettings() { }
 

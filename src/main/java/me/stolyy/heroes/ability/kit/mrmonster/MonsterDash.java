@@ -27,6 +27,8 @@ public class MonsterDash extends Dash {
     private boolean secondQueued;
     private int delayLeft = -1;
 
+    private boolean delayArmedThisTick;
+
     public MonsterDash(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
         this.firstDash = DashParams.of(Configs.requireSection(this.config, "dash1"));
@@ -35,13 +37,8 @@ public class MonsterDash extends Dash {
     }
 
     @Override
-    public boolean canExecute(Hero hero) {
-        if (sequenceActive) return false;
-        return super.canExecute(hero);
-    }
-
-    @Override
-    protected void startCooldown(Hero hero) {
+    protected boolean canUse(Hero hero) {
+        return !sequenceActive && super.canUse(hero);
     }
 
     @Override
@@ -49,24 +46,28 @@ public class MonsterDash extends Dash {
         sequenceActive = true;
         secondQueued = !hero.getController().isSneaking();
         delayLeft = -1;
+        delayArmedThisTick = false;
         applyParams(firstDash);
         super.perform(hero);
     }
 
     @Override
-    protected void onTick(Hero hero) {
-        if (currentDash != null) {
-            if (currentDash.tick()) {
-                currentDash = null;
-                if (secondQueued) {
-                    delayLeft = delayTicks;
-                } else {
-                    finishSequence();
-                }
-            }
+    protected void onDashEnd(Hero hero) {
+        if (secondQueued) {
+            delayLeft = delayTicks;
+            delayArmedThisTick = true;
+        } else {
+            finishSequence(hero);
+        }
+    }
+
+    @Override
+    protected void onDashTick(Hero hero) {
+        if (currentDash != null) return;
+        if (delayArmedThisTick) {
+            delayArmedThisTick = false;
             return;
         }
-
         if (delayLeft > 0) {
             delayLeft--;
             return;
@@ -79,24 +80,25 @@ public class MonsterDash extends Dash {
         }
     }
 
-    private void finishSequence() {
+    private void finishSequence(Hero hero) {
         sequenceActive = false;
-        getCooldownObject().start();
+        resolveCooldown(hero);
     }
 
     private void applyParams(DashParams params) {
-        this.speed = params.speed();
+        setBaseSpeed(params.speed());
         this.ticks = params.duration();
-        this.radius = params.radius();
-        this.damage = params.damage();
-        this.knockback = params.knockback();
+        setBaseRadius(params.radius());
+        setBaseDamage(params.damage());
+        setBaseKnockback(params.knockback());
     }
 
     @Override
     public void onDeath(Hero hero) {
         super.onDeath(hero);
-        if (sequenceActive) finishSequence();
+        sequenceActive = false;
         secondQueued = false;
         delayLeft = -1;
+        delayArmedThisTick = false;
     }
 }

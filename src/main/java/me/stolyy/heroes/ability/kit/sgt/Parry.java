@@ -32,14 +32,14 @@ public class Parry extends BaseAbility {
     private final SoundEffect successSound;
     private final SoundEffect missSound;
 
+    private final Object defenseKey = new Object();
+    private final Object buffKey = new Object();
+
     private boolean windowActive;
     private long windowEndMs;
 
     private boolean invulnActive;
     private long invulnEndMs;
-
-    private double originalDamageMultiplier;
-    private double originalKnockbackMultiplier;
 
     private boolean buffApplied;
     private long buffEndMs;
@@ -64,34 +64,21 @@ public class Parry extends BaseAbility {
         this.titleStayTicks = Configs.requireInt(titleSection, "stay_ticks");
         this.titleFadeOutTicks = Configs.requireInt(titleSection, "fade_out_ticks");
 
-        this.activationSound = new SoundEffect(this.config.getConfigurationSection("visuals.activation_sound"));
-        this.successSound = new SoundEffect(this.config.getConfigurationSection("visuals.success_sound"));
-        this.missSound = new SoundEffect(this.config.getConfigurationSection("visuals.miss_sound"));
-    }
-
-    public static Parry of(Hero hero) {
-        for (Ability passive : hero.getPassiveAbilities()) {
-            if (passive instanceof Parry parry) return parry;
-        }
-        return null;
+        this.activationSound = new SoundEffect(Configs.requireSection(this.config, "visuals.activation_sound"));
+        this.successSound = new SoundEffect(Configs.requireSection(this.config, "visuals.success_sound"));
+        this.missSound = new SoundEffect(Configs.requireSection(this.config, "visuals.miss_sound"));
     }
 
     @Override
-    public boolean canExecute(Hero hero) {
-        int currentEnergy = (int) hero.getEnergy().getCurrentEnergy();
-        if (cooldown.isReady(currentEnergy)) return true;
-
-        if (!cooldown.isInUse()) cooldown.sendNotReadyVisuals(hero, getName());
-        return false;
+    protected boolean canUse(Hero hero) {
+        return !cooldown.isInUse();
     }
 
     @Override
     public void perform(Hero hero) {
         if (!windowActive && !invulnActive) {
-            originalDamageMultiplier = hero.getAttributes().getDamageMultiplier();
-            originalKnockbackMultiplier = hero.getAttributes().getKnockbackMultiplier();
-            hero.getAttributes().setDamageMultiplier(parryDamageTakenMultiplier);
-            hero.getAttributes().setKnockbackMultiplier(parryKnockbackTakenMultiplier);
+            hero.getAttributes().addDamageTakenMultiplier(defenseKey, parryDamageTakenMultiplier);
+            hero.getAttributes().addKnockbackTakenMultiplier(defenseKey, parryKnockbackTakenMultiplier);
         }
         windowActive = true;
         invulnActive = false;
@@ -148,36 +135,32 @@ public class Parry extends BaseAbility {
         buffEndMs = System.currentTimeMillis() + buffDurationMs;
         if (buffApplied) return;
         buffApplied = true;
-        hero.getAttributes().setDamageDealtMultiplier(
-                hero.getAttributes().getDamageDealtMultiplier() * buffDamageDealtMultiplier);
-        hero.getAttributes().setKnockbackDealtMultiplier(
-                hero.getAttributes().getKnockbackDealtMultiplier() * buffKnockbackDealtMultiplier);
+        hero.getAttributes().addDamageDealtMultiplier(buffKey, buffDamageDealtMultiplier);
+        hero.getAttributes().addKnockbackDealtMultiplier(buffKey, buffKnockbackDealtMultiplier);
     }
 
     private void clearBuff(Hero hero) {
         if (!buffApplied) return;
         buffApplied = false;
-        hero.getAttributes().setDamageDealtMultiplier(
-                hero.getAttributes().getDamageDealtMultiplier() / buffDamageDealtMultiplier);
-        hero.getAttributes().setKnockbackDealtMultiplier(
-                hero.getAttributes().getKnockbackDealtMultiplier() / buffKnockbackDealtMultiplier);
+        hero.getAttributes().removeDamageDealtModifier(buffKey);
+        hero.getAttributes().removeKnockbackDealtModifier(buffKey);
     }
 
     private void closeWindow(Hero hero) {
         if (!windowActive) return;
         windowActive = false;
-        restoreMultipliers(hero);
+        removeDefenseModifiers(hero);
     }
 
     private void endInvuln(Hero hero) {
         if (!invulnActive) return;
         invulnActive = false;
-        restoreMultipliers(hero);
+        removeDefenseModifiers(hero);
     }
 
-    private void restoreMultipliers(Hero hero) {
-        hero.getAttributes().setDamageMultiplier(originalDamageMultiplier);
-        hero.getAttributes().setKnockbackMultiplier(originalKnockbackMultiplier);
+    private void removeDefenseModifiers(Hero hero) {
+        hero.getAttributes().removeDamageTakenModifier(defenseKey);
+        hero.getAttributes().removeKnockbackTakenModifier(defenseKey);
     }
 
     public boolean isCharged() { return buffApplied; }
@@ -185,6 +168,14 @@ public class Parry extends BaseAbility {
     @Override
     public void onDeath(Hero hero) {
         super.onDeath(hero);
+        closeWindow(hero);
+        endInvuln(hero);
+        clearBuff(hero);
+    }
+
+    @Override
+    public void onOwnerLost(Hero hero) {
+        super.onOwnerLost(hero);
         closeWindow(hero);
         endInvuln(hero);
         clearBuff(hero);

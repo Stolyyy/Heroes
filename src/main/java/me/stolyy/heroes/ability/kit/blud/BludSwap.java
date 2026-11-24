@@ -7,7 +7,7 @@ import me.stolyy.heroes.vfx.effect.SoundEffect;
 import org.bukkit.configuration.ConfigurationSection;
 
 /**
- * Blud PASSIVE_SWAP (B18.13) — cycles BludPrimary's mode: F forward, sneak+F backward
+ * Blud PASSIVE_SWAP — cycles BludPrimary's mode: F forward, sneak+F backward
  * (Controller.isSneaking, so bots could cycle too).
  */
 public class BludSwap extends BaseAbility {
@@ -16,14 +16,12 @@ public class BludSwap extends BaseAbility {
 
     public BludSwap(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        this.swapSound = new SoundEffect(this.config.getConfigurationSection("visuals.swap_sound"));
+        this.swapSound = SoundEffect.optional(this.config, "visuals.swap_sound");
     }
 
     @Override
     public void initialize(Hero hero) {
-        if (hero.getPrimaryAbility() instanceof BludPrimary p) {
-            this.primary = p;
-        }
+        this.primary = hero.findAbility(BludPrimary.class).orElse(null);
     }
 
     @Override

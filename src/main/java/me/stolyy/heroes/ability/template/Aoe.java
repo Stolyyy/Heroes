@@ -29,8 +29,8 @@ public class Aoe {
 
     private final Ability sourceAbility;
     private final double radius;
-    private final double damage;         // 0 means "use fallback from caller"
-    private final double knockback;      // 0 means "use fallback from caller"
+    private final double damage;         // 0 makes the blast visual/sound-only when knockback is also 0
+    private final double knockback;      // 0 makes the blast visual/sound-only when damage is also 0
     private final boolean piercesWalls;
     // aoe.kb_type: HIT_LOCATION radiates knockback out from the blast center; anything else
     // (the default) pushes attacker→victim by player positions. Center-radial is deliberately
@@ -51,13 +51,21 @@ public class Aoe {
         // Independent of the sibling abilities.<slot>.pierces_walls, which decides whether the
         // projectile survives contact with a wall. A rocket can stop dead on a wall and still have
         // its blast wrap the corner, or punch through and detonate with a wall-shadowed blast.
-        this.piercesWalls = section.getBoolean("pierces_walls", false);
-        this.kbFromCenter = "HIT_LOCATION".equalsIgnoreCase(section.getString("kb_type", ""));
+        this.piercesWalls = Configs.orTemplateBoolean(section, "pierces_walls", "aoe.pierces_walls");
+        String kbTypeStr = Configs.orTemplateString(section, "kb_type", "aoe.kb_type").toUpperCase();
+        if (kbTypeStr.equals("HIT_LOCATION")) {
+            this.kbFromCenter = true;
+        } else if (kbTypeStr.equals("POSITIONAL")) {
+            this.kbFromCenter = false;
+        } else {
+            throw new IllegalArgumentException("Unknown aoe.kb_type '" + kbTypeStr
+                    + "' (expected POSITIONAL or HIT_LOCATION)");
+        }
 
-        this.hitVisual = new VisualEffect(section.getConfigurationSection("hit_visual"));
-        this.hitSound = new SoundEffect(section.getConfigurationSection("hit_sound"));
-        this.centerVisual = new VisualEffect(section.getConfigurationSection("center_visual"));
-        this.centerSound = new SoundEffect(section.getConfigurationSection("center_sound"));
+        this.hitVisual = VisualEffect.optional(section, "hit_visual");
+        this.hitSound = SoundEffect.optional(section, "hit_sound");
+        this.centerVisual = VisualEffect.optional(section, "center_visual");
+        this.centerSound = SoundEffect.optional(section, "center_sound");
     }
 
     /**
@@ -67,10 +75,10 @@ public class Aoe {
      * @param trajectory       Travel direction of the shot that produced this blast, used to back the
      *                         center out of geometry. Null falls back to the attacker's eye.
      * @param attacker         The hero causing the explosion.
-     * @param excludeVictim    An optional LivingEntity to exclude from hits (e.g. the projectile's original target).
-     * @param fallbackDamage   Damage to use if this Aoe's damage is 0.
-     * @param fallbackKnockback Knockback to use if this Aoe's knockback is 0.
-     * @param onHitCallback    Optional callback invoked for each victim hit, with the victim and hit location.
+     * @param excludeVictim     An optional LivingEntity to exclude from hits (e.g. the projectile's original target).
+     * @param fallbackDamage    Unused; retained in overload signature for caller convenience.
+     * @param fallbackKnockback Unused; retained in overload signature for caller convenience.
+     * @param onHitCallback     Optional callback invoked for each victim hit, with the victim and hit location.
      */
     public void detonate(Location rawCenter, @Nullable Vector trajectory, Hero attacker,
                          @Nullable LivingEntity excludeVictim,
@@ -82,8 +90,11 @@ public class Aoe {
         centerVisual.play(center, attacker.getSkin().getId());
         centerSound.play(center, attacker.getController());
 
-        final double effectiveDmg = damage > 0 ? damage : fallbackDamage;
-        final double effectiveKb = knockback > 0 ? knockback : fallbackKnockback;
+        final double effectiveDmg = damage;
+        final double effectiveKb = knockback;
+        if (effectiveDmg == 0 && effectiveKb == 0 && onHitCallback == null) {
+            return;
+        }
 
         Hitbox hitbox = Hitbox.sphere(center, radius)
                 .exclude(attacker.getController().getEntity())
@@ -99,6 +110,8 @@ public class Aoe {
             hitSound.play(target.getEyeLocation(), attacker.getController());
             hitVisual.play(target.getEyeLocation());
 
+            attacker.triggerAbilityHit(sourceAbility, target);
+
             Interactions.InteractionBuilder interaction =
                     Interactions.on(attacker.getController().getEntity(), target)
                             .abilityName(sourceAbility != null ? sourceAbility.getName() : null)
@@ -108,8 +121,6 @@ public class Aoe {
             // blast into radiating from its center instead.
             if (kbFromCenter) interaction.fromLocation(center);
             interaction.execute();
-
-            attacker.triggerAbilityHit(sourceAbility, target);
 
             if (onHitCallback != null) {
                 onHitCallback.accept(target, hitLoc);
@@ -134,16 +145,14 @@ public class Aoe {
         detonate(center, null, attacker, excludeVictim, fallbackDamage, fallbackKnockback, null);
     }
 
-    /**
-     * A direct hit resolves its center by ray-tracing the victim's AABB expanded by the PROJECTILE
-     * radius, so a fat projectile can plant it a full radius past the victim — for bulk (1.5) that is
-     * a block and a half under their feet, buried in the floor. A center sunk r/2 deep leaves only
-     * ~16% of the blast volume above ground and turns the radial knockback vector near-vertical,
-     * which reads as "the rocket did nothing". Retreat along the path the shot arrived on until the
-     * center is clear of geometry, capped at the blast radius so a detonation can never relocate
-     * outside its own sphere. Runs before any visual so particle, damage sphere and knockback origin
-     * all agree on where the explosion was.
-     */
+    // A direct hit resolves its center by ray-tracing the victim's AABB expanded by the PROJECTILE
+    // radius, so a fat projectile can plant it a full radius past the victim — for bulk (1.5) that is
+    // a block and a half under their feet, buried in the floor. A center sunk r/2 deep leaves only
+    // ~16% of the blast volume above ground and turns the radial knockback vector near-vertical,
+    // which reads as "the rocket did nothing". Retreat along the path the shot arrived on until the
+    // center is clear of geometry, capped at the blast radius so a detonation can never relocate
+    // outside its own sphere. Runs before any visual so particle, damage sphere and knockback origin
+    // all agree on where the explosion was.
     private Location resolveCenter(Location center, @Nullable Vector trajectory, Hero attacker) {
         if (!WallDetection.isInsideSolid(center)) return center;
 

@@ -3,6 +3,8 @@ package me.stolyy.heroes.game;
 public enum GameEndReason {
     TIMEOUT,
     LAST_TEAM_STANDING,
+    KILL_TARGET,
+    HERO_EXHAUSTION,
     FORFEIT,
     /**
      * Admin force-end (/forceend). The round is discarded: no winner is discovered, no win

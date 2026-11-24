@@ -7,6 +7,10 @@ import me.stolyy.heroes.vfx.effect.SoundEffect;
 import me.stolyy.heroes.vfx.effect.VisualEffect;
 import org.bukkit.util.Vector;
 
+/**
+ * Base multi-jump and mobility mechanic attached to each {@link Hero}, extended by custom
+ * kit mobility types (glides, directional launches, dark jumps).
+ */
 public class DoubleJump {
     protected int maxJumps;
     protected int jumpsUsed;
@@ -98,4 +102,11 @@ public class DoubleJump {
     public int getRemainingJumps() { return maxJumps - jumpsUsed; }
 
     public void tick(Hero hero) { }
+
+    /** Called while the hero is eliminated/dormant so independent sub-projectiles (e.g. Defecake) keep resolving. */
+    public void tickDormant(Hero hero) { }
+
+    public void onDeath(Hero hero) { }
+
+    public void onOwnerLost(Hero hero) { }
 }

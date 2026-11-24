@@ -18,10 +18,8 @@ public class PlayerLeaveListener implements Listener {
         QueueManager.leaveQueue(player);
         GUIManager.closeAndCleanup(player);
         PartyManager.leaveParty(player);
-        // Hero teardown happens inside GameManager.leaveGame -> Game.removePlayer ->
-        // HeroManager.removePlayer. A second direct call here would double-fire the
-        // onDeath/onOwnerLost teardown hooks (lobby players have no hero to remove).
-        GameManager.leaveGame(player, false);
+        // Hero teardown happens inside GameManager.detach -> Game.removePlayer -> HeroManager.removePlayer.
+        GameManager.detach(player);
         PlayerStatsManager.unload(player.getUniqueId());
     }
 }

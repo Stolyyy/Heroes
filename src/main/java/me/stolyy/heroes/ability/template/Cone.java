@@ -1,16 +1,23 @@
 package me.stolyy.heroes.ability.template;
 
+import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.ability.AbilityType;
 import me.stolyy.heroes.hero.Hero;
-import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
+import me.stolyy.heroes.physics.Hitbox;
 import me.stolyy.heroes.physics.Interactions;
+import me.stolyy.heroes.util.Configs;
+import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.vfx.effect.SoundEffect;
 import me.stolyy.heroes.vfx.effect.VisualEffect;
-import me.stolyy.heroes.physics.Hitbox;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
+/**
+ * Frustum-cone blast template supporting optional multi-tick lingering detection and ring/cone
+ * particle visuals.
+ */
 public abstract class Cone extends BaseAbility {
     protected double range;
     // Frustum option: the cone starts this wide at the caster instead of tapering to a point —
@@ -36,19 +43,26 @@ public abstract class Cone extends BaseAbility {
     private final int replayDelayTicks;
 
     public Cone(ConfigurationSection config, HeroSkin skin) {
-        super(config, skin);
-        this.range = this.config.getDouble("range", 5.0);
-        this.minRadius = this.config.getDouble("min_radius", 0.0);
-        this.spacing = this.config.getDouble("visuals.spacing", 1.0);
-        this.piercesWalls = this.config.getBoolean("pierces_walls", false);
-        this.replayDelayTicks = this.config.getInt("visuals.replay_delay_ticks", -1); // -1 = linger midpoint
+        this(config, skin, null);
+    }
 
-        this.activationSound = new SoundEffect(this.config.getConfigurationSection("visuals.activation_sound"));
-        this.hitSound = new SoundEffect(this.config.getConfigurationSection("visuals.hit_sound"));
-        
-        this.coneVisual = new VisualEffect(this.config.getConfigurationSection("visuals.cone_visual"));
-        this.ringVisual = new VisualEffect(this.config.getConfigurationSection("visuals.ring_visual"));
-        this.hitVisual = new VisualEffect(this.config.getConfigurationSection("visuals.hit_visual"));
+    protected Cone(ConfigurationSection config, HeroSkin skin, AbilityType explicitType) {
+        super(config, skin, explicitType);
+        this.range = Configs.orTemplate(this.config, "range", "cone.range");
+        this.minRadius = Configs.orTemplate(this.config, "min_radius", "cone.min_radius");
+        this.spacing = Configs.orTemplate(this.config, "visuals.spacing", "cone.spacing");
+        if (!Double.isFinite(this.spacing) || this.spacing <= 0) {
+            throw new IllegalArgumentException("Cone visuals.spacing must be > 0, got " + this.spacing);
+        }
+        this.piercesWalls = Configs.orTemplateBoolean(this.config, "pierces_walls", "cone.pierces_walls");
+        this.replayDelayTicks = Configs.orTemplateInt(this.config, "visuals.replay_delay_ticks", "cone.replay_delay_ticks");
+
+        this.activationSound = SoundEffect.optional(this.config, "visuals.activation_sound");
+        this.hitSound = SoundEffect.optional(this.config, "visuals.hit_sound");
+
+        this.coneVisual = VisualEffect.optional(this.config, "visuals.cone_visual");
+        this.ringVisual = VisualEffect.optional(this.config, "visuals.ring_visual");
+        this.hitVisual = VisualEffect.optional(this.config, "visuals.hit_visual");
     }
 
     @Override
@@ -66,7 +80,7 @@ public abstract class Cone extends BaseAbility {
         hitbox.check();
         displayVisuals(hero, start, lingerDirection);
 
-        int totalTicks = (int) (activeDuration / 50);
+        int totalTicks = (int) (activeDuration / Heroes.MS_PER_TICK);
         if (totalTicks > 1) {
             lingerHitbox = hitbox;
             lingerTicksLeft = totalTicks - 1; // this tick already checked
@@ -75,27 +89,30 @@ public abstract class Cone extends BaseAbility {
     }
 
     @Override
-    protected void onTick(Hero hero) {
-        if (lingerHitbox == null && replayTicksLeft <= 0) return;
-        if (hero.getController() == null || hero.getController().getEntity() == null) {
-            clearLinger();
-            return;
-        }
-
-        Location eye = hero.getController().getEyeLocation();
-        if (lingerHitbox != null) {
-            lingerDirection = eye.getDirection();
-            lingerHitbox.moveTo(eye).reorient(lingerDirection).check();
-            if (--lingerTicksLeft <= 0) {
-                lingerHitbox = null;
-                lingerTicksLeft = 0;
+    protected final void onTick(Hero hero) {
+        if (lingerHitbox != null || replayTicksLeft > 0) {
+            if (hero.getController() == null || hero.getController().getEntity() == null) {
+                clearLinger();
+            } else {
+                Location eye = hero.getController().getEyeLocation();
+                if (lingerHitbox != null) {
+                    lingerDirection = eye.getDirection();
+                    lingerHitbox.moveTo(eye).reorient(lingerDirection).check();
+                    if (--lingerTicksLeft <= 0) {
+                        lingerHitbox = null;
+                        lingerTicksLeft = 0;
+                    }
+                }
+                // The replay may outlive the linger hitbox (see field comment) — it follows current aim.
+                if (replayTicksLeft > 0 && --replayTicksLeft == 0) {
+                    displayVisuals(hero, eye, eye.getDirection());
+                }
             }
         }
-        // The replay may outlive the linger hitbox (see field comment) — it follows current aim.
-        if (replayTicksLeft > 0 && --replayTicksLeft == 0) {
-            displayVisuals(hero, eye, eye.getDirection());
-        }
+        onConeTick(hero);
     }
+
+    protected void onConeTick(Hero hero) {}
 
     private void clearLinger() {
         lingerHitbox = null;
@@ -122,13 +139,11 @@ public abstract class Cone extends BaseAbility {
         ringVisual.play(endLoc, direction, radius, hero.getSkin().getId());
     }
 
-    protected double calcDamage(Hero hero, LivingEntity victim) { return damage; }
-    protected double calcKnockback(Hero hero, LivingEntity victim) { return knockback; }
-
     protected void applyInteraction(Hero hero, LivingEntity victim, Vector direction) {
+        Interactions.InteractionBuilder interaction = hit(hero, victim);
         double dmg = calcDamage(hero, victim);
         double kb = calcKnockback(hero, victim);
-        Interactions.on(hero.getController().getEntity(), victim).abilityName(getName()).damage(dmg).knockback(kb).direction(direction).execute();
+        interaction.damage(dmg).knockback(kb).direction(direction).execute();
     }
 
     protected void onHit(Hero hero, LivingEntity victim, Vector direction) {
@@ -136,6 +151,4 @@ public abstract class Cone extends BaseAbility {
         hitVisual.play(victim.getEyeLocation());
         applyInteraction(hero, victim, direction);
     }
-
-    @Override public void onHit(Hero attacker, LivingEntity victim) { }
 }

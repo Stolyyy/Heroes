@@ -15,10 +15,9 @@ import org.bukkit.util.Vector;
  * project a landing for (this deliberately does NOT special-case arcing/gravity abilities —
  * a dash lands where {@code speed x duration} says it lands, full stop).
  *
- * <p>Recovery allowance (default ON): a dash that would land over the void is still permitted
- * when the bot has at least one double jump left — "dash off then jump back" is a legitimate
- * recovery play, not a suicide. It is vetoed only when the bot has nothing left to recover
- * with. Modeled on {@link JumpSafety}, whose reach projection makes the same trade for jumps.
+ * <p>A dash that would land over the void is still permitted when the bot has at least one
+ * double jump remaining to recover back onto the stage; it is vetoed only when no jumps remain.
+ * Modeled on {@link JumpSafety}, whose reach projection makes the same tradeoff.
  */
 public final class DashSafety {
     private DashSafety() {

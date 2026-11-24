@@ -113,11 +113,9 @@ public final class YmlSurgeon {
     // Path walking
     // -----------------------------------------------------------------------
 
-    /**
-     * Walks {@code segments} through the lines and returns the line index of the FINAL segment's
-     * key line. Windows narrow as the walk descends: a mapping segment narrows to the key's block,
-     * a list-type segment narrows to the matched {@code - type:} item's block.
-     */
+    // Walks segments through the lines and returns the line index of the FINAL segment's key
+    // line. Windows narrow as the walk descends: a mapping segment narrows to the key's block,
+    // a list-type segment narrows to the matched "- type:" item's block.
     private static int locate(File file, List<String> lines, String[] segments) {
         int start = 0;
         int end = lines.size();
@@ -132,6 +130,7 @@ public final class YmlSurgeon {
                     throw new IllegalStateException("Could not locate '" + segment + "' (in path "
                             + String.join(".", segments) + ") in " + file.getName());
                 }
+                if (si == segments.length - 1) return found;
                 // Narrow to the item block: everything more indented than the dash line, until
                 // the next item at the same indent or a dedent.
                 int itemIndent = indentOf(lines.get(found));
@@ -175,7 +174,7 @@ public final class YmlSurgeon {
         return -1;
     }
 
-    /** End of a mapping key's block: first line dedented below, or a same-indent non-item line. */
+    // End of a mapping key's block: first line dedented below, or a same-indent non-item line.
     private static int blockEnd(List<String> lines, int keyIdx, int keyIndent) {
         for (int i = keyIdx + 1; i < lines.size(); i++) {
             String line = lines.get(i);
@@ -187,7 +186,7 @@ public final class YmlSurgeon {
         return lines.size();
     }
 
-    /** End of a list item's block: next item dash at the same indent, or any dedent below it. */
+    // End of a list item's block: next item dash at the same indent, or any dedent below it.
     private static int itemBlockEnd(List<String> lines, int dashIdx, int itemIndent) {
         for (int i = dashIdx + 1; i < lines.size(); i++) {
             String line = lines.get(i);
@@ -218,7 +217,7 @@ public final class YmlSurgeon {
         return s.isEmpty() || s.startsWith("#");
     }
 
-    /** The scalar of a {@code - value  # comment} list line. */
+    // The scalar of a "- value  # comment" list line.
     private static String scalarOf(String itemLine) {
         String s = stripped(itemLine).substring(2); // past "- "
         int hash = s.indexOf('#');
@@ -234,7 +233,7 @@ public final class YmlSurgeon {
         }
     }
 
-    /** Validates the result still parses as YAML, then writes. Never writes a broken file. */
+    // Validates the result still parses as YAML, then writes. Never writes a broken file.
     private static void write(File file, List<String> lines) {
         String text = String.join("\n", lines) + "\n";
         try {

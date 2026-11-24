@@ -3,8 +3,10 @@ package me.stolyy.heroes.ability.kit.cakemonster;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroStats;
 import me.stolyy.heroes.ability.Ability;
+import me.stolyy.heroes.ability.AbilityType;
 import me.stolyy.heroes.ability.template.Projectile;
 import me.stolyy.heroes.control.Controller;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.hero.mechanics.DoubleJump;
 import me.stolyy.heroes.vfx.effect.SoundEffect;
@@ -28,13 +30,13 @@ public class Defecake extends DoubleJump {
     public Defecake(HeroStats.JumpStats stats, ConfigurationSection config, HeroSkin skin) {
         super(stats);
         cake = new CakePoop(config, skin);
-        this.energyCost = config.getInt("energy_cost");
+        this.energyCost = Configs.requireInt(config, "energy_cost");
 
-        this.defeXStrength = config.getDouble("defe_x_strength");
-        this.defeYStrength = config.getDouble("defe_y_strength");
+        this.defeXStrength = Configs.requireDouble(config, "defe_x_strength");
+        this.defeYStrength = Configs.requireDouble(config, "defe_y_strength");
 
-        this.defeSound = new SoundEffect(config.getConfigurationSection("visuals.defe_sound"));
-        this.defeVisual = new VisualEffect(config.getConfigurationSection("visuals.defe_visual"));
+        this.defeSound = SoundEffect.optional(config, "visuals.defe_sound");
+        this.defeVisual = new VisualEffect(Configs.requireSection(config, "visuals.defe_visual"));
     }
 
     @Override
@@ -85,10 +87,25 @@ public class Defecake extends DoubleJump {
         cake.tick(hero);
     }
 
+    @Override
+    public void tickDormant(Hero hero) {
+        cake.tick(hero);
+    }
+
+    @Override
+    public void onDeath(Hero hero) {
+        cake.onDeath(hero);
+    }
+
+    @Override
+    public void onOwnerLost(Hero hero) {
+        cake.onOwnerLost(hero);
+    }
+
 
     private static class CakePoop extends Projectile {
         public CakePoop(ConfigurationSection config, HeroSkin skin) {
-            super(config, skin);
+            super(config, skin, AbilityType.PASSIVE);
         }
 
         @Override

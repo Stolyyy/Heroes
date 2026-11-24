@@ -4,6 +4,7 @@ import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroStats;
 import me.stolyy.heroes.control.Controller;
 import me.stolyy.heroes.hero.mechanics.DoubleJump;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.effect.SoundEffect;
 import me.stolyy.heroes.vfx.effect.VisualEffect;
 import org.bukkit.configuration.ConfigurationSection;
@@ -29,14 +30,14 @@ public class Botglide extends DoubleJump {
     public Botglide(HeroStats.JumpStats stats, ConfigurationSection config) {
         super(stats);
 
-        this.energyThreshold = config.getInt("energy_threshold");
-        this.glideStrength = config.getDouble("glide_strength");
-        this.maxGlideTicks = config.getInt("max_glide_ticks");
-        this.loopSoundInterval = config.getInt("loop_sound_interval", 100);
+        this.energyThreshold = Configs.requireInt(config, "energy_threshold");
+        this.glideStrength = Configs.requireDouble(config, "glide_strength");
+        this.maxGlideTicks = Configs.requireInt(config, "max_glide_ticks");
+        this.loopSoundInterval = Configs.requireInt(config, "loop_sound_interval");
 
-        this.glideStartSound = new SoundEffect(config.getConfigurationSection("visuals.start_sound"));
-        this.glideLoopSound = new SoundEffect(config.getConfigurationSection("visuals.loop_sound"));
-        this.glideVisual = new VisualEffect(config.getConfigurationSection("visuals.glide_visual"));
+        this.glideStartSound = new SoundEffect(Configs.requireSection(config, "visuals.start_sound"));
+        this.glideLoopSound = SoundEffect.optional(config, "visuals.loop_sound");
+        this.glideVisual = new VisualEffect(Configs.requireSection(config, "visuals.glide_visual"));
     }
 
     @Override
@@ -126,9 +127,5 @@ public class Botglide extends DoubleJump {
     public void onLand(Hero hero) {
         super.onLand(hero);
         endGlide();
-    }
-
-    public boolean isGliding() {
-        return isGliding;
     }
 }

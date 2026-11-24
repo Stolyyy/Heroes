@@ -3,6 +3,7 @@ package me.stolyy.heroes.progression;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.GameMode;
 import me.stolyy.heroes.physics.Interactions;
+import me.stolyy.heroes.vfx.ui.visual.BoardDisplay;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -12,29 +13,42 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
+/**
+ * Persistent YAML storage and in-memory cache for per-player stats, plus an async-seeded
+ * {@code BoardEntry} index that answers leaderboard rankings without touching disk.
+ */
 public class PlayerStatsManager {
     private static File statsFolder;
     // Concurrent: the autosave and the async chat renderer read it off the main thread.
-    private static final Map<UUID, PlayerStats> cache = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final Map<UUID, PlayerStats> cache = new ConcurrentHashMap<>();
     private static BukkitTask autoSaveTask;
 
-    /**
-     * In-memory board index: one immutable {@link BoardEntry} snapshot per known stats file,
-     * holding just the numbers the leaderboards rank on. Seeded from disk ONCE at startup;
-     * from then on the folder is never walked again for a ranking — a game end only changes
-     * the participants' numbers, and those live in {@link #cache}, which
-     * {@link #boardPool()} overlays on top of this index at read time. The index only has to
-     * be right for players NOT in the cache, whose numbers cannot change while they're offline;
-     * {@link #saveStats} refreshes a player's snapshot at the same moment it persists them, so
-     * the entry is current by the time {@link #unload} evicts them from the cache.
-     *
-     * <p>ConcurrentHashMap because the seed and the autosave publish from an async thread;
-     * entries are immutable records, so cross-thread publication via the map is safe.
-     */
-    private static final Map<UUID, BoardEntry> boardIndex = new java.util.concurrent.ConcurrentHashMap<>();
+    // In-memory board index: one immutable BoardEntry snapshot per known stats file, holding
+    // just the numbers the leaderboards rank on. Seeded from disk ONCE at startup; from then on
+    // the folder is never walked again for a ranking — a game end only changes the participants'
+    // numbers, and those live in cache, which boardPool() overlays on top of this index at read
+    // time. The index only has to be right for players NOT in the cache, whose numbers cannot
+    // change while offline; saveStats refreshes a player's snapshot when persisting them so it is
+    // current before unload evicts them.
+    // ConcurrentHashMap because seed and autosave publish from an async thread; entries are
+    // immutable records, so cross-thread publication via the map is safe.
+    private static final Map<UUID, BoardEntry> boardIndex = new ConcurrentHashMap<>();
 
     public static void initialize() {
         statsFolder = new File(Heroes.getInstance().getDataFolder(), "player-stats");
@@ -45,11 +59,9 @@ public class PlayerStatsManager {
         seedBoardIndexAsync();
     }
 
-    /**
-     * The one full disk walk, at startup, off-thread. Until it completes the boards can only
-     * show cached (online) players — a refresh fires again on completion to backfill. Files
-     * loaded here are thread-confined; only the immutable snapshots are published.
-     */
+    // The one full disk walk, at startup, off-thread. Until it completes the boards can only
+    // show cached (online) players — a refresh fires again on completion to backfill. Files
+    // loaded here are thread-confined; only the immutable snapshots are published.
     private static void seedBoardIndexAsync() {
         Heroes plugin = Heroes.getInstance();
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -59,7 +71,8 @@ public class PlayerStatsManager {
                     UUID id;
                     try {
                         id = UUID.fromString(file.getName().replace(".yml", ""));
-                    } catch (IllegalArgumentException ignored) { // non-uuid file name
+                    } catch (IllegalArgumentException e) {
+                        plugin.getLogger().warning("Skipping non-UUID file in stats folder: " + file.getName());
                         continue;
                     }
                     PlayerStats stats = loadStats(id);
@@ -68,13 +81,7 @@ public class PlayerStatsManager {
                     }
                 }
             }
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                // Boards may have spawned (and refreshed against a half-empty index) before the
-                // seed landed — refresh again now that the offline players exist. Null-guarded
-                // the same way Game.end guards these: the boards are optional lobby furniture.
-                if (Heroes.getLeaderboardDisplay() != null) Heroes.getLeaderboardDisplay().refresh();
-                if (Heroes.getLevelLeaderboardDisplay() != null) Heroes.getLevelLeaderboardDisplay().refresh();
-            });
+            Bukkit.getScheduler().runTask(plugin, BoardDisplay::refreshAll);
         });
     }
 
@@ -116,9 +123,10 @@ public class PlayerStatsManager {
 
     /**
      * Resolves stats by player NAME, offline players included: online lookup first, then the
-     * cache by last-known name, then a scan of the on-disk stat files. Offline results are NOT
-     * entered into the write-back cache — the autosave loop would otherwise start rewriting
-     * files for players who aren't on. Null when the name has never been seen.
+     * cache by last-known name, then the in-memory board index (loading only the single matching
+     * file from disk). Offline results are NOT entered into the write-back cache — the autosave
+     * loop would otherwise start rewriting files for players who aren't on. Null when the name
+     * has never been seen.
      */
     public static PlayerStats lookupByName(String name) {
         Player online = Bukkit.getPlayerExact(name);
@@ -128,15 +136,10 @@ public class PlayerStatsManager {
             if (name.equalsIgnoreCase(stats.lastKnownName())) return stats;
         }
 
-        File[] files = statsFolder.listFiles((dir, n) -> n.endsWith(".yml"));
-        if (files == null) return null;
-        for (File file : files) {
-            try {
-                UUID id = UUID.fromString(file.getName().replace(".yml", ""));
-                if (cache.containsKey(id)) continue; // cache already checked above
-                PlayerStats stats = loadStats(id);
-                if (stats != null && name.equalsIgnoreCase(stats.lastKnownName())) return stats;
-            } catch (IllegalArgumentException ignored) {} // non-uuid file name
+        for (Map.Entry<UUID, BoardEntry> entry : boardIndex.entrySet()) {
+            if (name.equalsIgnoreCase(entry.getValue().name())) {
+                return loadStats(entry.getKey());
+            }
         }
         return null;
     }
@@ -158,8 +161,8 @@ public class PlayerStatsManager {
         try {
             config.save(file);
         } catch (IOException e) {
-            Heroes.getInstance().getLogger().severe("Failed to save stats for " + playerId);
-            e.printStackTrace();
+            Heroes.getInstance().getLogger().log(Level.SEVERE,
+                    "Failed to save stats for " + playerId, e);
         }
     }
 
@@ -238,7 +241,7 @@ public class PlayerStatsManager {
         stats.setEquippedCharms(new HashSet<>(charmNames));
 
         // Unlock economy. Missing keys (pre-progression files) fall back to the starting
-        // seed — that IS the migration path for existing players (B25.3).
+        // seed — that IS the migration path for existing players.
         stats.setTokenBalance(config.getInt("token-balance", ProgressionConfig.getStartingTokens()));
         stats.setSeasonChampion(config.getBoolean("season-champion", false));
         List<String> unlocked = config.getStringList("unlocked-heroes");
@@ -260,7 +263,10 @@ public class PlayerStatsManager {
                 try {
                     GameMode mode = GameMode.valueOf(key);
                     stats.setElo(mode, eloSection.getInt(key));
-                } catch (IllegalArgumentException ignored) {}
+                } catch (IllegalArgumentException e) {
+                    Heroes.getInstance().getLogger().warning(
+                            "Ignoring unknown GameMode '" + key + "' in elo stats for " + playerId);
+                }
             }
         }
 
@@ -312,14 +318,17 @@ public class PlayerStatsManager {
                             }
                         }
                     }
-                } catch (IllegalArgumentException ignored) {}
+                } catch (IllegalArgumentException e) {
+                    Heroes.getInstance().getLogger().warning(
+                            "Ignoring unknown GameMode '" + modeName + "' in mode stats for " + playerId);
+                }
             }
         }
 
         return stats;
     }
 
-    /** Total XP represented by being {@code level} with {@code xpIntoLevel} spare (curve sum). */
+    // Total XP represented by being `level` with `xpIntoLevel` spare (curve sum).
     private static int cumulativeXp(int level, int xpIntoLevel) {
         long total = xpIntoLevel;
         for (int l = 0; l < level; l++) {
@@ -376,12 +385,10 @@ public class PlayerStatsManager {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * The ranking pool: every indexed (offline) player, with a FRESH snapshot taken for anyone
-     * currently cached — a game that just ended changed only its participants' numbers, and they
-     * are by definition in the cache, so the overlay is what makes the boards current without
-     * ever re-reading a file. Main-thread only (reads live cached stats).
-     */
+    // The ranking pool: every indexed (offline) player, with a FRESH snapshot taken for anyone
+    // currently cached — a game that just ended changed only its participants' numbers, and they
+    // are by definition in the cache, so the overlay is what makes the boards current without
+    // ever re-reading a file. Main-thread only (reads live cached stats).
     private static List<BoardEntry> boardPool() {
         Map<UUID, BoardEntry> pool = new HashMap<>(boardIndex);
         for (Map.Entry<UUID, PlayerStats> entry : cache.entrySet()) {
@@ -392,11 +399,9 @@ public class PlayerStatsManager {
         return new ArrayList<>(pool.values());
     }
 
-    /**
-     * Immutable snapshot of the numbers the leaderboards rank on. Snapshotting (rather than
-     * holding PlayerStats references) is what makes the index safe to publish across threads
-     * and immune to later mutation of the live object.
-     */
+    // Immutable snapshot of the numbers the leaderboards rank on. Snapshotting (rather than
+    // holding PlayerStats references) is what makes the index safe to publish across threads
+    // and immune to later mutation of the live object.
     private record BoardEntry(String name, Map<GameMode, Integer> elo, Set<GameMode> playedModes,
                               int smashLevel, Map<String, Integer> heroLevels,
                               Map<Stat, Map<GameMode, Integer>> stats) {
@@ -439,11 +444,26 @@ public class PlayerStatsManager {
     public enum Stat {
         KILLS("Kills"), DEATHS("Deaths"), WINS("Wins"), GAMES("Games Played");
 
+        private static final List<String> TOKENS = List.of("kills", "deaths", "wins", "games");
         private final String displayName;
 
         Stat(String displayName) { this.displayName = displayName; }
 
         public String displayName() { return displayName; }
+        public String token() { return name().toLowerCase(Locale.ROOT); }
+
+        public static List<String> tokens() { return TOKENS; }
+
+        public static Optional<Stat> fromToken(String input) {
+            if (input == null) return Optional.empty();
+            return switch (input.toLowerCase(Locale.ROOT)) {
+                case "kills" -> Optional.of(KILLS);
+                case "deaths" -> Optional.of(DEATHS);
+                case "wins" -> Optional.of(WINS);
+                case "games" -> Optional.of(GAMES);
+                default -> Optional.empty();
+            };
+        }
     }
 
     /** One leaderboard row; {@code value} is elo or level depending on the query. */

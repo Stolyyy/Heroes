@@ -1,8 +1,8 @@
 package me.stolyy.heroes.control;
 
-import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.control.ai.BotAI;
-import me.stolyy.heroes.control.strategy.Strategy;
+import me.stolyy.heroes.game.PlayerVisibility;
+import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.npc.NpcHandle;
 import me.stolyy.heroes.npc.NpcService;
 import me.stolyy.heroes.npc.NpcServiceProvider;
@@ -10,19 +10,24 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
 import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 public class BotController implements Controller {
     private final NpcHandle npcHandle;
     private final NpcService npcService;
     private BotAI ai;
-    private Strategy strategy;
     private boolean wasOnGround;
 
     public BotController(NpcHandle handle) {
@@ -60,7 +65,7 @@ public class BotController implements Controller {
     }
 
     @Override
-    public void setAllowFlight(boolean allow) { /* no-op for bots */ }
+    public void setAllowFlight(boolean allow) {}
 
     @Override
     public boolean isOnGround() {
@@ -92,6 +97,94 @@ public class BotController implements Controller {
     }
 
     @Override
+    public void setSneaking(boolean sneaking) {
+        LivingEntity entity = getEntity();
+        if (entity != null) entity.setSneaking(sneaking);
+    }
+
+    @Override
+    public void setSprinting(boolean sprinting) {
+        if (getEntity() instanceof Player p && p.isSprinting() != sprinting) {
+            p.setSprinting(sprinting);
+        }
+    }
+
+    @Override
+    public void swingMainHand() {
+        LivingEntity entity = getEntity();
+        if (entity != null) entity.swingMainHand();
+    }
+
+    @Override
+    public void setFallDistance(float distance) {
+        LivingEntity entity = getEntity();
+        if (entity != null) entity.setFallDistance(distance);
+    }
+
+    @Override
+    public boolean isUseHeld() {
+        // Bots have no held-mouse input; keep held channels active until energy or duration ends.
+        return true;
+    }
+
+    @Override
+    public boolean isDrawingBow() {
+        return false;
+    }
+
+    @Override
+    public Vector getMovementAxes() {
+        return new Vector();
+    }
+
+    @Override
+    public void addPassenger(Entity passenger) {
+        LivingEntity entity = getEntity();
+        if (entity != null) entity.addPassenger(passenger);
+    }
+
+    @Override
+    public void removePassenger(Entity passenger) {
+        LivingEntity entity = getEntity();
+        if (entity != null) entity.removePassenger(passenger);
+    }
+
+    @Override
+    public boolean hasPassenger(Entity passenger) {
+        LivingEntity entity = getEntity();
+        return entity != null && entity.getPassengers().contains(passenger);
+    }
+
+    @Override
+    public void mount(Entity vehicle) {
+        LivingEntity entity = getEntity();
+        if (entity != null && vehicle != null) vehicle.addPassenger(entity);
+    }
+
+    @Override
+    public void leaveVehicle() {
+        LivingEntity entity = getEntity();
+        if (entity != null) entity.leaveVehicle();
+    }
+
+    @Override
+    public void addPotionEffect(PotionEffect effect) {
+        LivingEntity entity = getEntity();
+        if (entity != null) entity.addPotionEffect(effect);
+    }
+
+    @Override
+    public void removePotionEffect(PotionEffectType type) {
+        LivingEntity entity = getEntity();
+        if (entity != null) entity.removePotionEffect(type);
+    }
+
+    @Override
+    public void setGameMode(GameMode mode) {
+        if (getEntity() instanceof Player p) p.setGameMode(mode);
+    }
+
+    @Override
     public void setVelocity(Vector velocity) {
         LivingEntity entity = getEntity();
         if (entity != null) entity.setVelocity(velocity);
@@ -99,9 +192,7 @@ public class BotController implements Controller {
 
     @Override
     public void teleport(Location location) {
-        // Must go through Citizens rather than entity.teleport: the NPC's stored location and its
-        // Navigator state are only updated on NPC.teleport, so a raw entity teleport leaves the NPC
-        // believing it is still where it was and pathing back from a stale origin.
+        // Route through Citizens so Navigator origin and stored NPC location stay synchronized.
         npcService.teleport(npcHandle, location);
     }
 
@@ -112,30 +203,20 @@ public class BotController implements Controller {
         entity.setHealth(Objects.requireNonNull(entity.getAttribute(Attribute.MAX_HEALTH)).getValue());
     }
 
-    // --- Combat state ---
-
     /**
-     * Re-asserts the combat-ready entity state. Citizens re-creates the NPC entity in SURVIVAL on
-     * chunk load and always-keep-loaded is false, so this cannot be set once at spawn — it has to be
-     * re-asserted while the bot is in play. Same for MOVEMENT_SPEED: Citizens' BasicMobAI resets
-     * the BASE value to 0.3 on every entity re-creation, and player-NPC navigation reads exactly
-     * that base (see CitizensNpcService.setNavigationSpeed) — left unpinned, the bot's pace
-     * drifts after chunk churn.
+     * Re-asserts combat mode and base movement speed whenever Citizens re-creates the NPC entity
+     * across chunk loads.
      */
     public void ensureCombatState(Hero hero) {
-        if (!(getEntity() instanceof org.bukkit.entity.Player p)) return;
+        if (!(getEntity() instanceof Player p)) return;
 
-        double intended = hero.getAttributes().getMovementSpeed()
-                * hero.getAttributes().getSpeedMultiplier();
-        var speedAttr = p.getAttribute(Attribute.MOVEMENT_SPEED);
+        double intended = hero.getAttributes().getMovementSpeed();
+        AttributeInstance speedAttr = p.getAttribute(Attribute.MOVEMENT_SPEED);
         if (speedAttr != null && Math.abs(speedAttr.getBaseValue() - intended) > 1e-6) {
             speedAttr.setBaseValue(intended);
         }
 
-        // A bot must never carry the players' toggle-flight double-jump primer: with no client
-        // to fire (and MovementListener to cancel) PlayerToggleFlightEvent, mayfly on an NPC
-        // becomes literal hover the first time the server engages flight at a jump apex.
-        // setFlying(false) FIRST — CraftPlayer only rejects setFlying(true) without mayfly.
+        // Strip toggle-flight primer so NPCs without PlayerToggleFlightEvent handlers never hover.
         if (p.getAllowFlight() || p.isFlying()) {
             p.setFlying(false);
             p.setAllowFlight(false);
@@ -145,15 +226,10 @@ public class BotController implements Controller {
         p.setGameMode(GameMode.ADVENTURE);
         p.setMaximumNoDamageTicks(1);
         npcService.setProtected(npcHandle, false);
-        // A non-ADVENTURE gamemode means Citizens just re-created the entity (chunk churn):
-        // its fresh tab entry is globally listed again — re-scope it to this bot's game.
-        me.stolyy.heroes.game.Game.refreshBotListing(p);
+        PlayerVisibility.refreshBotListing(p);
     }
 
-    /**
-     * Edge-triggered landing detection. Bots never fire PlayerMoveEvent, which is the only thing
-     * that resets double jumps for players, so the airborne->grounded transition has to be polled.
-     */
+    /** Polls ground transitions so double jumps recharge without {@code PlayerMoveEvent}. */
     public void updateGroundState(Hero hero) {
         boolean onGround = isOnGround();
         if (onGround && !wasOnGround) {
@@ -163,8 +239,6 @@ public class BotController implements Controller {
         wasOnGround = onGround;
     }
 
-    // --- Navigation ---
-
     public void navigateTo(Location target) {
         npcService.navigateTo(npcHandle, target);
     }
@@ -173,17 +247,12 @@ public class BotController implements Controller {
         npcService.navigateToEntity(npcHandle, target, true);
     }
 
-    /**
-     * Citizens LocalParameters are per-navigation — a new setTarget resets them to defaults — so
-     * this must be re-applied after every navigate call, not once at spawn.
-     */
+    /** Must be called after every navigate call because Citizens resets local parameters per path. */
     public void setNavigationSpeed(float speedModifier) {
         npcService.setNavigationSpeed(npcHandle, speedModifier);
     }
 
-    /** Kiting facing (V2 §7): face this while navigating; null clears. Packet-level — needs
-     *  ProtocolLib to be visible; server-side facing still belongs to navigation. */
-    public void setNavigationLookAt(java.util.function.Supplier<Location> lookTarget) {
+    public void setNavigationLookAt(Supplier<Location> lookTarget) {
         npcService.setNavigationLookAt(npcHandle, lookTarget);
     }
 
@@ -199,55 +268,51 @@ public class BotController implements Controller {
         npcService.lookAt(npcHandle, target);
     }
 
-    // --- AI ---
-
-    public void setAI(BotAI ai) { this.ai = ai; }
+    public void setAI(BotAI ai) {
+        if (this.ai != null && this.ai != ai) {
+            this.ai.cleanup();
+        }
+        this.ai = ai;
+    }
     public BotAI getAI() { return ai; }
 
-    public void setStrategy(Strategy strategy) { this.strategy = strategy; }
-    public Strategy getStrategy() { return strategy; }
-
     public void tickAI(Hero hero) {
-        // A grabbed bot is a passenger with every input locked — its AI pausing entirely is
-        // the bot equivalent of a player who can't press anything. Same for its own respawn
-        // countdown: players can't act while respawning, so neither should the AI (it was
-        // acquiring targets and swinging from the respawn point). Eliminated is permanent
-        // respawning: an out-of-lives bot has no client left to press anything, ever.
         if (hero.actionsLocked() || hero.isRespawning() || hero.isEliminated()) return;
         if (ai != null) ai.tick(hero, this);
     }
 
-    // --- NPC Handle ---
-
     public NpcHandle getNpcHandle() { return npcHandle; }
-
-    // --- Stub implementations for Controller interface ---
 
     @Override public void sendMessage(Component message) {}
     @Override public void sendActionBar(Component message) {}
     @Override public void sendTitle(Component title, Component subtitle) {}
     @Override public void sendTitle(Component title, Component subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks) {}
-    @Override public void playSound(Object sound, float volume, float pitch) {}
     @Override public void updateEnergyDisplay(float percent, int value) {}
     @Override public void updateItemCooldown(int slotIndex, float progress) {}
 
-    @Override public void setInventoryItem(int slot, ItemStack item) {
-        // NPC "players" have a real inventory; slot 0 is the selected hotbar slot, so writing it is
-        // what puts the hero's ability item (and ult held-model swaps) visibly in the bot's hand.
-        if (getEntity() instanceof org.bukkit.entity.Player p) p.getInventory().setItem(slot, item);
+    @Override public ItemStack getInventoryItem(int slot) {
+        return getEntity() instanceof Player p ? p.getInventory().getItem(slot) : null;
     }
+
+    @Override public void setInventoryItem(int slot, ItemStack item) {
+        if (getEntity() instanceof Player p) p.getInventory().setItem(slot, item);
+    }
+
     @Override public void setHelmet(ItemStack item) {
         LivingEntity entity = getEntity();
         if (entity != null && entity.getEquipment() != null) entity.getEquipment().setHelmet(item);
     }
+
     @Override public void setChestplate(ItemStack item) {
         LivingEntity entity = getEntity();
         if (entity != null && entity.getEquipment() != null) entity.getEquipment().setChestplate(item);
     }
+
     @Override public void setLeggings(ItemStack item) {
         LivingEntity entity = getEntity();
         if (entity != null && entity.getEquipment() != null) entity.getEquipment().setLeggings(item);
     }
+
     @Override public void setBoots(ItemStack item) {
         LivingEntity entity = getEntity();
         if (entity != null && entity.getEquipment() != null) entity.getEquipment().setBoots(item);

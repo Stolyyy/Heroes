@@ -61,6 +61,26 @@ public final class Configs {
         return TemplateConfig.requireDouble(templatePath);
     }
 
+    public static int orTemplateInt(ConfigurationSection config, String key, String templatePath) {
+        if (config != null && config.contains(key)) return config.getInt(key);
+        return TemplateConfig.requireInt(templatePath);
+    }
+
+    public static long orTemplateLong(ConfigurationSection config, String key, String templatePath) {
+        if (config != null && config.contains(key)) return config.getLong(key);
+        return TemplateConfig.requireLong(templatePath);
+    }
+
+    public static boolean orTemplateBoolean(ConfigurationSection config, String key, String templatePath) {
+        if (config != null && config.contains(key)) return config.getBoolean(key);
+        return TemplateConfig.requireBoolean(templatePath);
+    }
+
+    public static String orTemplateString(ConfigurationSection config, String key, String templatePath) {
+        if (config != null && config.contains(key)) return config.getString(key);
+        return TemplateConfig.requireString(templatePath);
+    }
+
     private static void check(ConfigurationSection config, String key) {
         if (config == null) {
             throw new IllegalStateException("Missing config section while reading required key '" + key + "'");

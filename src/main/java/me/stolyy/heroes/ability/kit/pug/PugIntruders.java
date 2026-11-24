@@ -3,72 +3,44 @@ package me.stolyy.heroes.ability.kit.pug;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroBuilder;
 import me.stolyy.heroes.hero.minion.MinionHero;
-import me.stolyy.heroes.ability.kit.minions.basher.BasherAI;
-import me.stolyy.heroes.ability.kit.minions.princess.PrincessAI;
-import me.stolyy.heroes.ability.template.BaseAbility;
+import me.stolyy.heroes.ability.template.ActiveAbility;
+import me.stolyy.heroes.control.ai.BotAI;
+import me.stolyy.heroes.control.ai.MinionBotAI;
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
-import me.stolyy.heroes.vfx.effect.SoundEffect;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class PugIntruders extends BaseAbility {
-    private boolean isActive = false;
+public class PugIntruders extends ActiveAbility {
     private final List<MinionHero> summonedMinions = new ArrayList<>();
 
     private final ConfigurationSection basherConfig;
     private final ConfigurationSection princessConfig;
-    private final SoundEffect activationSound;
 
     public PugIntruders(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        this.basherConfig = this.config.getConfigurationSection("basher");
-        this.princessConfig = this.config.getConfigurationSection("princess");
-        this.activationSound = new SoundEffect(this.config.getConfigurationSection("visuals.activation_sound"));
+        this.basherConfig = Configs.requireSection(this.config, "basher");
+        this.princessConfig = Configs.requireSection(this.config, "princess");
     }
 
     @Override
-    public void perform(Hero hero) {
-        isActive = true;
-        activationSound.play(hero.getController());
-
+    protected void onActivate(Hero hero) {
         Location heroLoc = hero.getController().getLocation();
-
-        if (basherConfig != null) {
-            spawnMinion(hero, basherConfig, new BasherAI(basherConfig), heroLoc.clone().add(1, 0, 0));
-        }
-        if (princessConfig != null) {
-            spawnMinion(hero, princessConfig, new PrincessAI(princessConfig), heroLoc.clone().add(-1, 0, 0));
-        }
+        spawnMinion(hero, basherConfig, new MinionBotAI(basherConfig), heroLoc.clone().add(1, 0, 0));
+        spawnMinion(hero, princessConfig, new MinionBotAI(princessConfig), heroLoc.clone().add(-1, 0, 0));
     }
 
-    private void spawnMinion(Hero hero, ConfigurationSection minionConfig,
-                             me.stolyy.heroes.control.ai.BotAI ai, Location spawnLoc) {
+    private void spawnMinion(Hero hero, ConfigurationSection minionConfig, BotAI ai, Location spawnLoc) {
         MinionHero minion = HeroBuilder.buildMinion(minionConfig, hero);
-        // Invincibility now comes from the minion section's mandatory `invincible:` key, parsed in
-        // HeroBuilder.buildMinion, instead of being hardcoded for these two.
-        // spawn() wires the AI, injects the owner's game/team, and registers the minion.
-        // Game.gameTick drives the AI tick centrally — no manual tickAI loop needed here.
         minion.spawn(spawnLoc, ai);
-
         summonedMinions.add(minion);
     }
 
     @Override
-    protected void onTick(Hero hero) {
-        if (!isActive) return;
-
-        if (!getCooldownObject().isInUse()) {
-            onExpire(hero, null);
-        }
-    }
-
-    @Override
-    public void onExpire(Hero hero, Location location) {
-        if (!isActive) return;
-        isActive = false;
+    protected void onDeactivate(Hero hero) {
         for (MinionHero minion : summonedMinions) {
             minion.despawn();  // unregisters from HeroManager + GameManager
         }

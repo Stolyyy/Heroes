@@ -1,5 +1,6 @@
 package me.stolyy.heroes.hero.mechanics;
 
+import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroManager;
 import me.stolyy.heroes.hero.HeroStats;
@@ -7,25 +8,34 @@ import me.stolyy.heroes.hero.minion.MinionHero;
 import me.stolyy.heroes.control.Controller;
 import me.stolyy.heroes.physics.Hitbox;
 import me.stolyy.heroes.physics.Interactions;
+import me.stolyy.heroes.util.ModifierStack;
 import me.stolyy.heroes.vfx.effect.SoundEffect;
+import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
 import java.util.function.Consumer;
 
 public class Jab {
+    /** Returns {@code player}'s active hero when eligible to jab (not respawning or action-locked). */
+    public static @Nullable Hero readyHeroFor(Player player) {
+        if (GameManager.isRespawning(player)) return null;
+        Hero hero = HeroManager.getHero(player);
+        return (hero == null || hero.actionsLocked()) ? null : hero;
+    }
     private double cooldown; // in milliseconds
     private double damage;
     private double range;
-    // Multiplicative modifiers (charms). Kept separate from the base stats so stat
-    // re-application (Hero.resetStats -> apply) doesn't wipe an active charm's bonus.
-    private double rangeMultiplier = 1.0;
-    private double damageMultiplier = 1.0;
-    private double cooldownMultiplier = 1.0;
-    private double knockbackMultiplier = 1.0;
+    // Keyed modifier stacks (charms). Kept separate from base stats so stat re-application
+    // (Hero.resetStats -> apply) doesn't wipe active charm bonuses.
+    private final ModifierStack rangeMods = new ModifierStack();
+    private final ModifierStack damageMods = new ModifierStack();
+    private final ModifierStack cooldownMods = new ModifierStack();
+    private final ModifierStack knockbackMods = new ModifierStack();
     private double radius;   // half-extent of the jab box cross-section (0.5 = 1x1 profile)
     private boolean pierce;  // false = closest target only, true = everyone in the box
     private double knockback;
@@ -139,18 +149,15 @@ public class Jab {
         return true;
     }
 
-    /**
-     * Reserves this tick for one jab. Rejects a jab still on cooldown, and the second of the two
-     * events a single click fires.
-     *
-     * <p>{@code authoritative} marks the client-target path. It is allowed to run even if the
-     * fallback swing already went this tick, as long as that swing caught nothing: the client is
-     * not contractually required to send its attack packet before its swing packet, and without
-     * this a flipped order would let a fallback whiff silently suppress the accurate hit. Once
-     * anything has LANDED this tick, both paths are done.
-     */
+    // Reserves this tick for one jab. Rejects a jab still on cooldown, and the second of the two
+    // events a single click fires.
+    // `authoritative` marks the client-target path. It is allowed to run even if the fallback
+    // swing already went this tick, as long as that swing caught nothing: the client is not
+    // contractually required to send its attack packet before its swing packet, and without this
+    // a flipped order would let a fallback whiff silently suppress the accurate hit. Once
+    // anything has LANDED this tick, both paths are done.
     private boolean claimAttempt(boolean authoritative) {
-        int tick = org.bukkit.Bukkit.getCurrentTick();
+        int tick = Bukkit.getCurrentTick();
         if (tick < readyAtTick) return false;
         if (tick == lastLandedTick) return false;
         if (tick == lastAttemptTick && !authoritative) return false;
@@ -159,14 +166,14 @@ public class Jab {
     }
 
     private void startCooldown() {
-        int tick = org.bukkit.Bukkit.getCurrentTick();
+        int tick = Bukkit.getCurrentTick();
         lastLandedTick = tick;
         readyAtTick = tick + (int) Math.round(getCooldown() / 50.0);
     }
 
-    /** Plays the miss sound at most once per cooldown, so spam-clicking does not machine-gun it. */
+    // Plays the miss sound at most once per cooldown, so spam-clicking does not machine-gun it.
     private void playSwingSound(Controller attacker, Player player) {
-        int tick = org.bukkit.Bukkit.getCurrentTick();
+        int tick = Bukkit.getCurrentTick();
         if (tick < swingSoundReadyAtTick) return;
         swingSoundReadyAtTick = tick + (int) Math.round(getCooldown() / 50.0);
         if (swingSound != null) swingSound.play(attacker.getLocation(), player);
@@ -181,44 +188,53 @@ public class Jab {
         Hero actor = HeroManager.getHero(attacker.getUniqueId());
         String jabName = actor instanceof MinionHero ? actor.getName() : "Jab";
         Interactions.on(attacker.getEntity(), victim)
-                .damage(getDamage()).knockback(knockback * knockbackMultiplier).staticKnockback()
+                .damage(getDamage()).knockback(getKnockback()).staticKnockback()
                 .abilityName(jabName)
                 .execute();
 
         if (onHit != null) onHit.accept(victim);
     }
 
-    /** Effective jab cooldown: base cooldown from stats times any active multiplier. */
-    public double getCooldown() { return cooldown * cooldownMultiplier; }
-    public void setCooldown(double cooldown) { this.cooldown = cooldown; }
-    public void setCooldownMultiplier(double multiplier) { this.cooldownMultiplier = multiplier; }
-    /** Effective jab damage: base damage from stats times any active multiplier. */
-    public double getDamage() { return damage * damageMultiplier; }
-    public void setDamage(double damage) { this.damage = damage; }
-    public void setDamageMultiplier(double multiplier) { this.damageMultiplier = multiplier; }
-    public void setKnockbackMultiplier(double multiplier) { this.knockbackMultiplier = multiplier; }
-    /** Effective jab range: base range from stats times any active multiplier. */
-    public double getRange() { return range * rangeMultiplier; }
+    /** Effective jab cooldown: base cooldown evaluated with any active modifiers. */
+    public double getCooldown() { return cooldownMods.evaluate(cooldown, 0.0); }
+    public void addCooldownMultiplier(Object key, double mult) { cooldownMods.putMult(key, mult); }
+    public void addCooldownFlat(Object key, double deltaMs) { cooldownMods.putFlat(key, deltaMs); }
+    public void removeCooldownModifier(Object key) { cooldownMods.remove(key); }
 
-    /** Sets the base jab range without syncing the Bukkit interaction range attribute. */
-    public void setRange(double range) { this.range = range; }
+    /** Effective jab damage: base damage evaluated with any active modifiers. */
+    public double getDamage() { return damageMods.evaluate(damage, 0.0); }
+    public void addDamageMultiplier(Object key, double mult) { damageMods.putMult(key, mult); }
+    public void addDamageFlat(Object key, double delta) { damageMods.putFlat(key, delta); }
+    public void removeDamageModifier(Object key) { damageMods.remove(key); }
 
-    /**
-     * Sets the base jab range AND syncs the Bukkit {@code ENTITY_INTERACTION_RANGE} attribute
-     * on the controller's entity.
-     */
-    public void setRange(double range, Controller controller) {
-        this.range = range;
+    /** Effective jab knockback: base knockback evaluated with any active modifiers. */
+    public double getKnockback() { return knockbackMods.evaluate(knockback, 0.0); }
+    public void addKnockbackMultiplier(Object key, double mult) { knockbackMods.putMult(key, mult); }
+    public void addKnockbackFlat(Object key, double delta) { knockbackMods.putFlat(key, delta); }
+    public void removeKnockbackModifier(Object key) { knockbackMods.remove(key); }
+
+    /** Effective jab range: base range evaluated with any active modifiers. */
+    public double getRange() { return rangeMods.evaluate(range, 0.0); }
+
+    public void addRangeMultiplier(Object key, double mult, Controller controller) {
+        rangeMods.putMult(key, mult);
         syncRangeAttribute(controller);
     }
 
-    /**
-     * Sets the multiplicative range modifier (1.0 = no modifier) and syncs the Bukkit
-     * interaction range attribute. Use this for runtime modifiers (e.g. charms) — unlike
-     * setRange, the multiplier survives stat re-application via {@link #apply}.
-     */
-    public void setRangeMultiplier(double multiplier, Controller controller) {
-        this.rangeMultiplier = multiplier;
+    public void addRangeFlat(Object key, double delta, Controller controller) {
+        rangeMods.putFlat(key, delta);
         syncRangeAttribute(controller);
+    }
+
+    public void removeRangeModifier(Object key, Controller controller) {
+        rangeMods.remove(key);
+        syncRangeAttribute(controller);
+    }
+
+    public void clearModifiers() {
+        rangeMods.clear();
+        damageMods.clear();
+        cooldownMods.clear();
+        knockbackMods.clear();
     }
 }

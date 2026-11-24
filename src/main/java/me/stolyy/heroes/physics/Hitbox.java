@@ -2,7 +2,9 @@ package me.stolyy.heroes.physics;
 
 import me.stolyy.heroes.game.Game;
 import me.stolyy.heroes.game.GameManager;
+import me.stolyy.heroes.game.PracticeManager;
 import org.bukkit.FluidCollisionMode;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -14,17 +16,47 @@ import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+/**
+ * Fluent geometry collision query supporting sphere, cylinder, cone/frustum, and swept box shapes
+ * with optional wall checks, hit-history deduplication, and per-check callbacks.
+ */
 public class Hitbox {
 
     // Distance to back a directional wall hit off the struck face, so the reported location lands
     // in the air the ray travelled through rather than exactly on the block boundary (where it
     // would floor into the solid block on ~half of hits and break callers that use it as a center).
     private static final double WALL_HIT_BACKOFF = 0.05;
+
+    private Location origin;
+    private final Shape shape;
+    private final List<Predicate<LivingEntity>> filters = new ArrayList<>();
+
+    private boolean checkWalls = false;
+    private boolean pierce = true;
+    private Location wallHitLocation = null;
+    private BlockFace wallHitFace = null;
+
+    private Consumer<LivingEntity> onHit;
+    private BiConsumer<LivingEntity, Location> onHitWithLocation;
+    private Consumer<Location> onHitWall;
+    private Consumer<Location> onExpire;
+
+    private boolean trackingHits = false;
+    private long hitDelay = -1;  // -1 = never re-hit (default), >= 0 = ms before re-hit
+    private Map<UUID, Long> hitHistory = new HashMap<>();
 
     // --- Static target validation ---
 
@@ -39,7 +71,7 @@ public class Hitbox {
         // Invincibility is now enforced victim-only in Game.canTarget.
 
         if (entity instanceof Player player) {
-            if (player.getGameMode() != org.bukkit.GameMode.ADVENTURE) return false;
+            if (player.getGameMode() != GameMode.ADVENTURE) return false;
         }
         return true;
     }
@@ -53,30 +85,11 @@ public class Hitbox {
         // hitbox-based attack silently whiffed on the practice range. GameManager.canTarget
         // already has an explicit practice bypass, so a dummy would pass the team filter and
         // then get dropped here — the two gates disagreed.
-        if (me.stolyy.heroes.game.PracticeManager.isDummy(entity)) return true;
+        if (PracticeManager.isDummy(entity)) return true;
         Game game = GameManager.getEntityGame(entity);
         if (game == null) return false;
         return game.isAlive(entity);
     }
-
-    // --- Instance fields ---
-
-    private Location origin;
-    private final Shape shape;
-    private final List<Predicate<LivingEntity>> filters = new ArrayList<>();
-    
-    private boolean checkWalls = false;
-    private boolean pierce = true;
-    private Location wallHitLocation = null;
-    
-    private Consumer<LivingEntity> onHit;
-    private BiConsumer<LivingEntity, Location> onHitWithLocation;
-    private Consumer<Location> onHitWall;
-    private Consumer<Location> onExpire;
-
-    private boolean trackingHits = false;
-    private long hitDelay = -1;  // -1 = never re-hit (default), >= 0 = ms before re-hit
-    private final Map<UUID, Long> hitHistory = new HashMap<>();
 
     private Hitbox(Location origin, Shape shape) {
         this.origin = origin;
@@ -196,18 +209,24 @@ public class Hitbox {
         return this;
     }
 
-    public Hitbox allowRehit(UUID entityId) {
-        hitHistory.remove(entityId);
+    /** Share an external hit-history map across multiple Hitbox checks/instances. */
+    public Hitbox shareHitHistory(Map<UUID, Long> sharedHistory, long hitDelayMs) {
+        this.hitHistory = Objects.requireNonNull(sharedHistory, "sharedHistory");
+        this.trackingHits = true;
+        this.hitDelay = hitDelayMs;
         return this;
+    }
+
+    public Hitbox shareHitHistory(Map<UUID, Long> sharedHistory) {
+        return shareHitHistory(sharedHistory, -1);
+    }
+
+    public boolean hasHit(UUID entityId) {
+        return hitHistory.containsKey(entityId);
     }
 
     public Hitbox clearHitHistory() {
         hitHistory.clear();
-        return this;
-    }
-
-    public Hitbox copyHitHistory(Hitbox other) {
-        this.hitHistory.putAll(other.hitHistory);
         return this;
     }
 
@@ -222,6 +241,7 @@ public class Hitbox {
         // Wall state is per-check: without this reset, a reused moving hitbox (moveTo each
         // tick) reports a wall hit forever after its first one.
         wallHitLocation = null;
+        wallHitFace = null;
 
         // Expire old entries if re-hit is enabled
         if (trackingHits && hitDelay >= 0) {
@@ -229,7 +249,7 @@ public class Hitbox {
             hitHistory.entrySet().removeIf(entry -> now >= entry.getValue() + hitDelay);
         }
 
-        double maxDist = shape.getRoughRadius();
+        double maxDist = shape.getReach();
         
         if (checkWalls) {
             if (shape instanceof Directional dir) {
@@ -238,6 +258,7 @@ public class Hitbox {
                     BlockFace face = wallTrace.getHitBlockFace();
                     Vector normal = new Vector(face.getModX(), face.getModY(), face.getModZ());
                     wallHitLocation = wallTrace.getHitPosition().add(normal.multiply(WALL_HIT_BACKOFF)).toLocation(world);
+                    wallHitFace = face;
                     maxDist = origin.distance(wallHitLocation);
                 }
             } else if (shape instanceof Sphere && (onHitWall != null || onExpire != null)) {
@@ -323,15 +344,14 @@ public class Hitbox {
     }
 
     public Location getWallHitLocation() { return wallHitLocation; }
+    public BlockFace getWallHitFace() { return wallHitFace; }
 
-    /**
-     * True if a solid block lies between {@code origin} and {@code hitPos} — the point on the target
-     * that the shape reported as struck, not the target's center. Aiming at the same point the hit
-     * test used is what keeps the gate honest: the sphere accepts on the closest point of the AABB,
-     * so tracing to the center overshot by up to ~1.0 block (half a player's AABB diagonal) and let
-     * geometry the blast could never have touched veto a hit it had already authorized. The
-     * {@code maxDistance} clamp holds that invariant if the two ever drift apart again.
-     */
+    // True if a solid block lies between origin and hitPos — the point on the target that the
+    // shape reported as struck, not the target's center. Aiming at the same point the hit test
+    // used keeps the gate honest: the sphere accepts on the closest point of the AABB, so
+    // tracing to the center overshot by up to ~1.0 block (half a player's AABB diagonal) and let
+    // geometry the blast could never have touched veto a hit it had already authorized. The
+    // maxDistance clamp holds that invariant if the two ever drift apart again.
     private static boolean isLineOfSightBlocked(World world, Location origin, Location hitPos, double maxDistance) {
         // Line of sight from inside a solid block is undefined, so don't gate in that case.
         Block originBlock = origin.getBlock();
@@ -350,7 +370,7 @@ public class Hitbox {
     interface Shape {
         Location getIntersectionPoint(Location origin, BoundingBox box, double maxDist);
         BoundingBox getSearchBox(Location origin, double maxDist);
-        double getRoughRadius();
+        double getReach();
     }
 
     interface Directional {
@@ -386,7 +406,7 @@ public class Hitbox {
             return BoundingBox.of(origin, radius, radius, radius).expand(1.0);
         }
 
-        @Override public double getRoughRadius() { return radius; }
+        @Override public double getReach() { return radius; }
     }
 
     static class Cylinder implements Shape, Directional, Swept {
@@ -409,7 +429,7 @@ public class Hitbox {
             Vector end = origin.toVector().add(axis.clone().multiply(maxDist));
             return BoundingBox.of(origin.toVector(), end).expand(radius + 1.0);
         }
-        @Override public double getRoughRadius() { return height; }
+        @Override public double getReach() { return height; }
     }
 
     static class Box implements Shape, Directional, Swept {
@@ -437,7 +457,7 @@ public class Hitbox {
             Vector end = origin.toVector().add(direction.clone().multiply(maxDist));
             return BoundingBox.of(origin.toVector(), end).expand(Math.max(halfWidth, halfHeight) + 1.0);
         }
-        @Override public double getRoughRadius() { return length; }
+        @Override public double getReach() { return length; }
     }
 
     static class Cone implements Shape, Directional {
@@ -464,6 +484,6 @@ public class Hitbox {
             Vector end = origin.toVector().add(direction.clone().multiply(maxDist));
             return BoundingBox.of(origin.toVector(), end).expand(radius + 1.0);
         }
-        @Override public double getRoughRadius() { return height; }
+        @Override public double getReach() { return height; }
     }
 }

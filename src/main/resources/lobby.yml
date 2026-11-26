@@ -1,0 +1,411 @@
+# Lobby Configuration
+# Lobby spawn, NPCs, leaderboard display, and sidebar settings
+
+lobby:
+  spawn:
+    world: world
+    x: 0.5
+    y: 0.0
+    z: 500.5
+    yaw: 0.0
+    pitch: 0.0
+
+# NPC Configuration
+# Each NPC has: name (with color codes), location, armor, and hero mapping
+
+announcer:
+  name: "<gradient:gold:yellow>Lobby Menu</gradient>"
+  location:
+    world: world
+    x: 0.5
+    y: 0
+    z: 494.5
+    yaw: 180
+    pitch: 0
+  skin: "MHF_Steve"
+
+# Queue NPCs — one per joinable mode; three text layers above each (mode / playing / waiting).
+# Clicking toggles the ranked queues; the custom NPC routes through the normal custom-join flow.
+queue-npcs:
+  1v1:
+    name: "<gold><bold>1v1</bold></gold>"
+    skin: "MHF_Steve"   # FILL - skin username
+    location:
+      world: world
+      x: -13.5            # FILL - placed near the announcer; move to taste
+      y: 1
+      z: 499.5
+      yaw: 180
+      pitch: 0
+  2v2:
+    name: "<gold><bold>2v2</bold></gold>"
+    skin: "MHF_Steve"   # FILL - skin username
+    location:
+      world: world
+      x: -13.5            # FILL
+      y: 1
+      z: 497.5
+      yaw: 180
+      pitch: 0
+  custom:
+    name: "<gold><bold>Custom</bold></gold>"
+    skin: "MHF_Steve"   # FILL - skin username
+    location:
+      world: world
+      x: -13.5            # FILL
+      y: 1
+      z: 495.5
+      yaw: 180
+      pitch: 0
+
+heroes:
+  bug:
+    name: "<light_purple>Bug</light_purple>"
+    hero: bug
+    location:
+      world: world
+      x: 7.5
+      y: 1.0
+      z: 487.5
+      yaw: 45
+      pitch: 0
+    armor:
+      head:
+        hero: "Bug"
+        texture: "Head"
+        skin: "Default"
+      color: "34,34,68"
+
+  bulk:
+    name: "<green>Bulk</green>"
+    hero: bulk
+    location:
+      world: world
+      x: 0.5
+      y: 0.5
+      z: 488.5
+      yaw: 0
+      pitch: 0
+    armor:
+      head:
+        hero: "Bulk"
+        texture: "Head"
+        skin: "Default"
+      color: "53,119,73"
+
+  pug:
+    name: "<gold>Pug</gold>"
+    hero: pug
+    location:
+      world: world
+      x: 4.5
+      y: 0.5
+      z: 489.5
+      yaw: 39
+      pitch: 0
+    armor:
+      head:
+        hero: "Pug"
+        texture: "Head"
+        skin: "Default"
+      color: "190,141,89"
+
+  voidcrawler:
+    name: "<dark_purple>Void Crawler</dark_purple>"
+    hero: voidcrawler
+    location:
+      world: world
+      x: -2.5
+      y: 1.0
+      z: 486.5
+      yaw: -21
+      pitch: 0
+    armor:
+      head:
+        hero: "VoidCrawler"
+        texture: "Head"
+        skin: "Default"
+      color: "199,219,236"
+
+  skullfire:
+    name: "<red>Skullfire</red>"
+    hero: skullfire
+    location:
+      world: world
+      x: -1.5
+      y: 0.5
+      z: 488.5
+      yaw: -18
+      pitch: 0
+    armor:
+      head:
+        hero: "Skullfire"
+        texture: "Head"
+        skin: "Default"
+      color: "30,30,30"
+
+  shoop:
+    name: "<aqua>Shoop</aqua>"
+    hero: shoop
+    location:
+      world: world
+      x: 1.5
+      y: 1.0
+      z: 486.5
+      yaw: 7
+      pitch: 0
+    armor:
+      head:
+        hero: "Shoop"
+        texture: "Head"
+        skin: "Default"
+      color: "0,158,16"
+
+  spooderman:
+    name: "<dark_red>Spooderman</dark_red>"
+    hero: spooderman
+    location:
+      world: world
+      x: 2.5
+      y: 0.5
+      z: 488.5
+      yaw: 18
+      pitch: 0
+    armor:
+      head:
+        hero: "Spooderman"
+        texture: "Head"
+        skin: "Default"
+      color: "150,27,27"
+
+  botmon:
+    name: "<color:#1a2a34>Botmon</color>"
+    hero: botmon
+    location:
+      world: world
+      x: -10.5
+      y: 0.5
+      z: 489.5
+      yaw: -66
+      pitch: 0
+    armor:
+      head:
+        hero: "Botmon"
+        texture: "Head"
+        skin: "Default"
+      color: "26,42,52"
+
+  cakemonster:
+    name: "<color:#485400>Cake Monster</color>"
+    hero: cakemonster
+    location:
+      world: world
+      x: -8.5
+      y: 0.5
+      z: 488.5
+      yaw: -56
+      pitch: 0
+    armor:
+      head:
+        hero: "CakeMonster"
+        texture: "Head"
+        skin: "Default"
+      color: "72,84,0"
+
+  cryomancer:
+    name: "<color:#000000>Cryomancer</color>"
+    hero: cryomancer
+    location:
+      world: world
+      x: -6.5
+      y: 1.0
+      z: 487.5
+      yaw: -45
+      pitch: 0
+    armor:
+      head:
+        hero: "Cryomancer"
+        texture: "Head"
+        skin: "Default"
+      color: "0,0,0"
+
+  greenhood:
+    name: "<color:#1e6e2d>Green Hood</color>"
+    hero: greenhood
+    location:
+      world: world
+      x: -6.5
+      y: 0.5
+      z: 489.5
+      yaw: -54
+      pitch: 0
+    armor:
+      head:
+        hero: "GreenHood"
+        texture: "Head"
+        skin: "Default"
+      color: "30,110,45"
+
+  karakot:
+    name: "<color:#003c9e>Karakot</color>"
+    hero: karakot
+    location:
+      world: world
+      x: -4.5
+      y: 1.0
+      z: 487.5
+      yaw: -36
+      pitch: 0
+    armor:
+      head:
+        hero: "Karakot"
+        texture: "Head"
+        skin: "Default"
+      color: "0,60,158"
+
+  marauder:
+    name: "<color:#222222>Marauder</color>"
+    hero: marauder
+    location:
+      world: world
+      x: -3.5
+      y: 0.5
+      z: 489.5
+      yaw: -39
+      pitch: 0
+    armor:
+      head:
+        hero: "Marauder"
+        texture: "Head"
+        skin: "Default"
+      color: "34,34,34"
+
+  pochita:
+    name: "<color:#e6781e>Pokita</color>"
+    hero: pochita
+    location:
+      world: world
+      x: -0.5
+      y: 1.0
+      z: 486.5
+      yaw: -7
+      pitch: 0
+    armor:
+      head:
+        hero: "Pokita"
+        texture: "Head"
+        skin: "Default"
+      color: "230,120,30"
+
+  punishgers:
+    name: "<color:#3c5032>Punishgers</color>"
+    hero: punishgers
+    location:
+      world: world
+      x: 3.5
+      y: 1.0
+      z: 486.5
+      yaw: 21
+      pitch: 0
+    armor:
+      head:
+        hero: "Punishgers"
+        texture: "Head"
+        skin: "Default"
+      color: "60,80,50"
+
+  railgunner:
+    name: "<color:#e2283b>Railgunner</color>"
+    hero: railgunner
+    location:
+      world: world
+      x: 7.5
+      y: 0.5
+      z: 489.5
+      yaw: 54
+      pitch: 0
+    armor:
+      head:
+        hero: "Railgunner"
+        texture: "Head"
+        skin: "Default"
+      color: "226,40,59"
+
+  sgt:
+    name: "<color:#3c5aa0>Sgt</color>"
+    hero: sgt
+    location:
+      world: world
+      x: 5.5
+      y: 1.0
+      z: 487.5
+      yaw: 36
+      pitch: 0
+    armor:
+      head:
+        hero: "Sgt"
+        texture: "Head"
+        skin: "Default"
+      color: "60,90,160"
+
+  tinman:
+    name: "<color:#c38029>Tinman</color>"
+    hero: tinman
+    location:
+      world: world
+      x: 9.5
+      y: 0.5
+      z: 488.5
+      yaw: 56
+      pitch: 0
+    armor:
+      head:
+        hero: "Tinman"
+        texture: "Head"
+        skin: "Default"
+      color: "195,128,41"
+
+# Leaderboard Display (text display entity stack in lobby)
+leaderboard:
+  enabled: true
+  entries: 10
+  line-spacing: 0.3
+  location:
+    world: world
+    x: 0.5
+    y: 4.5
+    z: 509.5
+  # {mode} is substituted per stack ("1v1" / "2v2"), which is how each viewer can tell
+  # which board they are looking at after toggling. Keep it single-line: the title sits
+  # exactly at location and a second line would grow down into row 1 at this spacing.
+  title: "<gold><bold>TOP 10</bold></gold> <dark_gray>|</dark_gray> <yellow><bold>{mode}</bold></yellow>"
+
+# Level Leaderboard Display (separate board from the elo one; default view = overall smash level,
+# right-click steps forward through the hero list, left-click steps back)
+level-leaderboard:
+  enabled: true
+  entries: 10
+  line-spacing: 0.3
+  location:
+    world: world
+    x: -12.5        # FILL - placed a few blocks beside the elo board; move to taste
+    y: 4.5
+    z: 492.5
+  # {view} is substituted per stack ("Overall" or the hero's display name).
+  title: "<gold><bold>TOP 10</bold></gold> <dark_gray>|</dark_gray> <aqua><bold>{view} Level</bold></aqua>"
+
+# Lobby Sidebar (scoreboard shown to players in lobby)
+sidebar:
+  title: "<gold>SMASH HEROES</gold>"
+
+# Lobby plaques: one multi-line text display per entry (MiniMessage). Used for season placements,
+# achievement memorials, tournament winners and cosmetic-hall labels. Empty list = nothing spawns.
+# memorials:
+#   - world: world
+#     x: 10.5
+#     y: 5
+#     z: 520.5
+#     lines:
+#       - "<gold><bold>SEASON 1</bold></gold>"
+#       - "<yellow>#1</yellow> <white>PlayerName</white> <gray>2143 elo</gray>"
+memorials: []

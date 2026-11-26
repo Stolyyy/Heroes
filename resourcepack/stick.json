@@ -1,0 +1,299 @@
+{
+  "model": {
+    "type": "select",
+    "property": "custom_model_data",
+    "fallback": {
+      "type": "model",
+      "model": "item/stick"
+    },
+    "cases": [
+      {
+        "when": "bulk_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/bulkfist"
+        }
+      },
+      {
+        "when": "bulk_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/abominationfist"
+        }
+      },
+      {
+        "when": "cakemonster_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/rollingpin"
+        }
+      },
+      {
+        "when": "cakemonster_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/cakepan"
+        }
+      },
+      {
+        "when": "botmon_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/botarang"
+        }
+      },
+      {
+        "when": "botmon_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/botarangms"
+        }
+      },
+      {
+        "when": "marauder_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/lightsaber"
+        }
+      },
+      {
+        "when": "marauder_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/unstablesabre"
+        }
+      },
+      {
+        "when": "tinman_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/tinmangun"
+        }
+      },
+      {
+        "when": "tinman_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/mstinmangun"
+        }
+      },
+      {
+        "when": "spooderman_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/spoodermanfist"
+        }
+      },
+      {
+        "when": "spooderman_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/vanoomfist"
+        }
+      },
+      {
+        "when": "cryomancer_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/cryomancersword"
+        }
+      },
+      {
+        "when": "cryomancer_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/cryomancerhammer"
+        }
+      },
+      {
+        "when": "pug_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/pugfist"
+        }
+      },
+      {
+        "when": "pug_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/pugrattle"
+        }
+      },
+      {
+        "when": "skullfire_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/skullfiredeagle"
+        }
+      },
+      {
+        "when": "skullfire_item_ult",
+        "model": {
+          "type": "model",
+          "model": "item/skullfiredeagleflame"
+        }
+      },
+      {
+        "when": "skullfire_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/skullfiredeaglems"
+        }
+      },
+      {
+        "when": "karakot_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/karakotfist"
+        }
+      },
+      {
+        "when": "karakot_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/karakotfistms"
+        }
+      },
+      {
+        "when": "voidcrawler_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/voidsword"
+        }
+      },
+      {
+        "when": "voidcrawler_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/redsword"
+        }
+      },
+      {
+        "when": "shoop_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/shooplaser"
+        }
+      },
+      {
+        "when": "shoop_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/shooplaserms"
+        }
+      },
+      {
+        "when": "cluck_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/railgun"
+        }
+      },
+      {
+        "when": "cluck_item_soldier",
+        "model": {
+          "type": "model",
+          "model": "item/mosin"
+        }
+      },
+      {
+        "when": "all_secondary_ready",
+        "model": {
+          "type": "model",
+          "model": "item/ui/secondary_ready"
+        }
+      },
+      {
+        "when": "all_secondary_notready",
+        "model": {
+          "type": "model",
+          "model": "item/ui/secondary_notready"
+        }
+      },
+      {
+        "when": "all_ultimate_ready",
+        "model": {
+          "type": "model",
+          "model": "item/ui/ultimate_ready"
+        }
+      },
+      {
+        "when": "all_ultimate_notready",
+        "model": {
+          "type": "model",
+          "model": "item/ui/ultimate_notready"
+        }
+      },
+      {
+        "when": "cluck_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/railgunms"
+        }
+      },
+      {
+        "when": "mario_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/mario"
+        }
+      },
+      {
+        "when": "pochita_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/pochita"
+        }
+      },
+      {
+        "when": "pochita_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/pochitams"
+        }
+      },
+      {
+        "when": "punishgers_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/punishgers"
+        }
+      },
+      {
+        "when": "punishgers_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/punishgersms"
+        }
+      },
+      {
+        "when": "sgt_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/sgtshield"
+        }
+      },
+      {
+        "when": "sgt_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/sgtshieldms"
+        }
+      },
+      {
+        "when": "blud_item_default",
+        "model": {
+          "type": "model",
+          "model": "item/bludclub"
+        }
+      },
+      {
+        "when": "blud_item_masterskin",
+        "model": {
+          "type": "model",
+          "model": "item/bludclubms"
+        }
+      }
+    ]
+  }
+}

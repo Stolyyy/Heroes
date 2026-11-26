@@ -1,0 +1,73 @@
+# Default stats applied to all heroes unless overridden
+visuals:
+  kill_sound:
+    sound: entity.experience_orb.pickup
+    scope: PLAYER
+    pitch: 0
+  # Placeholder jingles - override per hero with custom sounds.
+  # death_sound: heard by the dying player (respawn + elimination).
+  # win_sound: the chosen winner's hero sound, played to everyone at game end.
+  death_sound:
+    sound: entity.wither.hurt
+    scope: PLAYER
+    pitch: 0.5
+  win_sound:
+    sound: ui.toast.challenge_complete
+    scope: PLAYER
+    volume: 1.0
+
+stats:
+  type: HYBRID
+  weight: 1.0
+  health: 100.0
+  speed: 0.2
+  jump_height: 0.63
+  gravity: 0.08
+  step_height: 0.6
+  interaction_range: 6.0
+  scale: 1.0
+
+mobility:
+  type: STANDARD
+  max_jumps: 2
+  x_strength: 0.9
+  y_strength: 0.85
+  sound:
+    sound: entity.bat.takeoff
+    volume: 1.0
+    pitch: 1.0
+  effect:
+    type: PARTICLE
+    shape: RING
+    particle: POOF
+    points: 16
+    radius: 1.5
+
+
+combat:
+  jab_range: 5.0 # length of the jab box from the eye (was vanilla-reach 6.0)
+  jab_radius: 0.5 # half-extent of the box cross-section (0.5 = 1x1 profile)
+  jab_pierce: false # false = closest target only, true = hit everyone in the box
+  jab_cooldown_ms: 500
+  jab_damage: 5.0
+  jab_knockback: 1.5
+  swing_sound:
+    sound: melee.punch.meleemiss
+    volume: 1.0
+    pitch: 1.0
+  hit_sound:
+    sound: melee.punch.meleehit
+    volume: 1.0
+    pitch: 1.0
+
+energy:
+  starting_energy: 100
+  max_energy: 100
+  energy_per_tick: 0
+  can_increase_energy: true
+
+# Unlock economy defaults (B25): heroes without their own unlock block inherit these
+unlock:
+  default-unlocked: false
+  token-cost: 1
+  smash-level-requirement: 0

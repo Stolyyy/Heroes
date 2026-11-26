@@ -1,0 +1,67 @@
+# Map Display Information
+name: "Sky Islands"
+display-item: GRASS_BLOCK
+
+# Supported Game Modes
+supported-modes:
+  - ONE_V_ONE
+  - TWO_V_TWO
+  - CUSTOM
+
+# World Template Folder (in /templates/)
+world-folder: "sky_islands"
+
+# Map Boundaries (players die if they leave)
+boundaries:
+  min:
+    x: -50.0
+    y: 0.0
+    z: -50.0
+  max:
+    x: 50.0
+    y: 100.0
+    z: 50.0
+
+# Spectator Spawn Location
+spectator-location:
+  x: 0.5
+  y: 65.0
+  z: 0.5
+  yaw: 0.0
+  pitch: 45.0
+
+# Team Spawn Locations (variable length list)
+# Index 0 = Team 1 (RED), Index 1 = Team 2 (BLUE), etc.
+spawn-locations:
+  - x: -20.5
+    y: 50.0
+    z: 0.5
+    yaw: 90.0
+    pitch: 0.0
+  - x: 20.5
+    y: 50.0
+    z: 0.5
+    yaw: -90.0
+    pitch: 0.0
+  - x: 0.5
+    y: 50.0
+    z: -20.5
+    yaw: 180.0
+    pitch: 0.0
+  - x: 0.5
+    y: 50.0
+    z: 20.5
+    yaw: 0.0
+    pitch: 0.0
+
+# Smash Crystal Spawn Locations (variable length list)
+crystal-locations:
+  - x: 0.5
+    y: 55.0
+    z: 0.5
+  - x: -10.5
+    y: 52.0
+    z: -10.5
+  - x: 10.5
+    y: 52.0
+    z: 10.5

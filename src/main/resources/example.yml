@@ -1,0 +1,182 @@
+# ============================================================
+#  VISUALS & SOUNDS REFERENCE
+#  Copy-paste any of these blocks into hero YML files.
+# ============================================================
+
+
+# ============================================================
+#  VISUAL EFFECT — PARTICLES
+# ============================================================
+#
+#  type: PARTICLE
+#
+#  shape:
+#    POINT         — spawns all particles at a single spot
+#    RING          — horizontal ring around the point (flat/floor ring)
+#    ORIENTED_RING — ring rotated to face a given direction (e.g. facing the player's look)
+#    SPHERE        — random surface points of a sphere
+#    LINE          — evenly-spaced points from the location to an end point
+#
+#  offset: (optional) shift the spawn point relative to the target location
+#    x / y / z  — decimal, can be negative
+#
+#  --- Single-particle shorthand ---
+#  particle:   Bukkit Particle enum name  (see list below)
+#  count:      how many particles to spawn  (integer, default 1)
+#  speed:      also written as `extra` — particle movement speed  (decimal, default 0)
+#  spread:     random XYZ spread radius around the point  (decimal, default 0)
+#  directional: true/false — when true, count is forced to 0 and
+#               the offset/direction is used as the movement vector instead of a random spread
+#
+#  --- Dust / color options (only for DUST and DUST_COLOR_TRANSITION particles) ---
+#  color:      starting color — accepts:
+#                "#RRGGBB"    hex string        e.g. "#FF4500"
+#                "R, G, B"   RGB integers      e.g. "255, 69, 0"
+#                named color  Bukkit Color name e.g. "RED", "BLUE", "AQUA"
+#  to_color:   ending color (DUST_COLOR_TRANSITION only) — same format as color
+#  size:       dust particle size  (decimal, default 1.0)
+#
+#  --- Multi-particle list (optional, overrides single-particle shorthand) ---
+#  particles:
+#    - particle: ...
+#      count: ...
+#      (all same fields as single-particle)
+#    - particle: ...
+#      ...
+#
+#  --- Shape parameters (all optional) ---
+#  radius:  size of the ring/sphere   (decimal, default: 1.0)
+#  points:  how many particles make up the ring/sphere  (integer, default: 12)
+#  step:    spacing between particles on a LINE  (decimal, default: 0.5)
+#
+#  --- Common Particle names ---
+#  FLAME, SOUL_FIRE_FLAME, SMALL_FLAME
+#  SMOKE, LARGE_SMOKE
+#  EXPLOSION, EXPLOSION_EMITTER
+#  CLOUD, SPIT, SPIT
+#  DUST, DUST_COLOR_TRANSITION      ← need color/to_color/size
+#  CRIT, ENCHANTED_HIT, DAMAGE_INDICATOR
+#  FALLING_WATER, DRIPPING_WATER
+#  PORTAL, REVERSE_PORTAL
+#  END_ROD, ELECTRIC_SPARK
+#  SNOWFLAKE, ITEM_SNOWBALL
+#  HEART, WITCH, COMPOSTER
+#  (Full list: https://jd.papermc.io/paper/1.21/org/bukkit/Particle.html)
+
+particle_example:
+  type: PARTICLE
+  shape: RING          # POINT | RING | ORIENTED_RING | SPHERE | LINE  (default: POINT)
+
+  offset:
+    x: 0.0             # shift left/right relative to the spawn location  (default: 0.0)
+    y: 1.0             # shift up/down (1.0 = one block above)  (default: 0.0)
+    z: 0.0             # shift forward/back  (default: 0.0)
+
+  # Shape parameters (relevant for RING / SPHERE / LINE)
+  radius: 1.5          # radius of the ring or sphere  (default: 1.0)
+  points: 16           # number of points placed around the ring/sphere  (default: 12)
+
+  # Multiple particles — they cycle around the ring together
+  particles:
+    - particle: FLAME
+      count: 1         # number of particles per point  (default: 1)
+      speed: 0.02      # particle movement speed  (default: 0.0)
+      spread: 0.05     # random XYZ scatter per point  (default: 0.0)
+      directional: false  # if true, uses spread as direction vector instead of scatter  (default: false)
+
+    - particle: DUST
+      count: 2
+      color: "#FF6600"  # hex orange  (DUST/DUST_COLOR_TRANSITION only — no default, omit if unused)
+      to_color: "255, 30, 0"  # transition end color (DUST_COLOR_TRANSITION only; for plain DUST use just `color`)
+      size: 1.2         # dust particle size  (default: 1.0)
+      spread: 0.1
+
+
+# ============================================================
+#  VISUAL EFFECT — ITEM DISPLAY ENTITY
+# ============================================================
+#
+#  type: ITEM_DISPLAY
+#
+#  model:
+#    hero:    the hero folder name that owns the resource-pack model  (string)
+#    texture: the specific model/texture file name inside that folder  (string)
+#    skin:    variant name — use "default" if there is only one  (string, default "default")
+#
+#  scale:     how large the display entity renders  (decimal, default 1.0)
+#
+#  duration:  how many ticks before the entity is auto-removed  (integer ticks, default 20 = 1 second)
+#             Note: spawnDisplay() ignores this — the caller manages removal manually.
+#
+#  transform: how the item is oriented on the entity. Options:
+#    NONE               — no transform applied
+#    THIRDPERSON_LEFT   — third-person left hand
+#    THIRDPERSON_RIGHT  — third-person right hand
+#    FIRSTPERSON_LEFT   — first-person left hand
+#    FIRSTPERSON_RIGHT  — first-person right hand
+#    HEAD               — worn on the head (default)
+#    GUI                — flat GUI-style render
+#    GROUND             — lying flat on the ground
+#    FIXED              — fixed in world-space (good for projectiles/holograms)
+#
+#  offset: same as particles — shifts spawn point relative to the target
+#    x / y / z
+#
+#  shape: also available, but ITEM_DISPLAY is almost always POINT
+
+display_example:
+  type: ITEM_DISPLAY
+  shape: POINT          # leave as POINT for most display entity uses  (default: POINT)
+
+  offset:
+    x: 0.0              # (default: 0.0)
+    y: 0.5              # half a block above the target location  (default: 0.0)
+    z: 0.0              # (default: 0.0)
+
+  model:
+    hero: "botmon"      # hero folder name in your resource pack
+    texture: "botrang"  # model/texture name inside that hero's folder
+    skin: "default"     # skin variant  (default: "default")
+
+  scale: 1.0            # 1.0 = normal size, 2.0 = double, 0.5 = half  (default: 1.0)
+  duration: 40          # ticks alive (20 ticks = 1 second). Ignored by spawnDisplay().  (default: 20)
+  transform: FIXED      # FIXED keeps it stationary in world-space (best for projectiles)  (default: HEAD)
+
+
+# ============================================================
+#  SOUND EFFECT
+# ============================================================
+#
+#  sound:           Minecraft/resource-pack sound key  (string, namespace:path format)
+#                   Vanilla examples:
+#                     "entity.player.attack.sweep"
+#                     "entity.enderman.teleport"
+#                     "entity.blaze.shoot"
+#                     "block.note_block.pling"
+#                     "item.trident.throw"
+#                   Custom resource-pack sounds use your own namespace:
+#                     "heroes:ability.botmon.fire"
+#
+#  volume:          how loud and how far the sound carries  (decimal, default 1.0)
+#                   > 1.0 increases range; < 1.0 makes it quieter
+#
+#  pitch:           playback speed / pitch shift  (decimal, default 1.0)
+#                   range is roughly 0.5 (low) – 2.0 (high)
+#
+#  pitch_variation: random +/- variation applied each time it plays  (decimal, default 0.0)
+#                   actual pitch = pitch ± (pitch_variation / 2)
+#                   e.g. pitch: 1.0  pitch_variation: 0.4  →  plays between 0.8 and 1.2
+#
+#  (Defaults for omitted visual/sound keys live in templates.yml.)
+#
+#  scope:
+#    PLAYER  — plays only for the player who triggered it (personal cues)
+#    LOCAL   — plays at the location with vanilla distance attenuation  (default)
+#    GLOBAL  — heard map-wide by every player in the world (ult announcements)
+
+sound_example:
+  sound: "entity.player.attack.sweep"   # sound key — vanilla or resource-pack  (required, no default)
+  volume: 1.0                           # loudness / range  (default: 1.0)
+  pitch: 1.1                            # playback pitch (0.5 low – 2.0 high)  (default: 1.0)
+  pitch_variation: 0.2                  # ± random pitch each play  (default: 0.0 = always same pitch)
+  scope: LOCAL                          # LOCAL = distance-attenuated | GLOBAL = map-wide | PLAYER = caster only

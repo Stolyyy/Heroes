@@ -1,0 +1,27 @@
+# Build output & Gradle cache
+build/
+out/
+target/
+.gradle/
+
+# IDE & local tooling
+.idea/
+.vscode/
+*.iml
+*.args
+local.properties
+run/
+
+# Logs & JVM crash dumps
+*.log
+hs_err_pid*
+.DS_Store
+
+# Agent & private workspace files
+.worktrees/
+.claude/settings.local.json
+.claude/worktrees/
+.legacy/
+papersrc/
+notes/
+planning/

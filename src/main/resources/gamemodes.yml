@@ -1,0 +1,65 @@
+# Gamemode preset defaults. Read when a preset is selected in the game-mode GUI;
+# everything stays adjustable per-game through the GUIs afterward.
+#
+# map-pool selects which maps a preset uses (round rotation in series modes, and the
+# lobby swaps to a pool map when the preset is picked). Values:
+#   ONE_V_ONE  - maps supporting 1v1
+#   TWO_V_TWO  - maps supporting 2v2
+#   ANY        - maps supporting 1v1 OR 2v2
+#   BOTH       - maps supporting 1v1 AND 2v2
+#   ALL        - every map
+
+boss:
+  non-boss-lives: 1
+  non-boss-hp: 100.0
+  # Decimals allowed. Boss lives = round(enemy count x this), minimum 1, rounded to the
+  # NEAREST whole life with ties going up: 1.5 x 4 = 6, 1.5 x 3 = 4.5 -> 5.
+  boss-lives-per-enemy: 1.0  # FILL
+  # Absolute starting/max HP the boss respawns with on EVERY life (not a total pool).
+  boss-hp-per-life: 100.0  # FILL
+  ultimates-enabled: true
+  map-pool: ALL
+
+tdm:
+  kill-limit: 20
+  start-hp: 50.0
+  change-hero-on-respawn: true
+  ult-carryover: true  # smash charge % carries across hero swaps
+  map-pool: ALL
+
+evolution:
+  # LADDER LENGTH, not a kill race: how many heroes a player must climb to win. 0 = the whole
+  # roster. It used to double as a team-kill limit, which ended a 3-player game at 10 COMBINED
+  # kills while the leader was only 7 heroes up — the only win now is finishing a ladder.
+  # The sidebar's "i/N" shows exactly this number.
+  kill-limit: 0
+  start-hp: 50.0
+  randomize-order: true
+  shared-order: false  # true = every player gets the SAME shuffled hero order
+  ult-carryover: true  # smash charge % carries across hero swaps
+  # The two toggles below cover the three ways a team can win, in this combination:
+  #   both false      -> first player to finish their own ladder wins it for the team
+  #   team-advance    -> the team evolves in lockstep and finishes together
+  #   win-requires-all -> only killers advance, and EVERY teammate must finish their own ladder
+  team-advance: false  # true = a kill advances EVERY teammate, not just the killer
+  win-requires-all: false  # true = the whole team must fully evolve. No effect when team-advance is on.
+  map-pool: ALL
+
+series:
+  best-of: 3
+  repick-between-rounds: true
+  map-pool: BOTH
+
+nuzlocke:
+  stocks-per-game: 1
+  hp-carryover: true
+  lockin: true
+  heroes-to-eliminate: 'all'
+  team-scope: false    # true = one player out of heroes puts their whole team out
+  map-pool: BOTH
+
+ironman:
+  stocks-per-game: 1
+  heroes-to-clear: 'all'
+  team-scope: false    # true = every member of a team must clear to win the series
+  map-pool: BOTH

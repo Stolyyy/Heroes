@@ -1,0 +1,178 @@
+admin-only: true   # moveset in development — hidden from non-op players for now
+name: MrMonster
+hurt_sound:
+  sound: mrmonster.pain # pack ships mrmonster pain1/pain2 — key must exist in the pack's sounds.json
+  scope: PLAYER
+  cooldown: 0.5 # seconds between hurt sounds
+  min_damage: 0 # only for hits dealing at least this much damage
+  chance: 1.0 # 0-1 probability the sound plays
+
+stats:
+  type: MELEE
+  weight: 3.5 # FILL — heavy bruiser
+
+energy:
+  starting_energy: 0
+  max_energy: 100 # FILL — the rage meter (Monster Within)
+  energy_per_tick: -0.5 # FILL — passive DRAIN (negative on purpose)
+  can_increase_energy: true # gates the per-tick change — must be true or the drain never runs
+
+abilities:
+  primary:
+    type: monsterdash
+    name: Rampage
+    description: Lunge twice — the second lunge follows your aim. Sneak for a single lunge.
+    cooldown: 4.0 # FILL — starts AFTER the sequence ends, not at cast
+    cooldown_starts: RESOLVE
+    delay_ticks: 2 # FILL — pause between the dashes (this is the re-aim window)
+    hitbox_grace_ticks: 3 # FILL — lingering hitbox after EACH dash (also a full stop between them)
+    dash1:
+      speed: 2.9 # FILL — blocks/tick
+      duration: 4 # FILL — ticks
+      radius: 1.7 # FILL — swept-box half-extent
+      damage: 4.0 # FILL
+      knockback: 1.7 # FILL
+    dash2:
+      speed: 2.7 # FILL — second lunge hits harder by default
+      duration: 5 # FILL
+      radius: 1.7 # FILL
+      damage: 5.0 # FILL
+      knockback: 2.2 # FILL
+    visuals:
+      activation_sound:
+        sound: mrmonster.active1 # pack sound; plays for BOTH dashes
+      hit_sound:
+        sound: entity.player.attack.knockback
+      dash_visual:
+        type: PARTICLE
+        particle: CLOUD
+        count: 8
+        spread: 0.3
+      trail_visual:
+        type: PARTICLE
+        particle: CRIT
+        count: 3
+
+  secondary:
+    type: monsterslam
+    name: Faultline
+    description: Grounded — pound out a travelling shockwave. Airborne — an instant burst.
+    cooldown: 4.5 # FILL
+    ground_proximity: 1.5 # FILL — within this many blocks of the floor counts as grounded
+    # --- grounded wave (travelling trapezoid: min_width at you, max_width at range, constant height)
+    range: 9.0 # FILL — how far the wave travels
+    wave_speed: 0.9 # FILL — blocks per tick (range / wave_speed = travel time in ticks)
+    min_width: 2.5 # FILL — wedge width at the caster
+    max_width: 7.0 # FILL — wedge width at full range
+    height: 5.0 # FILL — constant hitbox height; block visuals launch to exactly this
+    damage: 8.0 # FILL — grounded wave hit
+    knockback: 3.0 # FILL — along the wave direction
+    vertical_knockback: 0.5 # FILL — the pop-up component
+    # --- airborne burst (instant frustum cone along the aim, no travel)
+    air_range: 7.0 # FILL
+    air_min_radius: 3.0 # FILL — cone width at your position
+    air_radius: 4.0 # FILL — cone width at full range
+    air_damage: 7.0 # FILL
+    air_knockback: 2.5 # FILL
+    air_kb_angle: -15 # FILL — victim launch angle in degrees (spooderman's spike kick is -25)
+    visuals:
+      block_display_ticks: 6 # FILL — lifetime of each flung floor block
+      block_spacing: 0.8 # FILL — blocks between flung-block columns across the front
+      air_visual_spacing: 1.0 # FILL — blocks between air-burst particles
+      ground_sound:
+        sound: mrmonster.active2 # pack sound
+      air_sound:
+        sound: entity.player.attack.sweep
+        pitch: 0.6
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      wave_visual:
+        type: PARTICLE
+        particle: BLOCK_CRUMBLE
+        material: DIRT # REQUIRED for block-data particles (BLOCK/BLOCK_CRUMBLE/FALLING_DUST) —
+                       # spawning one without a material threw and wedged the wave
+        count: 10
+        spread: 0.6
+      air_visual:
+        type: PARTICLE
+        particle: SONIC_BOOM
+        count: 1
+
+  smash:
+    type: monstergrab
+    name: Snatch
+    description: Your next jab grabs the victim — right-click to hurl them.
+    cooldown: 80.0 # FILL
+    arm_window_ticks: 100 # FILL — time for the armed jab to connect before the arm lapses (no refund)
+    throw_window_ticks: 100 # FILL — time to right-click the throw; lapsing DROPS them in place
+    throw_primary_lockout_ticks: 8 # FILL — swallows the throw click's residual use-inputs so the
+                                   # dash can't fire on top of the throw
+    throw_damage: 8.0 # FILL
+    throw_knockback: 5.0 # FILL — along your aim at throw time
+    throw_lift: 1.2 # FILL — additive upward component on the hurl
+    visuals:
+      activation_sound:
+        sound: mrmonster.crystal # pack ult-activation sound
+        volume: 3.0
+        scope: GLOBAL
+      grab_sound:
+        sound: entity.player.attack.crit
+        pitch: 0.6
+      throw_sound:
+        sound: entity.player.attack.sweep
+        pitch: 0.5
+
+  passives:
+  - type: monsterrage
+    name: Monster Within
+    description: Pain feeds the monster. Taking hits builds rage that empowers your blows.
+    cooldown: 0.0
+    energy_per_hit: 8.0 # FILL — flat rage per hit taken (either knob can be 0)
+    energy_per_damage: 0.5 # FILL — rage per point of damage taken
+    max_damage_dealt_multiplier: 1.4 # FILL — outgoing damage at a FULL rage bar
+    max_knockback_dealt_multiplier: 1.5 # FILL — outgoing knockback at a FULL rage bar
+
+skins:
+  default:
+    armor:
+      chest: 90,30,30 # FILL — armor colors
+      legs: 60,20,20 # FILL
+      boots: 90,30,30 # FILL
+
+# Bot config — placeholder values; tune with the bot pass
+bot:
+  strategy_type: AGGRESSIVE
+ai:
+  min_target_duration: 40 # FILL
+  switch_threshold: 3.0 # FILL
+  search_radius: 100 # FILL
+  speed_modifier: 1.3 # FILL - x the hero's own pace, now with CORRECT math (sqrt-inverted Citizens squaring): 1.0 = walk parity, 1.3 = always-sprinting
+  input_delay: 2 # FILL
+# Bot movement kit (shared by RECOVER and EVADE): input slots tried lowest-priority-number
+# first; delay_after_ticks is the commit window before the NEXT action.
+movement:
+  actions:
+  - action: primary # Rampage double dash, ~20 blocks total; the second dash re-aims at current look
+    priority: 1
+    delay_after_ticks: 14 # FILL
+  - action: jump
+    priority: 2
+    delay_after_ticks: 8 # FILL
+strategy:
+  preferred_distance: 3.0 # FILL — melee brawler
+  chase_range: 40 # FILL
+  can_double_jump: true
+  panic_distance: 4.0 # FILL - EVADE trigger: a MELEE/HYBRID enemy inside this range makes the bot flee (0 = never)
+  ult_min_target_hp_percent: 0.25  # don't ult a target already below this HP fraction
+  ult_min_self_hp_percent: 0.30    # don't ult below this own-HP fraction unless on last life
+  ability_ranges:
+    primary: 12.0 # FILL
+    secondary: 8.0 # FILL
+    smash: 3.0 # FILL — grab is jab-range
+
+# Unlock economy
+unlock:
+  default-unlocked: false
+  token-cost: 1
+  smash-level-requirement: 0

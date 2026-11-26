@@ -1,0 +1,174 @@
+name: Cryomancer
+hurt_sound:
+  sound: frostmage.pain
+  scope: PLAYER
+  cooldown: 0.5 # seconds between hurt sounds
+  min_damage: 0 # only for hits dealing at least this much damage
+  chance: 1.0 # 0-1 probability the sound plays
+stats:
+  type: HYBRID
+  weight: 5.0
+
+combat:
+  jab_damage: 4.0
+
+energy:
+  starting_energy: 100
+  max_energy: 100
+  energy_per_tick: 0.5
+  can_increase_energy: true
+
+abilities:
+  primary:
+    type: cryomancerfrostbolt
+    name: Frostbolt
+    cooldown: 1.4
+    damage: 7.0
+    knockback: 2.8
+    radius: 1.1
+    range: 70.0
+    speed: 1.7
+    slowness_duration: 40
+    aoe:
+      damage: 7.0
+      knockback: 2.6
+      radius: 2.0
+      # Blast ignores line of sight. Independent of the projectile's own pierces_walls, which
+      # only decides whether the shot stops on the wall.
+      pierces_walls: false
+      # Aoe reads these directly off the aoe section — the old visuals: wrapper meant none ever played.
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      center_visual:
+        type: PARTICLE
+        particle: EXPLOSION
+      center_sound:
+        sound: frostmage.frostbolt.impact
+    visuals:
+      fire_sound:
+        sound: frostmage.frostbolt.activation
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      projectile_visual:
+        type: PARTICLE
+        particle: POOF
+  
+  secondary:
+    type: cryomancerfrostbreath
+    name: Frostbreath
+    cooldown: 6.0
+    damage: 7.5
+    knockback: 2.3
+    radius: 4.0
+    min_radius: 0.75   # FILL - cone starts this wide at the caster (frustum) instead of a point
+    range: 9
+    visuals:
+      activation_sound:
+        sound: frostmage.freezingbreath.activation
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      cone_visual:
+        type: PARTICLE
+        shape: ORIENTED_RING
+        particles:
+        - particle: POOF
+        - particle: DUST
+          color: WHITE
+        - particle: DUST
+          color: SILVER
+        - particle: CLOUD
+  
+  smash:
+    type: cryomancerultimate
+    name: Absolute Zero
+    cooldown: 80.0
+    active_duration: 12.0
+    damage_multiplier: 0.5
+    knockback_multiplier: 0.5
+    cooldown_multiplier: 0.5
+    visuals:
+      # Sparse follow-aura while the ult is active.
+      aura_visual:
+        type: PARTICLE
+        particle: SNOWFLAKE
+        count: 2
+        spread: 0.4
+        speed: 0.02
+      aura_interval: 10       # FILL - ticks between aura puffs
+      activation_sound:
+        sound: frostmage.crystal
+        scope: GLOBAL # ult announcement - audible map-wide (sound-scope rework)
+        volume: 5.0
+  
+  passives:
+  - type: cryomancertimewarp
+    name: Time Warp
+    description: null
+    activation: SNEAK
+    cooldown: 10.0
+    energy_cost: 50
+    energy_cost_per_second: 10.0
+    set_sound:
+      sound: block.respawn_anchor.set_spawn   # FILL - distinct anchor-set cue (was a quiet crystal)
+    recall_sound:
+      sound: entity.enderman.teleport
+    # Ring marking the warp anchor - SNOWFLAKE reads far better than ENCHANT dust.
+    anchor_visual:
+      type: PARTICLE
+      shape: RING
+      radius: 0.6
+      points: 12
+      particle: SNOWFLAKE
+    # Sparse cue on the cryomancer while the warp is armed (no shape - just a small puff).
+    aura_visual:
+      type: PARTICLE
+      particle: SNOWFLAKE
+      count: 2
+      spread: 0.25
+      speed: 0.03
+    aura_interval: 5      # FILL - ticks between aura puffs
+  - type: cryomancerfrostaura
+    name: Frost Aura
+    description: null
+    radius: 7.0
+    extra_damage: 2.0
+
+skins:
+  default:
+    armor:
+      chest: 0,0,0
+      legs: 0,0,0
+      boots: 0,0,0
+  masterskin:
+    armor:
+      chest: 0,0,0
+      legs: 0,0,0
+      boots: 0,0,0
+# Unlock economy (B25): starting-roster hero
+unlock:
+  default-unlocked: true
+
+# Bot config (B28.7) - placeholder values; tune for feel. strategy_type archetype suggested
+# from stats.type; ai.* read by BaseBotAI, strategy.* by the Strategy classes.
+bot:
+  strategy_type: MIDRANGE
+ai:
+  min_target_duration: 40 # FILL - ticks a target is kept before re-evaluating
+  switch_threshold: 3.0 # FILL - how much closer a new target must be to switch
+  search_radius: 100 # FILL - blocks scanned for targets
+  speed_modifier: 1.3 # FILL - x the hero's own pace, now with CORRECT math (sqrt-inverted Citizens squaring): 1.0 = walk parity, 1.3 = always-sprinting
+  input_delay: 2 # FILL - ticks between bot "inputs"
+strategy:
+  preferred_distance: 14.0 # FILL - distance the bot tries to hold
+  chase_range: 35 # FILL - max distance it will chase
+  can_double_jump: true
+  far_distance: 70 # FILL - beyond this counts as "far"
+  ult_min_target_hp_percent: 0.25  # don't ult a target already below this HP fraction
+  ult_min_self_hp_percent: 0.30    # don't ult below this own-HP fraction unless on last life
+  ability_ranges:
+    primary: 40.0 # FILL - use primary within this range
+    secondary: 7.0 # FILL
+    smash: 15.0 # FILL

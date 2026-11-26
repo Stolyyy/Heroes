@@ -1,0 +1,149 @@
+name: Blud
+admin-only: true   # moveset still in design — hidden from non-op players for now
+
+stats:
+  type: HYBRID
+  weight: 3.0
+
+energy:
+  starting_energy: 100
+  max_energy: 100
+  energy_per_tick: 0.15
+  can_increase_energy: true
+
+abilities:
+  primary:
+    type: bludprimary
+    name: Bludgeon
+    description: Dash, boomerang, or tracking fire — F cycles, sneak+F cycles back.
+    cooldown: 0.0
+    dash:
+      name: Blud Dash
+      cooldown: 5.0
+      energy_cost: 15
+      speed: 1.7
+      duration: 7
+      damage: 4.0
+      knockback: 2.5
+      radius: 1.5
+      visuals:
+        activation_sound:
+          sound: entity.breeze.shoot
+        hit_sound:
+          sound: entity.experience_orb.pickup
+          scope: PLAYER
+        trail_visual:
+          type: PARTICLE
+          particle: CRIMSON_SPORE
+    boomerang:
+      name: Blud Boomerang
+      cooldown: 7.0
+      energy_cost: 20
+      damage: 3.5
+      knockback: 2.0
+      range: 18
+      speed: 1.3
+      radius: 0.6
+      gravity: 0.0
+      pierces_players: true
+      returns: true
+      visuals:
+        fire_sound:
+          sound: item.trident.throw
+        hit_sound:
+          sound: entity.experience_orb.pickup
+          scope: PLAYER
+        projectile_visual:
+          type: ITEM_DISPLAY
+          model:
+            hero: blud
+            texture: boomerang
+        trail_visual:
+          type: PARTICLE
+          particle: CRIMSON_SPORE
+    tracking:
+      name: Blud Tracker
+      cooldown: 0.25
+      energy_cost: 3
+      damage: 1.5
+      knockback: 0.5
+      range: 35
+      radius: 0.3
+      min_damage: 1.0
+      dropoff_distance: 20
+      visuals:
+        trail_spacing: 1.5
+        fire_sound:
+          sound: entity.blaze.hurt
+          volume: 0.4
+          pitch: 2.0
+        hit_sound:
+          sound: entity.experience_orb.pickup
+          scope: PLAYER
+        trail_visual:
+          type: PARTICLE
+          particle: DUST
+          color: 180,20,20
+
+  # secondary: TBD-open (user decision pending)
+  # smash: TBD-open (user decision pending)
+
+  passives:
+  - type: bludswap
+    name: Mode Swap
+    description: Cycle Bludgeon's mode. Sneak to cycle backward.
+    activation: SWAP
+    cooldown: 0.5
+    visuals:
+      swap_sound:
+        sound: ui.button.click
+
+skins:
+  default:
+    armor:
+      chest: 140,20,25
+      legs: 40,10,12
+      boots: 140,20,25
+  masterskin:
+    armor:
+      chest: 140,20,25
+      legs: 40,10,12
+      boots: 140,20,25
+
+# Bot config (B28.6) — placeholder values; tune for feel. NOTE: the bot won't intelligently
+# swap modes without a custom AI hook; it stays in whichever mode is active.
+bot:
+  strategy_type: MIDRANGE
+ai:
+  min_target_duration: 40   # FILL — ticks a target is kept before re-evaluating
+  switch_threshold: 3.0     # FILL — how much closer a new target must be to switch
+  search_radius: 100         # FILL — blocks scanned for targets
+  speed_modifier: 1.3 # FILL - x the hero's own pace, now with CORRECT math (sqrt-inverted Citizens squaring): 1.0 = walk parity, 1.3 = always-sprinting
+  input_delay: 2            # FILL — ticks between bot "inputs"
+# Bot movement kit (shared by RECOVER and EVADE): input slots tried lowest-priority-number
+# first; delay_after_ticks is the commit window before the NEXT action.
+movement:
+  actions:
+  - action: jump # first: primary's canExecute over-reports (mode cooldown unchecked), it must not starve jumps
+    priority: 1
+    delay_after_ticks: 8 # FILL
+  - action: primary # mode dash, ~12 blocks along aim (DASH is the default mode)
+    priority: 2
+    delay_after_ticks: 10 # FILL
+strategy:
+  preferred_distance: 8.0   # FILL — distance the bot tries to hold
+  chase_range: 35           # FILL — max distance it will chase
+  can_double_jump: true
+  far_distance: 15          # FILL — beyond this counts as "far"
+  ult_min_target_hp_percent: 0.25  # don't ult a target already below this HP fraction
+  ult_min_self_hp_percent: 0.30    # don't ult below this own-HP fraction unless on last life
+  ability_ranges:
+    primary: 15.0           # FILL
+    secondary: 0.0          # FILL — no secondary yet
+    smash: 0.0              # FILL — no smash yet
+
+# Unlock economy (B25)
+unlock:
+  default-unlocked: false
+  token-cost: 1
+  smash-level-requirement: 0

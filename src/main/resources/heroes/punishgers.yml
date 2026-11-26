@@ -1,0 +1,260 @@
+name: Punishgers
+
+stats:
+  type: RANGED
+  weight: 4.0
+
+energy:
+  starting_energy: 0
+  max_energy: 0
+  energy_per_tick: 0
+  can_increase_energy: false
+
+abilities:
+  primary:
+    type: punishgersweapon
+    name: Arsenal
+    description: Minigun or shotgun — swap with F.
+    cooldown: 0
+    movement_penalty_multiplier: 0.6
+    penalty_linger_ticks: 12
+    pullout_ticks: 20
+    # Draw cost when the incoming clip isn't full — the swap doubles as its reload, so this must
+    # stay >= the longest ammo regen (minigun 2.8s = 56t) or swapping strictly beats reloading.
+    swap_reload_ticks: 35 # FILL
+    minigun:
+      name: Minigun
+      cooldown: 0.125 # per-shot interval (~10 rds/s) — FILL/tune
+      damage: 1.5
+      min_damage: 1.2
+      dropoff_distance: 25
+      knockback: 0.5
+      kb_falloff_start: 10      # blocks of full knockback, then linear falloff
+      kb_falloff_end: 40
+      kb_falloff_min_mult: 0.3  # knockback multiplier at and beyond kb_falloff_end
+      ult_charge_ms: 800        # SMASH cooldown removed per hit
+      range: 55
+      radius: 1
+      ammo:
+        mode: CLIP
+        max: 21
+        regen: 2.8
+        reload_sound:
+          sound: item.crossbow.loading_middle
+      visuals:
+        trail_spacing: 1.5
+        fire_sound:
+          sound: punishgers.carbineshot
+        hit_sound:
+          sound: entity.experience_orb.pickup
+          scope: PLAYER
+        trail_visual:
+          type: PARTICLE
+          particle: CRIT
+    shotgun:
+      name: Shotgun
+      cooldown: 0.4
+      damage: 6.0   # per cone hit since 4.0.1b (was 1.5 per pellet x8); retune
+      knockback: 3.0   # per cone hit since 4.0.1b (was 1.2 per pellet); retune
+      range: 20
+      radius: 0.6
+      speed: 6
+      pellet_count: 8
+      spread_deg: 12.5 # degrees off aim, uniform 0..max (was spread: 0.25)
+      # Pellets are visual only; one cone hit per shot, scaled by how far along the aim the target stands (length)
+      # and how far off the aim line it is (accuracy). Mults are linear: *_min_mult at 0, *_max_mult at full range / cone edge.
+      min_radius: 0.6   # cone width at the muzzle
+      dmg_length_min_mult: 1.0
+      dmg_length_max_mult: 0.5
+      dmg_accuracy_min_mult: 1.0
+      dmg_accuracy_max_mult: 0.6
+      kb_length_min_mult: 1.0
+      kb_length_max_mult: 0.5
+      kb_accuracy_min_mult: 1.0
+      kb_accuracy_max_mult: 0.6
+      ult_charge_ms: 8000   # SMASH cooldown removed per hit (one hit per shot)
+      ammo:
+        mode: CLIP
+        max: 2
+        regen: 2.2
+        reload_sound:
+          sound: item.crossbow.loading_end
+      visuals:
+        activation_sound:
+          sound: punishgers.shotgunshot
+        hit_sound:
+          sound: entity.experience_orb.pickup
+          scope: PLAYER
+        projectile_visual:
+          type: ITEM_DISPLAY
+          model:
+            hero: punishgers
+            texture: pellet
+          scale: 0.1
+  
+  secondary:
+    type: punishgerssecondary
+    name: Ordnance
+    description: Molotov (minigun) or stun grenade (shotgun).
+    cooldown: 10.0
+    molotov:
+      speed: 1.8
+      gravity: 0.04
+      range: 55
+      radius: 0.5
+      dot_damage: 1.5
+      dot_radius: 3.5
+      dot_duration: 4.0
+      dot_hit_interval: 5 # ticks a player is immune to the zone after each hit
+      area_ring_spacing: 0.5
+      area_points_per_block: 1.5
+      area_jitter: 0.3
+      visuals:
+        fire_sound:
+          sound: punishgers.grenadethrow
+        hit_sound:
+          sound: entity.experience_orb.pickup
+          scope: PLAYER
+        trail_visual:
+          type: PARTICLE
+          particle: FLAME
+        projectile_visual:
+          type: ITEM_DISPLAY
+          model:
+            hero: punishgers
+            texture: molotov
+        area_visual:
+          type: PARTICLE
+          particle: FLAME
+        # One ping per burn tick, per victim — up to 25 in a 5s zone, so it sits well under the
+        # other hit indicators and takes the low pitch of the pair.
+        dot_hit_sound:
+          sound: entity.experience_orb.pickup
+          scope: PLAYER
+          volume: 0.15 # FILL
+          pitch: 0.8 # FILL
+      aoe:
+        # These three were absent and ran on code defaults; spelled out at today's values so the
+        # burst stays sound-and-visual-only and all damage keeps coming from the burn zone.
+        radius: 3.0 # FILL
+        damage: 0 # FILL
+        knockback: 0 # FILL
+        # Blast ignores line of sight. Independent of the projectile's own pierces_walls, which
+        # only decides whether the shot stops on the wall.
+        pierces_walls: false
+        center_sound:
+          sound: punishgers.explodefirebomb
+          volume: 2.0
+    stun:
+      speed: 1.8
+      gravity: 0.06
+      range: 40
+      radius: 0.3
+      levitation_amplitude: 1
+      effect_radius: 3.5
+      levitation_ms: 1200   # levitation, and no double jumps for the same time
+      disorient_ms: 500
+      disorient_effect: NAUSEA   # NAUSEA or BLINDNESS
+      area_ring_spacing: 0.5
+      area_points_per_block: 1.5
+      area_jitter: 0.3
+      visuals:
+        fire_sound:
+          sound: punishgers.grenadethrow
+          pitch: 1.4
+        hit_sound:
+          sound: entity.experience_orb.pickup
+          scope: PLAYER
+        trail_visual:
+          type: PARTICLE
+          particle: END_ROD
+        projectile_visual:
+          type: ITEM_DISPLAY
+          model:
+            hero: punishgers
+            texture: stun_grenade
+        area_visual:
+          type: PARTICLE
+          particle: END_ROD
+        # One ping per victim on detonation, so it can sit near full volume; the high pitch is what
+        # separates it from the molotov's burn ping by ear.
+        effect_hit_sound:
+          sound: entity.experience_orb.pickup
+          scope: PLAYER
+          volume: 0.6 # FILL
+          pitch: 1.6 # FILL
+      aoe:
+        # As above — absent keys made explicit at today's values; the stun burst is presentation
+        # only, the effect itself is applied by the ability.
+        radius: 3.0 # FILL
+        damage: 0 # FILL
+        knockback: 0 # FILL
+        pierces_walls: false
+        center_sound:
+          sound: punishgers.explodeflashbang
+          volume: 2.0
+  
+  smash:
+    type: executioner
+    name: Executioner
+    description: Unlimited ammo. No mercy.
+    cooldown: 130.0
+    windup: 0.6            # seconds the player cannot shoot before the ult takes effect
+    active_duration: 4.0
+    fire_rate_multiplier: 0.75
+    grenade_cooldown_multiplier: 0.5
+    visuals:
+      activation_sound:
+        sound: punishgers.ult
+        scope: GLOBAL # ult announcement - audible map-wide (sound-scope rework)
+        volume: 5.0
+  
+  passives:
+  - type: punishgersswap
+    name: Weapon Swap
+    description: Swap between minigun and shotgun.
+    activation: SWAP
+    cooldown: 1.5
+    visuals:
+      swap_sound:
+        sound: item.armor.equip_netherite
+
+skins:
+  default:
+    armor:
+      chest: 60,80,50
+      legs: 25,25,25
+      boots: 25,25,25
+  masterskin:
+    armor:
+      chest: 60,80,50
+      legs: 25,25,25
+      boots: 25,25,25
+
+# Bot config (B28.3) — placeholder values; tune for feel. strategy_type archetype suggested.
+bot:
+  strategy_type: MIDRANGE
+ai:
+  min_target_duration: 40 # FILL — ticks a target is kept before re-evaluating
+  switch_threshold: 3.0 # FILL — how much closer a new target must be to switch
+  search_radius: 100 # FILL — blocks scanned for targets
+  speed_modifier: 1.3 # FILL - x the hero's own pace, now with CORRECT math (sqrt-inverted Citizens squaring): 1.0 = walk parity, 1.3 = always-sprinting
+  input_delay: 2 # FILL — ticks between bot "inputs"
+strategy:
+  preferred_distance: 25.0 # FILL — distance the bot tries to hold
+  chase_range: 35 # FILL — max distance it will chase
+  can_double_jump: true
+  panic_distance: 4.0 # FILL - EVADE trigger: a MELEE/HYBRID enemy inside this range makes the bot flee (0 = never)
+  far_distance: 55 # FILL — beyond this counts as "far" (Arsenal minigun sub-mode range; shotgun sub-mode is 20)
+  ult_min_target_hp_percent: 0.25  # don't ult a target already below this HP fraction
+  ult_min_self_hp_percent: 0.30    # don't ult below this own-HP fraction unless on last life
+  ability_ranges:
+    primary: 40.0 # FILL — use primary within this range
+    secondary: 18.0 # FILL
+    smash: 25.0 # FILL
+
+# Unlock economy (B25)
+unlock:
+  default-unlocked: false
+  token-cost: 1
+  smash-level-requirement: 0

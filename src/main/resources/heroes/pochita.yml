@@ -1,0 +1,192 @@
+name: Pokita
+
+stats:
+  type: MELEE
+  weight: 2.0
+
+combat:
+  jab_damage: 5.0
+  jab_cooldown_ms: 400
+
+energy:
+  starting_energy: 100
+  max_energy: 100
+  energy_per_tick: 0.5
+  can_increase_energy: true
+
+abilities:
+  primary:
+    type: chainrev
+    name: Chain Rev
+    description: Rev forward with a whirling chainsaw hitbox.
+    cooldown: 1.5
+    active_duration: 2.5
+    speed: 0.8
+    grounded_speed: 0.8             # rev speed while on the ground (flat slide); speed is the airborne rev
+    radius: 2.0
+    damage: 1.5
+    hit_interval: 5                # FILL - ticks before the rev can re-hit the same target
+    knockback: 2.0                  # airborne rev hit (static)
+    energy_cost_per_tick: 2.5         # drain while whiffing
+    energy_cost_per_tick_hitting: 1 # FILL - drain while a hit landed within the window below
+    hit_discount_window: 0.6        # FILL - seconds after a landed hit that the discount lasts
+    # While Pochita has dealt damage within damage_window_ms, rev energy drain and damage taken are scaled.
+    damage_window_ms: 1500          # FILL - ms after dealing damage that the window stays open
+    energy_drain_mult: 0.6          # FILL - rev energy drain multiplier inside the window
+    damage_taken_mult: 0.85         # FILL - damage taken multiplier inside the window
+    # Grounded rev: victims get shoved ALONG the travel direction (staying in front of the saw)
+    # with a downward pin, additively - stronger than airborne to keep up with the slide speed.
+    grounded_knockback: 2.5         # FILL
+    grounded_knockback_y: -0.6      # FILL - negative = pinned down
+    airborne_pitch: 35.0            # FILL - aim up more than this many degrees to lift off
+    loop_sound_interval: 8
+    visuals:
+      activation_sound:
+        sound: entity.iron_golem.attack
+      active_sound:
+        sound: block.grindstone.use
+        volume: 0.6
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      trail_visual:
+        type: PARTICLE
+        particle: SWEEP_ATTACK
+
+  secondary:
+    type: chainslash
+    name: Chain Slash
+    description: A brutal all-around slash that stops you dead.
+    cooldown: 5.0
+    # Flexible cost: consumes whatever you have up to energy_cost_max; damage/kb scale from
+    # low_energy_floor at 0 energy to full at max, with full_energy_bonus on an exactly-full cast.
+    # energy_cost stays 0 so the cooldown gate never blocks on energy.
+    energy_cost: 0
+    energy_cost_max: 30
+    low_energy_floor: 0.35          # FILL - fraction of full effect on a 0-energy cast
+    full_energy_bonus: 1.15         # FILL - multiplier when cast at exactly max energy
+    damage: 7.0
+    knockback: 4.5
+    radius: 4.0
+    visuals:
+      activation_sound:
+        sound: entity.player.attack.sweep
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      wave_visual:
+        type: PARTICLE
+        shape: RING
+        particle: SWEEP_ATTACK
+        points: 16
+        radius: 3.0
+
+  smash:
+    type: heroofhell
+    name: Hero Of Hell
+    description: Unleash the devil within.
+    cooldown: 100.0
+    active_duration: 8.0
+    hell_skin: hell
+    damage_taken_multiplier: 0.75
+    damage_dealt_multiplier: 1.5
+    energy_regen_multiplier: 1.5
+    visuals:
+      activation_sound:
+        sound: entity.ender_dragon.growl
+        scope: GLOBAL # ult announcement - audible map-wide (sound-scope rework)
+        volume: 2.0
+
+  passives:
+  - type: chainhook
+    name: Chain Hook
+    description: Fire a chain and reel yourself in.
+    activation: SNEAK
+    cooldown: 2.5                   # paid ON HIT (wall or player), not on cast
+    cooldown_starts: RESOLVE
+    miss_cooldown: 1.0              # FILL - whiffs only cost this much
+    speed: 9.0                      # FILL - chain projectile speed (fast but dodgeable)
+    range: 50
+    radius: 0.5
+    damage: 4                       # small on-hit chip - the incentive to hook players
+    pull_start: 0.7                 # FILL - self reel speed at the start of a pull (walls and players)
+    pull_accel_per_tick: 0.03       # FILL - added to the reel speed each tick the pull is held
+    pull_max: 1.6                   # FILL - reel speed cap
+    pull_speed_target: 1.0          # FILL - how hard a hooked player is dragged to you
+    max_pull_ticks: 100             # self-pull duration cap
+    max_pull_ticks_target: 50       # FILL - shorter cap on dragging players (displacement is scary)
+    drift_strength: 0.35        # FILL - A/D lateral steering strength during the pull
+    vertical_drift_strength: 0.25   # FILL - W/S up/down steering strength during the pull
+    energy_cost_per_tick: 1
+    messages:
+      touch_ground: "&7Touch the ground to use Chain Hook again."
+    visuals:
+      fire_sound:
+        sound: entity.fishing_bobber.throw
+      hit_sound:
+        sound: block.chain.hit
+        scope: PLAYER
+      wall_sound:
+        sound: block.chain.place
+      projectile_visual:
+        type: PARTICLE
+        particle: SQUID_INK
+      trail_visual:
+        type: PARTICLE
+        particle: CRIT
+
+skins:
+  default:
+    armor:
+      chest: 230,120,30
+      legs: 25,25,25
+      boots: 25,25,25
+  hell:
+    # Applied and reverted by Hero of Hell — must never appear in the skin picker.
+    hidden: true
+    armor:
+      chest: 160,20,20
+      legs: 20,20,20
+      boots: 160,20,20
+  masterskin:
+    armor:
+      chest: 230,120,30
+      legs: 25,25,25
+      boots: 25,25,25
+
+# Bot config (B28.2) — placeholder values; tune for feel. strategy_type archetype suggested.
+bot:
+  strategy_type: AGGRESSIVE
+ai:
+  min_target_duration: 40   # FILL — ticks a target is kept before re-evaluating
+  switch_threshold: 3.0     # FILL — how much closer a new target must be to switch
+  search_radius: 100         # FILL — blocks scanned for targets
+  speed_modifier: 1.3 # FILL - x the hero's own pace, now with CORRECT math (sqrt-inverted Citizens squaring): 1.0 = walk parity, 1.3 = always-sprinting
+  input_delay: 2            # FILL — ticks between bot "inputs" (higher = slower reactions)
+# Bot movement kit (shared by RECOVER and EVADE): input slots tried lowest-priority-number
+# first; delay_after_ticks is the commit window before the NEXT action.
+movement:
+  actions:
+  - action: primary # Chain Rev - bots keep the full rev window; airborne it thrusts along the aim every tick
+    priority: 2
+    delay_after_ticks: 20 # FILL
+  - action: jump
+    priority: 1
+    delay_after_ticks: 8 # FILL
+strategy:
+  preferred_distance: 2.0   # FILL — distance the bot tries to hold
+  chase_range: 30           # FILL — max distance it will chase
+  can_double_jump: true
+  far_distance: 12          # FILL — beyond this counts as "far" for decision-making
+  ult_min_target_hp_percent: 0.25  # don't ult a target already below this HP fraction
+  ult_min_self_hp_percent: 0.30    # don't ult below this own-HP fraction unless on last life
+  ability_ranges:
+    primary: 5.0            # FILL — use primary within this range
+    secondary: 6.0          # FILL
+    smash: 5.0              # FILL
+
+# Unlock economy (B25)
+unlock:
+  default-unlocked: false
+  token-cost: 1
+  smash-level-requirement: 0

@@ -1,0 +1,212 @@
+name: CakeMonster
+hurt_sound:
+  sound: cakemonster.pain
+  scope: PLAYER
+  cooldown: 0.5     # seconds between hurt sounds
+  min_damage: 0     # only for hits dealing at least this much damage
+  chance: 1.0       # 0-1 probability the sound plays
+stats:
+  type: MELEE
+  weight: 4.0
+
+combat:
+  jab_damage: 5.0
+
+energy:
+  starting_energy: 100
+  max_energy: 100
+  energy_per_tick: 0.8
+  can_increase_energy: true
+
+mobility:
+  type: defecake
+  defe_x_strength: 0.85
+  defe_y_strength: 0.95
+  energy_cost: 50
+  damage: 5.0
+  knockback: 1.0
+  radius: 1.0
+  range: 20.0
+  speed: 1.5
+  gravity: 0.06
+  aoe:
+    damage: 5.0
+    knockback: 1.0
+    radius: 3.0     # FILL — was 1.0, too small to read as an explosion
+    # Blast ignores line of sight. Independent of the projectile's own pierces_walls, which
+    # only decides whether the shot stops on the wall.
+    pierces_walls: true
+    # NOTE: Aoe reads these keys directly on the aoe section (no visuals: wrapper —
+    # the old nested center_sound was never played)
+    center_visual:
+      type: PARTICLE
+      particle: EXPLOSION
+    center_sound:
+      sound: skullfire.explodegrenade
+      volume: 5.0
+    hit_sound:
+      sound: entity.experience_orb.pickup
+      scope: PLAYER
+  visuals:
+    defe_visual:
+      type: PARTICLE
+      shape: RING
+      points: 12
+      radius: 0.65
+      particles:
+      - particle: DUST
+        color: "#8B4513"
+    fire_sound:
+      sound: cakemonster.defecake.activation
+      volume: 3.0
+    hit_sound:
+      sound: entity.experience_orb.pickup
+      scope: PLAYER
+    projectile_visual:
+      type: ITEM_DISPLAY
+      model:
+        hero: cakemonster
+        texture: tnt
+
+abilities:
+  primary:
+    type: rollingpin
+    name: Rolling Pin
+    cooldown: 2.0
+    damage: 6.0
+    knockback: 1.5
+    radius: 1.5
+    speed: 2.5
+    duration: 3
+    visuals:
+      activation_sound:
+        sound: melee.punch.meleemiss
+      hit_sound:
+        sound: melee.punch.meleehit
+      dash_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: cakemonster
+          texture: dash
+  
+  secondary:
+    type: regurgicake
+    name: Regurgicake
+    cooldown: 5.5
+    damage: 2.0
+    knockback: 0.6
+    radius: 0.85
+    range: 17.0
+    speed: 1.6
+    gravity: 0.08
+    burst_count: 6
+    burst_delay_ms: 50
+    spread_deg: 15.0
+    visuals:
+      activation_sound:
+        sound: cakemonster.reguricake.activation
+      fire_sound:
+        sound: entity.chicken.egg
+        volume: 2.0
+        pitch: 0.0
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      wall_sound:
+        sound: block.gravel.break
+        pitch: 0.0
+      projectile_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: cakemonster
+          texture: cake
+      wall_visual:
+        type: PARTICLE
+        particle: FALLING_HONEY
+  
+  smash:
+    type: cakestorm
+    name: Cake Storm
+    cooldown: 100.0
+    active_duration: 9.0
+    damage: 2.0
+    knockback: 0.6
+    radius: 1.0
+    range: 40
+    speed: 1.6
+    gravity: 0.08
+    burst_start_delay_ms: 100
+    burst_delay_ms: 100
+    burst_until_inactive: true
+    spread_deg: 10.0
+    visuals:
+      activation_sound:
+        sound: cakemonster.crystal
+        scope: GLOBAL # ult announcement - audible map-wide (sound-scope rework)
+        volume: 5.0
+      fire_sound:
+        sound: entity.chicken.egg
+        volume: 2.0
+        pitch: 0.0
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      projectile_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: cakemonster
+          texture: cake
+  
+  passives:
+  - type: goodbaker
+    name: Good Baker
+    description: Resets Rolling Pin cooldown whenever you hit a cake
+
+skins:
+  default:
+    armor:
+      chest: 72,84,0
+      legs: 72,84,0
+      boots: 72,84,0
+  masterskin:
+    armor:
+      chest: 255,255,255
+      legs: 172,84,0
+      boots: 255,255,255
+# Unlock economy (B25)
+unlock:
+  default-unlocked: false
+  token-cost: 1
+  smash-level-requirement: 0
+
+# Bot config (B28.7) - placeholder values; tune for feel. strategy_type archetype suggested
+# from stats.type; ai.* read by BaseBotAI, strategy.* by the Strategy classes.
+bot:
+  strategy_type: AGGRESSIVE
+ai:
+  min_target_duration: 40 # FILL - ticks a target is kept before re-evaluating
+  switch_threshold: 3.0 # FILL - how much closer a new target must be to switch
+  search_radius: 100 # FILL - blocks scanned for targets
+  speed_modifier: 1.3 # FILL - x the hero's own pace, now with CORRECT math (sqrt-inverted Citizens squaring): 1.0 = walk parity, 1.3 = always-sprinting
+  input_delay: 2 # FILL - ticks between bot "inputs"
+# Bot movement kit (shared by RECOVER and EVADE): input slots tried lowest-priority-number
+# first; delay_after_ticks is the commit window before the NEXT action.
+movement:
+  actions:
+  - action: primary # Rolling Pin, ~9 blocks; the jump below is Defecake - at 50+ energy it costs no double jump
+    priority: 1
+    delay_after_ticks: 10 # FILL
+  - action: jump
+    priority: 2
+    delay_after_ticks: 8 # FILL
+strategy:
+  preferred_distance: 2.5 # FILL - distance the bot tries to hold
+  chase_range: 30 # FILL - max distance it will chase
+  can_double_jump: true
+  far_distance: 16 # FILL - beyond this counts as "far"
+  ult_min_target_hp_percent: 0.25  # don't ult a target already below this HP fraction
+  ult_min_self_hp_percent: 0.30    # don't ult below this own-HP fraction unless on last life
+  ability_ranges:
+    primary: 6.0 # FILL - use primary within this range
+    secondary: 8.0 # FILL
+    smash: 9.0 # FILL

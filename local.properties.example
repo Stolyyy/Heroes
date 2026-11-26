@@ -1,0 +1,5 @@
+# Copy this file to local.properties (gitignored) to auto-deploy the shaded plugin jar
+# straight into a local Paper server's plugins folder on `./gradlew build`.
+# Leave unset to output into build/libs/.
+#
+# deployDir=/path/to/your/server/plugins

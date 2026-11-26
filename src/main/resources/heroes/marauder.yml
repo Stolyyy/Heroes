@@ -1,0 +1,176 @@
+name: Marauder
+hurt_sound:
+  sound: marauder.pain
+  scope: PLAYER
+  cooldown: 0.5 # seconds between hurt sounds
+  min_damage: 0 # only for hits dealing at least this much damage
+  chance: 1.0 # 0-1 probability the sound plays
+
+stats:
+  type: MELEE
+  weight: 4.0
+
+combat:
+  jab_damage: 5.0
+
+energy:
+  starting_energy: 100
+  max_energy: 100
+  energy_per_tick: 0.9
+  can_increase_energy: true
+
+mobility:
+  type: marauderdarkjump
+  dark_jump_energy_cost: 50
+  max_dark_jumps: 3
+  dark_jump_strength: 1.25
+  dark_jump_y_strength: 0.35
+  dark_jump_sound:
+    sound: marauder.forcejump
+  dark_jump_visuals:
+    type: PARTICLE
+    shape: RING
+    particle: SMOKE
+    points: 16
+    radius: 0.5
+
+abilities:
+  primary:
+    type: marauderlightning
+    name: Lightning
+    energy_cost: 40
+    damage: 8.0
+    knockback: 2.0
+    radius: 1.5
+    range: 8
+    pierces_players: true
+    energy_per_jab: 15 # FILL - energy a landed jab feeds back into the lightning
+    visuals:
+      fire_sound:
+        sound: marauder.forcelightning.activation
+      hit_sound:
+        sounds:
+        - sound: marauder.forcelightning.impact
+        - sound: entity.experience_orb.pickup
+          scope: PLAYER
+      trail_spacing: 100
+      trail_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: marauder
+          texture: lightning
+  
+  secondary:
+    type: maraudergrip
+    name: Grip
+    cooldown: 0.5
+    energy_cost: 70
+    damage: 6
+    knockback: -3.0
+    radius: 2.0
+    range: 18
+    stun_duration: 0.6
+    pierces_players: true
+    visuals:
+      fire_sound:
+        sound: marauder.grip.activation
+      hit_sound:
+        sound: marauder.grip.impact
+      trail_spacing: 1.0
+      trail_visual:
+        type: PARTICLE
+        particle: LARGE_SMOKE
+      hit_visual:
+        type: PARTICLE
+        particle: DAMAGE_INDICATOR
+        count: 16
+        speed: 0.5
+        spread: 0.5
+  
+  smash:
+    type: marauderultimate
+    name: The Dark Side
+    cooldown: 100.0
+    active_duration: 12.0
+    damage_mitigation: 0.66
+    energy_regen_multiplier: 2.5
+    visuals:
+      # Sparse follow-aura while the ult is active.
+      aura_visual:
+        type: PARTICLE
+        particle: SOUL
+        count: 2
+        spread: 0.4
+        speed: 0.02
+      aura_interval: 10       # FILL - ticks between aura puffs
+      activation_sound:
+        sound: marauder.forceunleashed
+        scope: GLOBAL # ult announcement - audible map-wide (sound-scope rework)
+        volume: 5.0
+  
+  passives:
+  - type: maraudersaberthrow
+    name: Saber Throw
+    description: null
+    activation: DROP
+    energy_cost: 75
+    damage: 8.0
+    knockback: 2.0
+    radius: 1.6
+    range: 30
+    speed: 1.5
+    pierces_players: true
+    returns: true
+    spin_deg_per_tick: 34.4
+    kb_type: HIT_LOCATION
+    visuals:
+      fire_sound:
+        sound: melee.marauder.meleemiss
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      projectile_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: marauder
+          texture: item
+
+skins:
+  default:
+    armor:
+      chest: 34,34,34
+      legs: 34,34,34
+      boots: 34,34,34
+  masterskin:
+    armor:
+      chest: 34,34,34
+      legs: 34,34,34
+      boots: 34,34,34
+
+# Unlock economy (B25)
+unlock:
+  default-unlocked: false
+  token-cost: 1
+  smash-level-requirement: 0
+
+# Bot config (B28.7) - placeholder values; tune for feel. strategy_type archetype suggested
+# from stats.type; ai.* read by BaseBotAI, strategy.* by the Strategy classes.
+bot:
+  strategy_type: AGGRESSIVE
+ai:
+  min_target_duration: 40 # FILL - ticks a target is kept before re-evaluating
+  switch_threshold: 3.0 # FILL - how much closer a new target must be to switch
+  search_radius: 100 # FILL - blocks scanned for targets
+  speed_modifier: 1.3 # FILL - x the hero's own pace, now with CORRECT math (sqrt-inverted Citizens squaring): 1.0 = walk parity, 1.3 = always-sprinting
+  input_delay: 2 # FILL - ticks between bot "inputs"
+strategy:
+  preferred_distance: 2.5 # FILL - distance the bot tries to hold
+  chase_range: 30 # FILL - max distance it will chase
+  can_double_jump: true
+  far_distance: 15 # FILL - beyond this counts as "far"
+  ult_min_target_hp_percent: 0.25  # don't ult a target already below this HP fraction
+  ult_min_self_hp_percent: 0.30    # don't ult below this own-HP fraction unless on last life
+  ability_ranges:
+    primary: 7.0 # FILL - use primary within this range
+    secondary: 14.0 # FILL
+    smash: 12.0 # FILL

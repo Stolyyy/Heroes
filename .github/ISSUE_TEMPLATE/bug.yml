@@ -1,0 +1,30 @@
+name: Bug report
+description: Something broke or behaved wrong in a game
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: One or two sentences. What did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Custom game, 2 bots\n2. Reroll the map\n3. Start"
+  - type: input
+    id: context
+    attributes:
+      label: Hero / map / mode
+      placeholder: "Punishgers, Skyline, 2v2"
+  - type: input
+    id: version
+    attributes:
+      label: Heroes version (from /heroesversion)
+  - type: textarea
+    id: log
+    attributes:
+      label: Console lines or screenshots
+      render: text

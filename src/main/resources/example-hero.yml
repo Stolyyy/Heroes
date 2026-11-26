@@ -1,0 +1,154 @@
+# Complete hero YML skeleton — copy this into `src/main/resources/heroes/<id>.yml`
+# (kept outside `heroes/` so HeroConfig never tries to load it as a playable hero).
+#
+# Defaults for stats, mobility, combat, energy, unlock, and death/kill visuals are inherited
+# from `heroes/default.yml`. Template-wide defaults live in `templates.yml`.
+# Comments tagged `# FILL` mark balance values intended to be tuned in playtests via `/balance`.
+
+name: ExampleHero                # Display name; lowercase without spaces becomes the asset key ("examplehero")
+admin-only: false                # Optional: true hides the hero from non-ops in /hero and HeroSelectGUI
+
+hurt_sound:
+  sound: entity.player.hurt      # Custom resource-pack event or vanilla sound key
+  scope: PLAYER                  # PLAYER | LOCAL | GLOBAL
+  cooldown: 0.5                  # seconds between hurt sounds
+  min_damage: 0.0
+  chance: 1.0
+
+stats:
+  type: HYBRID                   # MELEE | RANGED | HYBRID (determines default ult-charge sources)
+  weight: 2.0                    # Higher weight resists knockback
+  movement_speed: 0.2            # Base Minecraft movement speed attribute
+
+mobility:
+  type: STANDARD                 # STANDARD or a registered custom mobility key in AbilityRegistry
+  max_double_jumps: 2
+  jump_x_strength: 0.9
+  jump_y_strength: 0.85
+
+combat:
+  jab_damage: 4.0
+  jab_knockback: 2.0
+  jab_range: 5.0
+  jab_radius: 0.5
+  jab_cooldown_ms: 500           # milliseconds
+
+energy:
+  starting_energy: 0
+  max_energy: 100
+  energy_per_tick: 0.5
+  can_increase_energy: true
+
+abilities:
+  primary:
+    type: my_primary             # Registered lowercase key in AbilityRegistry.registerAll()
+    name: Example Shot           # Display name — also the PlayerStats key (do not rename after release)
+    description: Fires a basic projectile.
+    cooldown: 0.5                # seconds
+    damage: 6.0
+    knockback: 2.0
+    radius: 0.5
+    range: 50.0
+    speed: 2.0
+    gravity: 0.0
+    visuals:
+      fire_sound:
+        sound: entity.blaze.shoot
+        scope: LOCAL
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      projectile_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: examplehero
+          texture: projectile
+      trail_spacing: 2.0
+      trail_visual:
+        type: PARTICLE
+        shape: POINT
+        particle: CRIT
+
+  secondary:
+    type: my_secondary
+    name: Example Dash
+    description: Dashes forward along your aim.
+    cooldown: 4.0
+    damage: 6.0
+    knockback: 3.0
+    radius: 1.2
+    speed: 1.4
+    duration: 6                  # ticks
+    visuals:
+      activation_sound:
+        sound: entity.player.attack.sweep
+        scope: LOCAL
+
+  smash:
+    type: my_ultimate
+    name: Example Smash
+    description: Empowered ultimate ability.
+    cooldown: 90.0               # seconds (reduced on hits per HeroType)
+    active_duration: 10.0        # seconds
+    visuals:
+      activation_sound:
+        sound: entity.ender_dragon.growl
+        scope: GLOBAL            # map-wide announcement
+        volume: 5.0
+
+  passives:
+    - type: my_passive
+      name: Example Passive
+      description: Triggers on sneak.
+      activation: SNEAK          # TICK | SNEAK | DROP | SWAP
+      cooldown: 3.0
+      energy_cost: 40
+
+skins:
+  default:
+    armor:
+      chest: 100,140,220         # R,G,B leather armor dye
+      legs: 40,40,50
+      boots: 40,40,50
+  masterskin:
+    armor:
+      chest: 220,180,40
+      legs: 30,30,30
+      boots: 220,180,40
+
+unlock:
+  default-unlocked: false
+  token-cost: 1
+  smash-level-requirement: 0
+
+# Per-hero bot configuration (see docs/BOTS.md)
+bot:
+  strategy_type: MIDRANGE        # AGGRESSIVE | DEFENSIVE | MIDRANGE
+
+ai:
+  min_target_duration: 40        # ticks before considering target switch
+  switch_threshold: 3.0          # blocks closer a new target must be to switch
+  search_radius: 100
+  speed_modifier: 1.3            # 1.0 = walk parity, 1.3 = sprint parity
+  input_delay: 2                 # ticks between bot decisions
+
+movement:
+  actions:
+    - action: secondary          # jump | primary | secondary | smash | sneak | drop | swap
+      priority: 1
+      delay_after_ticks: 8
+    - action: jump
+      priority: 2
+      delay_after_ticks: 8
+
+strategy:
+  preferred_distance: 15.0
+  far_distance: 35.0
+  panic_distance: 4.0
+  can_double_jump: true
+  ult_min_target_hp_percent: 0.25
+  ult_min_self_hp_percent: 0.30
+  ability_ranges:
+    primary: 30.0
+    secondary: 12.0
+    smash: 25.0

@@ -1,0 +1,25 @@
+name: Balance
+description: A hero or ability feels too strong or too weak
+labels: ["balance"]
+body:
+  - type: input
+    id: hero
+    attributes:
+      label: Hero and ability
+      placeholder: "Cryomancer, frostbolt"
+    validations:
+      required: true
+  - type: dropdown
+    id: direction
+    attributes:
+      label: Direction
+      options: [nerf, buff, rework, "needs monitoring"]
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: What happens in games that makes you think so.
+    validations:
+      required: true

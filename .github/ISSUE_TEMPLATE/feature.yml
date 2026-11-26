@@ -1,0 +1,19 @@
+name: Feature or QOL idea
+description: Something the game or lobby should have
+labels: ["feature"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it helps
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [game, lobby, cosmetic, admin/ops, other]

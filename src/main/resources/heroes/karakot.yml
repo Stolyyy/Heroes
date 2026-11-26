@@ -1,0 +1,198 @@
+name: Karakot
+hurt_sound:
+  sound: goku.pain
+  scope: PLAYER
+  cooldown: 0.5 # seconds between hurt sounds
+  min_damage: 0 # only for hits dealing at least this much damage
+  chance: 1.0 # 0-1 probability the sound plays
+stats:
+  type: HYBRID
+  weight: 2.0
+
+combat:
+  jab_damage: 4.0
+
+energy:
+  starting_energy: 100
+  max_energy: 100
+  energy_per_tick: 0.5
+  can_increase_energy: true
+
+abilities:
+  primary:
+    type: kiblast
+    name: Ki Blast
+    cooldown: 1.0
+    damage: 4.0
+    knockback: 1.0
+    radius: 1.0
+    range: 100
+    speed: 1.9
+    spread_deg: 7
+    burst_count: 2
+    spread_alternate: true
+    aoe:
+      damage: 4.0
+      knockback: 1.0
+      radius: 1.5
+      # Blast ignores line of sight. Independent of the projectile's own pierces_walls, which
+      # only decides whether the shot stops on the wall. True here because 1.5 is the smallest
+      # blast in the game — a wall check at that scale vetoes more hits than it justifies.
+      pierces_walls: true
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      center_visual:
+        type: PARTICLE
+        particle: EXPLOSION
+    visuals:
+      fire_sound:
+        sound: goku.kiblast
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      projectile_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: karakot
+          texture: ki
+  
+  secondary:
+    type: kamedo
+    name: Kame Do
+    charges: 3
+    charge_on_primary_hit: true
+    damage: 12.0
+    knockback: 2.3
+    radius: 1.5
+    range: 100
+    speed: 1.6
+    kb_type: HIT_LOCATION
+    aoe:
+      kb_type: HIT_LOCATION   # blast kb radiates from the hit point (default: player positions)
+      damage: 12.0
+      knockback: 1.0
+      radius: 2.5
+      pierces_walls: false
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      center_visual:
+        type: PARTICLE
+        particle: EXPLOSION
+    visuals:
+      fire_sound:
+        sound: goku.pain
+      hit_sound:
+        sound: entity.experience_orb.pickup
+        scope: PLAYER
+      trail_spacing: 1.0
+      trail_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: karakot
+          texture: kametrail
+      projectile_visual:
+        type: ITEM_DISPLAY
+        model:
+          hero: karakot
+          texture: kame
+  
+  smash:
+    type: karakotultimate
+    name: True Power
+    cooldown: 90.0
+    active_duration: 10.0
+    ult_skin: ult
+    damage_mitigation: 0.5
+    primary_cooldown_reduction_percent: 0.5
+    passive_energy_reduction_percent: 0.5
+    visuals:
+      # Sparse follow-aura while the ult is active.
+      aura_visual:
+        type: PARTICLE
+        particle: ELECTRIC_SPARK
+        count: 2
+        spread: 0.4
+        speed: 0.02
+      aura_interval: 10       # FILL - ticks between aura puffs
+      activation_sound:
+        sound: goku.crystal
+        scope: GLOBAL # ult announcement - audible map-wide (sound-scope rework)
+        volume: 5.0
+  
+  passives:
+  - type: karakotteleport
+    name: Instant Transmission
+    description: null
+    activation: SNEAK
+    energy_cost: 40
+    distance: 9.0
+    velocity_multiplier: 0.03
+    visuals:
+      initial_visual:
+        type: PARTICLE
+        shape: RING
+        particle: POOF
+        points: 16
+        radius: 1.0
+      activation_sound:
+        sound: goku.teleport
+
+skins:
+  default:
+    armor:
+      chest: 0,60,158
+      legs: 255,80,0
+      boots: 255,80,0
+  ult:
+    # Applied and reverted by the ultimate itself — must never appear in the skin picker,
+    # or selecting it persists the saiyan look as the player's real skin from spawn.
+    hidden: true
+    armor:
+      chest: 0,60,158
+      legs: 255,80,0
+      boots: 255,80,0
+  masterskin:
+    armor:
+      chest: 0,60,158
+      legs: 255,213,61
+      boots: 0,60,158
+
+# Unlock economy (B25)
+unlock:
+  default-unlocked: false
+  token-cost: 1
+  smash-level-requirement: 0
+
+# Bot config (B28.7) - placeholder values; tune for feel. strategy_type archetype suggested
+# from stats.type; ai.* read by BaseBotAI, strategy.* by the Strategy classes.
+bot:
+  strategy_type: MIDRANGE
+ai:
+  min_target_duration: 40 # FILL - ticks a target is kept before re-evaluating
+  switch_threshold: 3.0 # FILL - how much closer a new target must be to switch
+  search_radius: 100 # FILL - blocks scanned for targets
+  speed_modifier: 1.3 # FILL - x the hero's own pace, now with CORRECT math (sqrt-inverted Citizens squaring): 1.0 = walk parity, 1.3 = always-sprinting
+  input_delay: 2 # FILL - ticks between bot "inputs"
+# Bot movement kit (shared by RECOVER and EVADE): input slots tried lowest-priority-number
+# commit window before the NEXT recovery action.
+movement:
+  actions:
+  - action: sneak # Instant Transmission — teleports along the aim toward the stage
+    priority: 1
+    delay_after_ticks: 10 # FILL
+  - action: jump
+    priority: 2
+    delay_after_ticks: 8 # FILL
+strategy:
+  preferred_distance: 8.0 # FILL - distance the bot tries to hold
+  chase_range: 35 # FILL - max distance it will chase
+  can_double_jump: true
+  far_distance: 100 # FILL - beyond this counts as "far"
+  ult_min_target_hp_percent: 0.25  # don't ult a target already below this HP fraction
+  ult_min_self_hp_percent: 0.30    # don't ult below this own-HP fraction unless on last life
+  ability_ranges:
+    primary: 40.0 # FILL - use primary within this range
+    secondary: 16.0 # FILL
+    smash: 14.0 # FILL

@@ -51,4 +51,4 @@ Old pre-rewrite code may sit in `.legacy/` (gitignored, outside `src/`, not comp
 - **Loud errors:** Do not add defensive null guards, swallowing `try/catch` blocks, or silent Java config fallbacks unless explicitly requested or listed as an allowed exception in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 - **Deliberate game design:** Never remove or "fix" the 0 HP alive buffer (`Interactions.ZERO_HP_BUFFER`).
 - **Live configs:** `saveResource(false)` never overwrites existing files in `plugins/Heroes/`. Any new or changed YML key must go into `src/main/resources/` and be listed clearly in your summary so it can be mirrored to live servers.
-- **Git:** Do not commit or push unless explicitly asked.
+- **Git:** Commit and push as you work; no need to ask first. Issue work goes on its own branch with a PR (see Issue Tracking & Workflow). Do not merge PRs or push to `master`: Will merges after playtesting.

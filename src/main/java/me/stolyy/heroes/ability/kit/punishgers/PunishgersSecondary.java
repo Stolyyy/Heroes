@@ -6,10 +6,11 @@ import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.CompositeAbility;
 import me.stolyy.heroes.ability.template.Projectile;
+import me.stolyy.heroes.hero.mechanics.StatusEffects;
 import me.stolyy.heroes.physics.Hitbox;
+import me.stolyy.heroes.physics.Interactions;
 import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
-import me.stolyy.heroes.hero.HeroManager;
 import me.stolyy.heroes.vfx.effect.ParticleBuilder;
 import me.stolyy.heroes.vfx.effect.SoundEffect;
 import org.bukkit.Location;
@@ -40,8 +41,8 @@ public class PunishgersSecondary extends CompositeAbility {
     private final SoundEffect dotHitSound;
 
     private final double stunRadius;
-    private final int levitationAmplifier;
-    private final long levitationMs;
+    private final double stunLaunchKnockback;
+    private final StatusEffects.Spec stunStatus;
     private final long disorientMs;
     private final PotionEffectType disorientEffect;
     private final AreaDisc stunArea;
@@ -64,8 +65,8 @@ public class PunishgersSecondary extends CompositeAbility {
         this.dotHitSound = new SoundEffect(Configs.requireSection(molotovConfig, "visuals.dot_hit_sound"));
 
         this.stunRadius = Configs.requireDouble(stunConfig, "effect_radius");
-        this.levitationAmplifier = Configs.requireInt(stunConfig, "levitation_amplitude");
-        this.levitationMs = Configs.requireLong(stunConfig, "levitation_ms");
+        this.stunLaunchKnockback = Configs.requireDouble(stunConfig, "launch_knockback");
+        this.stunStatus = StatusEffects.Spec.fromConfig(stunConfig);
         this.disorientMs = Configs.requireLong(stunConfig, "disorient_ms");
         this.disorientEffect = switch (Configs.requireString(stunConfig, "disorient_effect").toUpperCase()) {
             case "NAUSEA" -> PotionEffectType.NAUSEA;
@@ -110,6 +111,7 @@ public class PunishgersSecondary extends CompositeAbility {
     @Override
     protected void onCompositeOwnerLost(Hero hero) {
         dotZones.clear();
+        StatusEffects.removeAllFrom(this);
     }
 
     private void detonateStun(Hero owner, Location center, @Nullable LivingEntity directHitVictim) {
@@ -129,12 +131,13 @@ public class PunishgersSecondary extends CompositeAbility {
                 .onHit(victim -> {
                     stunHitSound.play(victim.getEyeLocation(), owner.getController());
                     if (!victim.equals(directHitVictim)) owner.triggerAbilityHit(this, victim);
-                    victim.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION,
-                            (int) (levitationMs / 50), levitationAmplifier, false, false, false));
+                    Interactions.on(self, victim)
+                            .verticalKnockback(stunLaunchKnockback)
+                            .staticKnockback()
+                            .execute();
                     victim.addPotionEffect(new PotionEffect(disorientEffect,
                             (int) (disorientMs / 50), 0, false, false, false));
-                    Hero victimHero = HeroManager.getHero(victim);
-                    if (victimHero != null) victimHero.getMobility().root(levitationMs);
+                    StatusEffects.applyTo(victim, stunStatus, this, owner, null);
                 })
                 .check();
     }

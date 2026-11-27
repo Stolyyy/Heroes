@@ -3,6 +3,7 @@ package me.stolyy.heroes.control;
 import me.stolyy.heroes.control.ai.BotAI;
 import me.stolyy.heroes.game.PlayerVisibility;
 import me.stolyy.heroes.hero.Hero;
+import me.stolyy.heroes.hero.mechanics.StatusEffects;
 import me.stolyy.heroes.npc.NpcHandle;
 import me.stolyy.heroes.npc.NpcService;
 import me.stolyy.heroes.npc.NpcServiceProvider;
@@ -29,6 +30,7 @@ public class BotController implements Controller {
     private final NpcService npcService;
     private BotAI ai;
     private boolean wasOnGround;
+    private boolean moveBlocked;
 
     public BotController(NpcHandle handle) {
         this.npcHandle = handle;
@@ -240,10 +242,12 @@ public class BotController implements Controller {
     }
 
     public void navigateTo(Location target) {
+        if (moveBlocked) return;
         npcService.navigateTo(npcHandle, target);
     }
 
     public void navigateToEntity(LivingEntity target) {
+        if (moveBlocked) return;
         npcService.navigateToEntity(npcHandle, target, true);
     }
 
@@ -277,7 +281,11 @@ public class BotController implements Controller {
     public BotAI getAI() { return ai; }
 
     public void tickAI(Hero hero) {
-        if (hero.actionsLocked() || hero.isRespawning() || hero.isEliminated()) return;
+        if (hero.isRespawning() || hero.isEliminated()) return;
+        moveBlocked = hero.status().blocks(StatusEffects.Restriction.MOVE);
+        if (moveBlocked && isNavigating()) {
+            stopNavigation();
+        }
         if (ai != null) ai.tick(hero, this);
     }
 

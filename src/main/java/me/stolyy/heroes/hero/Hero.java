@@ -11,6 +11,7 @@ import me.stolyy.heroes.hero.mechanics.Attributes;
 import me.stolyy.heroes.hero.mechanics.DoubleJump;
 import me.stolyy.heroes.hero.mechanics.Energy;
 import me.stolyy.heroes.hero.mechanics.Jab;
+import me.stolyy.heroes.hero.mechanics.StatusEffects;
 import me.stolyy.heroes.hero.minion.MinionHero;
 import me.stolyy.heroes.util.TemplateConfig;
 import me.stolyy.heroes.game.GameManager;
@@ -38,6 +39,7 @@ public class Hero {
     private final Jab combat;
     private final Energy energy;
     private final CooldownManager cooldowns;
+    private final StatusEffects status = new StatusEffects();
 
     private final Ability primaryAbility;
     private final Ability secondaryAbility;
@@ -64,12 +66,8 @@ public class Hero {
     private boolean eliminated;
 
     private Runnable primaryOverride;
-    // Full input lock (Mr. Monster's grab holds BOTH participants in it): every ability
-    // input and jab is dead while set. The one exception is a pending primary override —
-    // deliberately, because the override IS the grab's throw input.
-    private boolean actionsLocked;
-    // Post-override input absorption: consuming a primary override (the grab's throw) unlocks
-    // actions, but the SAME physical click keeps generating use inputs for a few ticks (the
+    // Post-override input absorption: consuming a primary override (the grab's throw) clears
+    // the grab's disable status, but the SAME physical click keeps generating use inputs for a few ticks (the
     // held-fire sampler, the paired interact events) — which fired the real primary right on
     // top of the throw. The override consumer stamps a short lockout to swallow that residue.
     private int primarySuppressedUntilTick = Integer.MIN_VALUE;
@@ -187,6 +185,7 @@ public class Hero {
         energy.tick(controller);
         cooldowns.tick(this, controller);
         eventBus.triggerTick(this);
+        status.tick(this);
     }
 
     private List<Ability> allAbilities() {
@@ -222,6 +221,7 @@ public class Hero {
     public void triggerLand() { if (!isRespawning()) eventBus.triggerLand(); }
     public void triggerDoubleJump() { if (!isRespawning()) eventBus.triggerDoubleJump(); }
     public void triggerDeath(Location deathLocation) {
+        status.clear(this);
         mobility.onDeath(this);
         eventBus.triggerDeath(deathLocation);
     }
@@ -266,6 +266,7 @@ public class Hero {
     public DoubleJump getMobility() { return mobility; }
     public Jab getCombat() { return combat; }
     public Energy getEnergy() { return energy; }
+    public StatusEffects status() { return status; }
 
     public String getName() { return name; }
     public HeroStats getBaseStats() { return baseStats; }
@@ -309,6 +310,7 @@ public class Hero {
      * (not triggerDeath) so bus-level death listeners (e.g. the death jingle) don't fire.
      */
     public void cleanup() {
+        status.clear(this);
         for (Ability a : allAbilities()) {
             a.onDeath(this);      // stop character-bound actives (dashes, vehicles, duration ults)
             a.onOwnerLost(this);  // expire detached state (in-flight projectiles, planted objects)
@@ -340,9 +342,6 @@ public class Hero {
     public void setPrimaryOverride(Runnable action) { this.primaryOverride = action; }
     public void clearPrimaryOverride() { this.primaryOverride = null; }
 
-    public boolean actionsLocked() { return actionsLocked; }
-    public void setActionsLocked(boolean locked) { this.actionsLocked = locked; }
-
     public void suppressPrimary(int ticks) {
         primarySuppressedUntilTick = Bukkit.getCurrentTick() + ticks;
     }
@@ -350,24 +349,24 @@ public class Hero {
     public void usePrimary() {
         if (isRespawning()) return;
         // One-shot intercept (Clusterbuck arm-then-fire): the armed action REPLACES the
-        // normal primary for exactly one input. Checked BEFORE the action lock — the
-        // grab's throw rides this seam and must fire while everything else is locked.
+        // normal primary for exactly one input. Checked BEFORE the ability restriction — the
+        // grab's throw rides this seam and must fire while disabled.
         if (primaryOverride != null) {
             Runnable action = primaryOverride;
             primaryOverride = null;
             action.run();
             return;
         }
-        if (actionsLocked) return;
+        if (status.blocks(StatusEffects.Restriction.ABILITIES)) return;
         if (Bukkit.getCurrentTick() < primarySuppressedUntilTick) return;
         if (primaryAbility != null && primaryAbility.execute(this)) triggerAbilityUse(primaryAbility);
     }
-    public void useSecondary() { if (!isRespawning() && !actionsLocked && secondaryAbility != null && secondaryAbility.execute(this)) triggerAbilityUse(secondaryAbility); }
-    public void useSmash() { if (!isRespawning() && !actionsLocked && smashAbility != null && smashAbility.execute(this)) triggerAbilityUse(smashAbility); }
+    public void useSecondary() { if (!isRespawning() && !status.blocks(StatusEffects.Restriction.ABILITIES) && secondaryAbility != null && secondaryAbility.execute(this)) triggerAbilityUse(secondaryAbility); }
+    public void useSmash() { if (!isRespawning() && !status.blocks(StatusEffects.Restriction.ABILITIES) && smashAbility != null && smashAbility.execute(this)) triggerAbilityUse(smashAbility); }
 
-    public void onSneak() { if (!isRespawning() && !actionsLocked) triggerPassives(AbilityType.PASSIVE_SNEAK); }
+    public void onSneak() { if (!isRespawning() && !status.blocks(StatusEffects.Restriction.ABILITIES)) triggerPassives(AbilityType.PASSIVE_SNEAK); }
     public void onDrop() {
-        if (isRespawning() || actionsLocked) return;
+        if (isRespawning() || status.blocks(StatusEffects.Restriction.ABILITIES)) return;
         // Q-reload: a partially spent CLIP primary dumps its rounds and starts the timed
         // reload (startReload no-ops for full clips, in-progress reloads, and non-CLIP
         // modes). PASSIVE_DROP still fires after.
@@ -379,7 +378,7 @@ public class Hero {
         }
         triggerPassives(AbilityType.PASSIVE_DROP);
     }
-    public void onSwap() { if (!isRespawning() && !actionsLocked) triggerPassives(AbilityType.PASSIVE_SWAP); }
+    public void onSwap() { if (!isRespawning() && !status.blocks(StatusEffects.Restriction.ABILITIES)) triggerPassives(AbilityType.PASSIVE_SWAP); }
 
     /** Public: the mobility layer (DoubleJump and its variants) shares this gate too. */
     public boolean isRespawning() {

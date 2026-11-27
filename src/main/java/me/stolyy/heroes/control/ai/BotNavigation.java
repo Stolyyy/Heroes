@@ -5,6 +5,7 @@ import me.stolyy.heroes.control.strategy.Strategy;
 import me.stolyy.heroes.game.Game;
 import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.hero.Hero;
+import me.stolyy.heroes.hero.mechanics.StatusEffects;
 import me.stolyy.heroes.physics.WallDetection;
 import me.stolyy.heroes.util.BotConfig;
 import org.bukkit.Location;
@@ -79,7 +80,7 @@ public class BotNavigation {
                     controller.getLocation().clone().add(back.clone().normalize().multiply(2)));
             Vector current = controller.getVelocity();
             boolean slowEnough = current.clone().setY(0).lengthSquared() < BotConfig.velocityQuietSpeedSq();
-            if (safe && slowEnough) {
+            if (safe && slowEnough && !hero.status().blocks(StatusEffects.Restriction.MOVE)) {
                 double effectiveSpeedAttr = hero.getAttributes().getMovementSpeed();
                 Vector vel = back.normalize().multiply(effectiveSpeedAttr * WALK_SPEED_PER_ATTR_PER_TICK);
                 vel.setY(current.getY());

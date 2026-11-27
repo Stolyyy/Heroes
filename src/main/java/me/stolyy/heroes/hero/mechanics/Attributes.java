@@ -21,6 +21,7 @@ public class Attributes {
 
     private final ModifierStack weightMods = new ModifierStack();
     private final ModifierStack movementSpeedMods = new ModifierStack();
+    private final ModifierStack jumpStrengthMods = new ModifierStack();
     private final ModifierStack gravityMods = new ModifierStack();
     private final ModifierStack stepHeightMods = new ModifierStack();
     private final ModifierStack damageTakenMods = new ModifierStack();
@@ -56,7 +57,7 @@ public class Attributes {
             pc.getPlayer().setHealthScaled(true);
         }
         syncSpeed(controller);
-        writeBase(controller, Attribute.JUMP_STRENGTH, baseJumpHeight);
+        syncJumpStrength(controller);
         syncGravity(controller);
         syncStepHeight(controller);
         writeBase(controller, Attribute.SCALE, baseScale);
@@ -96,8 +97,22 @@ public class Attributes {
         writeBase(controller, Attribute.MOVEMENT_SPEED, getMovementSpeed());
     }
 
-    public double getJumpHeight() { return baseJumpHeight; }
+    public double getJumpHeight() { return jumpStrengthMods.evaluate(baseJumpHeight, 0.0); }
     public double getBaseJumpHeight() { return baseJumpHeight; }
+
+    public void addJumpStrengthMultiplier(Controller controller, Object key, double mult) {
+        jumpStrengthMods.putMult(key, mult);
+        syncJumpStrength(controller);
+    }
+
+    public void removeJumpStrengthModifier(Controller controller, Object key) {
+        jumpStrengthMods.remove(key);
+        syncJumpStrength(controller);
+    }
+
+    private void syncJumpStrength(Controller controller) {
+        writeBase(controller, Attribute.JUMP_STRENGTH, getJumpHeight());
+    }
 
     public double getGravity() { return gravityMods.evaluate(baseGravity, 0.0); }
     public double getBaseGravity() { return baseGravity; }
@@ -173,6 +188,7 @@ public class Attributes {
     public void clearModifiers() {
         weightMods.clear();
         movementSpeedMods.clear();
+        jumpStrengthMods.clear();
         gravityMods.clear();
         stepHeightMods.clear();
         damageTakenMods.clear();

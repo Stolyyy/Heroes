@@ -9,28 +9,30 @@ import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.CosmeticManager;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.hero.mechanics.Attributes;
+import me.stolyy.heroes.hero.mechanics.StatusEffects;
 import me.stolyy.heroes.vfx.effect.SoundEffect;
 import me.stolyy.heroes.vfx.effect.VisualEffect;
-import me.stolyy.heroes.physics.Stun;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.LivingEntity;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 public class SkullfireBlazingDeagle extends ActiveAbility {
     private final Map<LivingEntity, Integer> victimStages = new HashMap<>();
     private final Map<LivingEntity, Long> lastHitTimes = new HashMap<>();
-    private final Stun stun;
+    private final Set<LivingEntity> pendingStuns = new HashSet<>();
+    private final StatusEffects.Spec status;
 
     private final int bonusAmmo;
     private final int originalMaxAmmo;
     private final double movementSlow, gravitySlow;
     private final int maxStage;
     private final long decayMs;
-    private final long stunDurationMs;
     private final double blastDamage;
     private final double blastKnockback;
     private final String ultItemSkin;
@@ -48,7 +50,7 @@ public class SkullfireBlazingDeagle extends ActiveAbility {
         this.gravitySlow = Configs.requireDouble(this.config, "gravity_slow");
         this.maxStage = Configs.requireInt(this.config, "max_stage");
         this.decayMs = (long) (Configs.requireDouble(this.config, "decay_duration") * 1000);
-        this.stunDurationMs = (long) (Configs.requireDouble(this.config, "stun_duration") * 1000);
+        this.status = StatusEffects.Spec.fromConfig(this.config);
         this.blastDamage = Configs.requireDouble(this.config, "blast_damage");
         this.blastKnockback = Configs.requireDouble(this.config, "blast_knockback");
         this.ultItemSkin = Configs.requireString(this.config, "ult_item_skin");
@@ -57,8 +59,6 @@ public class SkullfireBlazingDeagle extends ActiveAbility {
         this.ringSpacing = Configs.requireDouble(this.config, "visuals.ring_spacing");
         this.stunSound = new SoundEffect(Configs.requireSection(this.config, "visuals.stun_sound"));
         this.blastSound = new SoundEffect(Configs.requireSection(this.config, "visuals.blast_sound"));
-
-        this.stun = new Stun(stunDurationMs, this::endStun);
     }
 
     @Override
@@ -75,19 +75,35 @@ public class SkullfireBlazingDeagle extends ActiveAbility {
     @Override
     public void onAbilityHit(Hero hero, Ability ability, LivingEntity victim) {
         if (!isActive() || ability.getType() != AbilityType.PRIMARY) return;
-        if (stun.isStunned(victim)) return;
+        if (StatusEffects.hasFrom(victim, this)) return;
 
         int stage = victimStages.getOrDefault(victim, 0) + 1;
+        if (stage >= maxStage) {
+            // Reset stage counters and slow modifiers up front so an early knockback break
+            // never leaves stale slow modifiers or buildup stacks behind.
+            clearVictimStage(victim);
+            pendingStuns.add(victim);
+            return;
+        }
+
         victimStages.put(victim, stage);
         lastHitTimes.put(victim, System.currentTimeMillis());
 
         Hero victimHero = HeroManager.getHero(victim);
-        if (victimHero == null) return;
-
-        if (stage >= maxStage) {
-            triggerStun(victim);
-        } else {
+        if (victimHero != null) {
             applyStageEffects(victimHero, stage);
+        }
+    }
+
+    /**
+     * Applies the deferred final-stage stun after the triggering Deagle shot's {@code execute()}
+     * finishes, so the shot's own knockback does not immediately break the stun.
+     */
+    void onPrimaryHitResolved(Hero hero, LivingEntity victim) {
+        if (!pendingStuns.remove(victim)) return;
+        if (!isActive()) return;
+        if (StatusEffects.applyTo(victim, status, this, hero, () -> blast(hero, victim))) {
+            stunSound.play(victim.getLocation());
         }
     }
 
@@ -95,6 +111,12 @@ public class SkullfireBlazingDeagle extends ActiveAbility {
         Attributes attributes = victim.getAttributes();
         attributes.addSpeedFlat(victim.getController(), this, -movementSlow * stage);
         attributes.addGravityMultiplier(victim.getController(), this, Math.max(0.0, 1.0 - gravitySlow * stage));
+    }
+
+    private void clearVictimStage(LivingEntity victim) {
+        lastHitTimes.remove(victim);
+        victimStages.remove(victim);
+        resetAttributes(victim);
     }
 
     private void resetAttributes(LivingEntity entity) {
@@ -105,16 +127,7 @@ public class SkullfireBlazingDeagle extends ActiveAbility {
         }
     }
 
-    private void triggerStun(LivingEntity victim) {
-        stun.apply(victim);
-        stunSound.play(victim.getLocation());
-    }
-
-    private void endStun(Hero attacker, LivingEntity victim) {
-        lastHitTimes.remove(victim);
-        victimStages.remove(victim);
-        resetAttributes(victim);
-
+    private void blast(Hero attacker, LivingEntity victim) {
         blastSound.play(victim.getLocation());
         hit(attacker, victim).damage(blastDamage).knockback(blastKnockback).staticKnockback().execute();
     }
@@ -126,15 +139,13 @@ public class SkullfireBlazingDeagle extends ActiveAbility {
             return;
         }
 
-        stun.tick(hero);
-
         long now = System.currentTimeMillis();
         Iterator<Map.Entry<LivingEntity, Long>> it = lastHitTimes.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<LivingEntity, Long> entry = it.next();
             LivingEntity e = entry.getKey();
 
-            if (stun.isStunned(e)) continue;
+            if (StatusEffects.hasFrom(e, this)) continue;
 
             if (now - entry.getValue() > decayMs) {
                 it.remove();
@@ -174,6 +185,7 @@ public class SkullfireBlazingDeagle extends ActiveAbility {
         }
         victimStages.clear();
         lastHitTimes.clear();
-        stun.releaseAll();
+        pendingStuns.clear();
+        StatusEffects.removeAllFrom(this);
     }
 }

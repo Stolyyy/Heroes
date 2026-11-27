@@ -5,6 +5,7 @@ import me.stolyy.heroes.ability.kit.bug.CharmConfig;
 import me.stolyy.heroes.command.HeroesCommand;
 import me.stolyy.heroes.command.admin.BalanceCommand;
 import me.stolyy.heroes.command.admin.ForceEndCommand;
+import me.stolyy.heroes.command.admin.ForceHeroCommand;
 import me.stolyy.heroes.command.admin.ForceReadyCommand;
 import me.stolyy.heroes.command.admin.MapAdminCommand;
 import me.stolyy.heroes.command.admin.MapPoolCommand;
@@ -207,6 +208,7 @@ public final class Heroes extends JavaPlugin {
         registerCommand(new BalanceCommand());
         registerCommand(new ForceReadyCommand());
         registerCommand(new ForceEndCommand());
+        registerCommand(new ForceHeroCommand());
         registerCommand(new UnlockCommand());
         registerCommand(new TokenCommand());
         registerCommand(new PracticeCommand());

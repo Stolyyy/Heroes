@@ -114,6 +114,13 @@ public class GameConfigManager {
     /** Cap on bots addable via the custom game GUI's Add Bot button (map-change carryover ignores this). */
     public static int getMaxBotsPerGame() { return Configs.requireInt(gameConfig, "bots.max-per-game"); }
 
+    // --- Team Balance ---
+
+    /** Rolling window (in hours) of recent Custom matches used for auto-balance session scores. */
+    public static double getTeamBalanceSessionWindowHours() {
+        return Configs.requireDouble(gameConfig, "team-balance.session-window-hours");
+    }
+
     // --- Rating (see EloCalculator) ---
 
     public static int getStartingElo() { return Configs.requireInt(gameConfig, "elo.starting-elo"); }

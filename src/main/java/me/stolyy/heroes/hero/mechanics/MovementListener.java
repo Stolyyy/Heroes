@@ -20,13 +20,15 @@ public class MovementListener implements Listener {
                 e.setCancelled(true);
                 hero.getMobility().performJump(hero);
             } else {
-                // ADVENTURE with no hero is a lobby player: the only way mayfly is still set is a
-                // stale grant (practice exit, game teardown mid-air), so it must never become
-                // real flight. Map builders are in CREATIVE and spectators in SPECTATOR, so
-                // neither is caught here; a live practice or game player always has a hero,
-                // because both create the hero before granting flight.
                 e.setCancelled(true);
-                p.setAllowFlight(false);
+                if (LobbyMobility.isInLobby(p)) {
+                    if (!LobbyMobility.performJump(p)) {
+                        p.setAllowFlight(false);
+                    }
+                } else {
+                    p.setFlying(false);
+                    p.setAllowFlight(false);
+                }
             }
         }
     }
@@ -44,6 +46,8 @@ public class MovementListener implements Listener {
                 } else if (!hero.getMobility().canJump(hero)) {
                     p.setAllowFlight(false);
                 }
+            } else if (LobbyMobility.isInLobby(p) && p.isOnGround()) {
+                LobbyMobility.onLand(p);
             }
         }
     }

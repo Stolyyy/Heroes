@@ -35,6 +35,17 @@ public class GameEffects {
         player.setHealth(20.0);
         player.setHealthScaled(false);
         player.setMaximumNoDamageTicks(10);
+        resetToDefault(player, Attribute.MOVEMENT_SPEED);
+        resetToDefault(player, Attribute.JUMP_STRENGTH);
+        resetToDefault(player, Attribute.GRAVITY);
+        resetToDefault(player, Attribute.STEP_HEIGHT);
+        resetToDefault(player, Attribute.SCALE);
+        resetToDefault(player, Attribute.ENTITY_INTERACTION_RANGE);
+    }
+
+    private static void resetToDefault(Player player, Attribute attribute) {
+        AttributeInstance instance = player.getAttribute(attribute);
+        if (instance != null) instance.setBaseValue(instance.getDefaultValue());
     }
 
     public static void restrictPlayer(Player player){

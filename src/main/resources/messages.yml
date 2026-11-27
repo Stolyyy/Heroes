@@ -217,6 +217,11 @@ restart:
   admin-now-started: "&aRestart countdown started."
   admin-already: "&cA restart is already in progress."
 
+# Chat Format
+chat:
+  # Prefix before the sender's name in chat. {level} = Smash Level.
+  level-prefix: "&7[&6{level}&7] "
+
 tablist:
   # Suffix after the player name for anyone in a live game. Placeholders until resource-pack font
   # glyphs replace them.

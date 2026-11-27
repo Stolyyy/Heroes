@@ -107,11 +107,16 @@ abilities:
 skins:
   default:
     armor:
-      chest: 100,140,220         # R,G,B leather armor dye
+      chest: 100,140,220         # R,G,B leather armor dye — or a section: { material, color, equipment, model }
       legs: 40,40,50
       boots: 40,40,50
   masterskin:
     armor:
+      # Section form lets non-leather pieces use a custom worn texture (equipment:) and/or item model (model: true):
+      # chest:
+      #   material: CHAINMAIL_CHESTPLATE
+      #   equipment: examplehero_masterskin  # resource-pack equipment asset key (assets/minecraft/equipment/<key>.json)
+      #   model: true                        # optional: sets custom_model_data <hero>_chest_<skin> on the item itself
       chest: 220,180,40
       legs: 30,30,30
       boots: 220,180,40

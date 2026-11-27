@@ -38,7 +38,7 @@ Copy `src/main/resources/example-hero.yml` to `src/main/resources/heroes/<id>.ym
 - `heroes/default.yml` supplies hero-level defaults (`stats`, `mobility`, `combat`, `energy`, `unlock`, death/kill sounds). Only override what differs.
 - `abilities.primary`, `abilities.secondary`, `abilities.smash`: each requires `type:` matching a key in `AbilityRegistry`.
 - `abilities.passives`: YAML list; each entry needs `type:` and `activation:` (`TICK`, `SNEAK`, `DROP`, or `SWAP`).
-- `skins.default` and `skins.masterskin`: leather armor RGB dyes (`R,G,B`) and optional `hand:` or `piece_visuals:` overrides.
+- `skins.default` and `skins.masterskin`: armor pieces (`chest`, `legs`, `boots`) as leather RGB dyes (`R,G,B`) or sections with optional `material:`, `color:`, `equipment:` (custom worn-armor texture asset key in the resource pack), and `model: true` (sets item `custom_model_data` to `<asset>_<chest|legs|boots>_<skin>`), plus optional `hand:` or `piece_visuals:` overrides.
 - `unlock:`: `default-unlocked`, `token-cost`, and `smash-level-requirement`.
 - `admin-only: true`: optional flag that hides work-in-progress heroes from non-ops in `/hero` and `HeroSelectGUI`.
 - `bot:`, `ai:`, `movement:`, `strategy:`: per-hero bot config (see [docs/BOTS.md](BOTS.md)). If the hero cannot be played by bots yet (e.g. player-packet bow mechanics), add `<id>` to `disabled_heroes:` in `src/main/resources/bots.yml`.

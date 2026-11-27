@@ -37,6 +37,7 @@ import me.stolyy.heroes.game.queue.QueueManager;
 import me.stolyy.heroes.hero.HeroBuilder;
 import me.stolyy.heroes.hero.HeroConfig;
 import me.stolyy.heroes.hero.HeroManager;
+import me.stolyy.heroes.hero.mechanics.LobbyMobility;
 import me.stolyy.heroes.hero.minion.MinionManager;
 import me.stolyy.heroes.listener.ChatFormatListener;
 import me.stolyy.heroes.listener.HungerListener;
@@ -250,8 +251,7 @@ public final class Heroes extends JavaPlugin {
         player.teleport(lobbyLocation);
         player.getInventory().clear();
 
-        player.setFlying(false);
-        player.setAllowFlight(false);
+        LobbyMobility.apply(player);
         player.setFoodLevel(20);
         player.setExp(0);
         player.setLevel(0);
@@ -261,8 +261,10 @@ public final class Heroes extends JavaPlugin {
         }
 
         Bukkit.getScheduler().runTaskLater(getInstance(), () -> {
-            if (GameManager.isPlayerInGame(player)) return;
+            if (!player.isOnline() || GameManager.isPlayerInGame(player) || PracticeManager.isPracticing(player)) return;
             player.setGameMode(GameMode.ADVENTURE);
+            // setGameMode(ADVENTURE) clears allowFlight in Bukkit, so re-arm lobby mobility after applying it.
+            LobbyMobility.apply(player);
         }, 1L);
         LobbyScoreboard.apply(player);
         LobbyScoreboard.refreshAll();

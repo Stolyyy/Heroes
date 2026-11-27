@@ -99,6 +99,7 @@ public final class BotConfig {
 
     public static List<String> eligibleHeroes() {
         List<String> eligible = HeroConfig.getAvailableNames().stream()
+                .filter(name -> !HeroConfig.isAdminOnly(name))
                 .filter(BotConfig::isEligibleForBots)
                 .toList();
         if (eligible.isEmpty()) {

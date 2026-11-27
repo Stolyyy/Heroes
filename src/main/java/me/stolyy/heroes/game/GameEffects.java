@@ -44,8 +44,8 @@ public class GameEffects {
     }
 
     private static void resetToDefault(Player player, Attribute attribute) {
-        AttributeInstance instance = player.getAttribute(attribute);
-        if (instance != null) instance.setBaseValue(instance.getDefaultValue());
+        AttributeInstance instance = Objects.requireNonNull(player.getAttribute(attribute));
+        instance.setBaseValue(instance.getDefaultValue());
     }
 
     public static void restrictPlayer(Player player){

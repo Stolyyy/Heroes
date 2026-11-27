@@ -1,6 +1,5 @@
 package me.stolyy.heroes.hero.mechanics;
 
-import me.stolyy.heroes.control.PlayerController;
 import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.HeroConfig;
@@ -84,7 +83,7 @@ public final class LobbyMobility {
         Vector velocity = player.getLocation().getDirection().multiply(xStrength);
         velocity.setY(yStrength);
         player.setVelocity(velocity);
-        sound.play(player.getLocation(), new PlayerController(player));
+        sound.play(player.getLocation(), player);
         effect.play(player.getLocation());
         player.setAllowFlight(false);
         return true;

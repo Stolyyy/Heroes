@@ -14,6 +14,7 @@ import me.stolyy.heroes.hero.HeroManager;
 import me.stolyy.heroes.hero.minion.MinionManager;
 import me.stolyy.heroes.npc.NpcServiceProvider;
 import me.stolyy.heroes.progression.PlayerStatsManager;
+import me.stolyy.heroes.util.BotConfig;
 import me.stolyy.heroes.util.ErrorReporter;
 import me.stolyy.heroes.util.GameConfigManager;
 import me.stolyy.heroes.util.GameModeConfigManager;
@@ -186,8 +187,19 @@ final class MatchHeroes {
         } else {
             order = buildEvolutionOrder();
         }
+        List<String> botSubstitutes = order.stream().filter(BotConfig::isEligibleForBots).toList();
         int ladder = game.modeConfig().killLimit();
         if (ladder > 0 && ladder < order.size()) order = new ArrayList<>(order.subList(0, ladder));
+        if (gamePlayer.isBot()) {
+            if (botSubstitutes.isEmpty()) {
+                throw new IllegalStateException("No heroes eligible for bot Evolution order (check bots.yml disabled_heroes)");
+            }
+            // Swap blacklisted rungs rather than dropping them: a shorter ladder would let a bot
+            // finish in fewer kills than the humans it is racing. A repeated hero is acceptable.
+            order.replaceAll(hero -> BotConfig.isDisabledForBots(hero)
+                    ? botSubstitutes.get(ThreadLocalRandom.current().nextInt(botSubstitutes.size()))
+                    : hero);
+        }
         gamePlayer.setHeroOrder(order);
         gamePlayer.setHeroIndex(0);
     }

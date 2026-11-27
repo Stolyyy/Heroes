@@ -2,7 +2,6 @@ package me.stolyy.heroes.listener;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.util.GameConfigManager;
-import me.stolyy.heroes.vfx.ui.visual.HeroNpcSkins;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -21,9 +20,6 @@ public class PlayerJoinListener implements Listener {
         // Read before the teleport: hasPlayedBefore flips once the server writes playerdata.
         boolean firstJoin = !player.hasPlayedBefore();
         Heroes.teleportToLobby(player);
-        Bukkit.getScheduler().runTask(Heroes.getInstance(), () -> {
-            if (player.isOnline()) HeroNpcSkins.refresh(player);
-        });
         sendOnboarding(player, firstJoin);
     }
 

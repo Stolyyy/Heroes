@@ -69,10 +69,11 @@ public final class HeroNpcSkins {
     private static final class TrackListener implements Listener {
         @EventHandler
         public void onTrack(PlayerTrackEntityEvent event) {
+            if (!(event.getEntity() instanceof LivingEntity npc)) return;
             Player viewer = event.getPlayer();
             if (!NpcServiceProvider.isAvailable() || !Interactions.isRealPlayer(viewer)) return;
-            String heroName = NpcManager.heroNameForEntity(event.getEntity());
-            if (heroName == null || !(event.getEntity() instanceof LivingEntity npc)) return;
+            String heroName = NpcManager.heroNameForEntity(npc);
+            if (heroName == null) return;
             // Delay 1 tick so our override lands after Paper sends the entity's initial spawn equipment.
             Bukkit.getScheduler().runTask(Heroes.getInstance(), () -> {
                 if (viewer.isOnline() && npc.isValid() && npc.getWorld().equals(viewer.getWorld())) {

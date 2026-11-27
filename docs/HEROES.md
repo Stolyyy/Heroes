@@ -49,7 +49,7 @@ Copy `src/main/resources/example-hero.yml` to `src/main/resources/heroes/<id>.ym
 
 ## 4. Optional Wiring
 
-- **Chat aliases:** Add shortcuts in `SetHeroCommand.HERO_ALIASES` if desired (must resolve to the lowercase hero ID filename).
+- **Chat aliases:** Add shortcuts in `HeroConfig.HERO_ALIASES` if desired (must resolve to the lowercase hero ID filename).
 - **Lobby NPC:** Add an entry under `heroes:` in `src/main/resources/lobby.yml` if you want a physical lobby display NPC for the hero (`HeroSelectGUI` lists all heroes dynamically without this).
 - **Resource pack models & sounds:**
   - Models use string-keyed custom model data in `resourcepack/sponge.json` (`<asset>_head_<skin>`), `stick.json` (`<asset>_item_<skin>`), and `stone.json` (`<asset>_<texture>_default`). Missing keys safely fall back to the base vanilla item during development.

@@ -29,6 +29,7 @@ import me.stolyy.heroes.command.general.VersionCommand;
 import me.stolyy.heroes.game.AutoSpectate;
 import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.game.MapSkipPoll;
+import me.stolyy.heroes.game.PlayerVisibility;
 import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.game.SpawnProtection;
 import me.stolyy.heroes.game.map.GameMapManager;
@@ -248,6 +249,7 @@ public final class Heroes extends JavaPlugin {
         }
         PracticeManager.exitPractice(player, false);
         player.teleport(lobbyLocation);
+        PlayerVisibility.refreshVisibility(player);
         player.getInventory().clear();
 
         player.setFlying(false);

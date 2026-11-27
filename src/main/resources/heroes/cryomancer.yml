@@ -140,16 +140,24 @@ abilities:
     extra_damage: 2.0
 
 skins:
+  # Chainmail is not dyeable, so there is no colour. Default and masterskin share the body armor
+  # and differ by head and hand models until a masterskin equipment texture exists (see #73).
   default:
     armor:
-      chest: 0,0,0
-      legs: 0,0,0
-      boots: 0,0,0
+      chest:
+        material: CHAINMAIL_CHESTPLATE
+      legs:
+        material: CHAINMAIL_LEGGINGS
+      boots:
+        material: CHAINMAIL_BOOTS
   masterskin:
     armor:
-      chest: 0,0,0
-      legs: 0,0,0
-      boots: 0,0,0
+      chest:
+        material: CHAINMAIL_CHESTPLATE
+      legs:
+        material: CHAINMAIL_LEGGINGS
+      boots:
+        material: CHAINMAIL_BOOTS
 # Unlock economy (B25): starting-roster hero
 unlock:
   default-unlocked: true

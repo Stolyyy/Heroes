@@ -85,7 +85,8 @@ final class MatchHeroes {
     }
 
     void initBots() {
-        // Iterate a snapshot because the failure handler calls removeBot, which mutates botMap().
+        boolean removedAny = false;
+        // Iterate a snapshot because the failure handler calls detachBot, which mutates botMap().
         for (Map.Entry<UUID, GameBot> entry : new HashMap<>(game.botMap()).entrySet()) {
             UUID botUUID = entry.getKey();
             GameBot bot = entry.getValue();
@@ -118,10 +119,13 @@ final class MatchHeroes {
             } catch (Exception e) {
                 ErrorReporter.report(game, "Failed to initialize bot " + bot.getName() + " (" + botUUID
                         + ") — removing it from the game", e);
-                game.removeBot(botUUID);
+                game.detachBot(botUUID);
                 NpcServiceProvider.get().remove(bot.getNpcHandle().id());
+                removedAny = true;
             }
         }
+        // One end check after the whole roster is initialised, not one per failed bot: see Game#detachBot.
+        if (removedAny) game.checkEnd();
     }
 
     void startAbilityCooldowns(Hero hero) {

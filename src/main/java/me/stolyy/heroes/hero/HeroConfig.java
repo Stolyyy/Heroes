@@ -17,7 +17,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -32,7 +31,8 @@ import java.util.stream.Collectors;
  */
 public class HeroConfig {
 
-    private static final Map<String, YamlConfiguration> heroConfigs = new HashMap<>();
+    // Concurrent: read off-thread by Discord bot autocomplete and /games formatting during reloads.
+    private static final Map<String, YamlConfiguration> heroConfigs = new ConcurrentHashMap<>();
     // Concurrent: read off-thread via PlayerStats.smashLevel() during async board seeding, autosave, and chat formatting.
     private static final Set<String> adminOnlyHeroes = ConcurrentHashMap.newKeySet();
     private static final Map<String, String> HERO_ALIASES = Map.ofEntries(

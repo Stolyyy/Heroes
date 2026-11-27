@@ -1,6 +1,7 @@
 name: Heroes
 version: '${version}'
 main: me.stolyy.heroes.Heroes
+loader: me.stolyy.heroes.HeroesPluginLoader
 api-version: '1.21.10'
 description: Fast-paced arena PvP minigame plugin for PaperMC inspired by Smash Heroes
 authors:

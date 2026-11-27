@@ -38,6 +38,12 @@ dependencies {
     // LuckPerms context calculator (mapper permissions scoped to template worlds). compileOnly:
     // the server-side LuckPerms plugin provides the classes at runtime; registration is guarded.
     compileOnly("net.luckperms:api:5.4")
+    // Discord bot slash commands. Loaded at runtime via Paper's PluginLoader (HeroesPluginLoader)
+    // so JDA is not shaded into the plugin jar.
+    compileOnly("net.dv8tion:JDA:6.7.0") {
+        exclude(group = "club.minnced", module = "opus-java")
+        exclude(group = "com.google.crypto.tink", module = "tink")
+    }
 }
 
 group = "me.stolyy"

@@ -113,10 +113,11 @@ public final class Heroes extends JavaPlugin {
         GameModeConfigManager.reload();
         ProgressionConfig.load();
         GameMapManager.initialize();
-        PlayerStatsManager.initialize();
         extractHeroResources();
         AbilityRegistry.registerAll();
         HeroConfig.load();
+        // After HeroConfig.load(): async board seeding computes smashLevel(), which filters admin-only heroes.
+        PlayerStatsManager.initialize();
         CharmConfig.load();
         HeroBuilder.validateAll();
         BotNameManager.load();

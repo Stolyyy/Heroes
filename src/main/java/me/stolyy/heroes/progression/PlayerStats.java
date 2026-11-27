@@ -1,7 +1,8 @@
 package me.stolyy.heroes.progression;
 
-import me.stolyy.heroes.util.GameConfigManager;
 import me.stolyy.heroes.game.GameMode;
+import me.stolyy.heroes.hero.HeroConfig;
+import me.stolyy.heroes.util.GameConfigManager;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -164,10 +165,11 @@ public class PlayerStats {
         return modeStats.values().stream().mapToDouble(ModeStats::totalVoidDamage).sum();
     }
 
-    /** Smash Level = sum of every hero's global level. Pure computation. */
+    /** Smash Level = sum of every non-admin-only hero's global level. Pure computation. */
     public int smashLevel() {
-        return heroLevels.values().stream()
-                .mapToInt(HeroLevel::level)
+        return heroLevels.entrySet().stream()
+                .filter(entry -> !HeroConfig.isAdminOnly(entry.getKey()))
+                .mapToInt(entry -> entry.getValue().level())
                 .sum();
     }
 

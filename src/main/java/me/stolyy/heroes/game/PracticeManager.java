@@ -11,6 +11,7 @@ import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroConfig;
 import me.stolyy.heroes.hero.HeroManager;
 import me.stolyy.heroes.hero.mechanics.LobbyMobility;
+import me.stolyy.heroes.hero.mechanics.StatusEffects;
 import me.stolyy.heroes.hero.minion.MinionHero;
 import me.stolyy.heroes.hero.minion.MinionManager;
 import me.stolyy.heroes.npc.NpcHandle;
@@ -83,6 +84,7 @@ public class PracticeManager {
         dummies.clear();
         dummyIds.clear();
         practicing.clear();
+        StatusEffects.clearAllNonHero();
     }
 
     // --- Player state ---
@@ -285,6 +287,7 @@ public class PracticeManager {
         for (DummySlot slot : dummies) {
             slot.tick();
         }
+        StatusEffects.tickNonHeroEffects();
     }
 
     // --- Lifecycle triggers ---

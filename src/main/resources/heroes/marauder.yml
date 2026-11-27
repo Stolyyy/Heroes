@@ -71,7 +71,9 @@ abilities:
     knockback: -3.0
     radius: 2.0
     range: 18
-    stun_duration: 0.6
+    status:
+      id: pin
+      duration: 0.6
     pierces_players: true
     visuals:
       fire_sound:

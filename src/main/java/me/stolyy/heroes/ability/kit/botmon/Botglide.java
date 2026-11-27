@@ -51,11 +51,7 @@ public class Botglide extends DoubleJump {
     }
 
     @Override
-    public boolean performJump(Hero hero) {
-        if (isRooted()) return false;
-        if (hero.isRespawning()) return false;
-        if (!canJump(hero)) return false;
-
+    protected boolean executeJump(Hero hero) {
         if (shouldGlide(hero)) {
             hero.getEnergy().tryConsume(hero.getController(), energyThreshold);
             startGlide(hero);

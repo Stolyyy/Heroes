@@ -21,11 +21,11 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 public class Jab {
-    /** Returns {@code player}'s active hero when eligible to jab (not respawning or action-locked). */
+    /** Returns {@code player}'s active hero when eligible to jab (not respawning or jab-blocked). */
     public static @Nullable Hero readyHeroFor(Player player) {
         if (GameManager.isRespawning(player)) return null;
         Hero hero = HeroManager.getHero(player);
-        return (hero == null || hero.actionsLocked()) ? null : hero;
+        return (hero == null || hero.status().blocks(StatusEffects.Restriction.JAB)) ? null : hero;
     }
     private double cooldown; // in milliseconds
     private double damage;

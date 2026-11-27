@@ -41,6 +41,7 @@ Old pre-rewrite code may sit in `.legacy/` (gitignored, outside `src/`, not comp
 - Labels: type (`bug`, `feature`, `balance`, `hero`), area (`area:*`), size (`size:S`, `size:M`, `size:L`), status (`needs-spec`, `ready`, `needs-playtest`, `needs-assets`), and owner (`agent:gemini`, `agent:claude`). Status lives in labels; if a project board is in use, keep its column in sync.
 - Only pick up issues labelled `ready`. `needs-spec` means a decision is still owed: ask, do not guess.
 - One issue per branch (`<type>/<issue#>-<slug>`, cut from `refactor/codebase-review` until that branch merges to `master`) and one PR per issue, using the PR template. CI builds the jar on every PR.
+- While the combined playtest branch `playtest/4.0.1b` (PR #74) is open, 4.0.1b issue branches are cut from `origin/playtest/4.0.1b` and their PRs target `playtest/4.0.1b`, not `refactor/codebase-review`. It already contains PRs #52-#70.
 - `"triage"`: read unlabelled issues, clarify ambiguities, label (type / area / size / status) each one, comment a one-paragraph plan.
 - `"start <issue>"`: implement it, comment with files changed and every new/changed YML key, then swap `ready` for `needs-playtest`.
 - If an issue resists two attempts, comment what was tried and what failed, and relabel it `agent:claude`.

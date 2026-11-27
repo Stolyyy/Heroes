@@ -70,6 +70,12 @@ elo:
   gain: "&aELO: &e{old} &7-> &a{new} &7(&a+{change}&7)"
   loss: "&cELO: &e{old} &7-> &c{new} &7(&c{change}&7)"
 
+# Progression Messages
+progression:
+  # Server-wide broadcast when a player hits the master-skin level on a hero.
+  # {player} = player name, {hero} = hero display name, {level} = master-skin level
+  master-skin-broadcast: "&d&lMASTER! &e{player} &7has mastered &6{hero} &7(Level {level})!"
+
 # Scoreboards & In-Game Visuals (MiniMessage)
 scoreboard:
   lobby:

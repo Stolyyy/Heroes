@@ -8,11 +8,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
-/** Pure domain logic for ordering custom-game rosters and auto-balancing teams by ELO. */
+/** Pure domain logic for ordering custom-game rosters and auto-balancing teams by session score and ELO. */
 public final class TeamBalancer {
 
     public enum Shape {
@@ -83,7 +85,17 @@ public final class TeamBalancer {
         List<UUID> parts = participants(game);
         if (parts.isEmpty()) return false;
 
-        parts.sort(Comparator.comparingInt((UUID u) -> eloOf(game, u)).reversed());
+        Map<UUID, GameBot> bots = game.getGameBots();
+        Set<UUID> lobbyHumans = new HashSet<>();
+        for (UUID uuid : parts) {
+            if (!bots.containsKey(uuid)) lobbyHumans.add(uuid);
+        }
+        Map<UUID, Integer> sessionScores = MatchLog.sessionScores(lobbyHumans);
+
+        parts.sort(Comparator
+                .comparingInt((UUID u) -> sessionScores.getOrDefault(u, 0))
+                .thenComparingInt((UUID u) -> eloOf(game, u))
+                .reversed());
 
         TeamColor[] order = Arrays.stream(TeamColor.values())
                 .filter(c -> c != TeamColor.SPECTATOR)

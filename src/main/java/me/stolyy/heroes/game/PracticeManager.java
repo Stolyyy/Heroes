@@ -1,11 +1,17 @@
 package me.stolyy.heroes.game;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.ability.Ability;
+import me.stolyy.heroes.ability.Cooldown;
+import me.stolyy.heroes.ability.template.BaseAbility;
+import me.stolyy.heroes.control.BotController;
+import me.stolyy.heroes.control.Controller;
+import me.stolyy.heroes.control.PlayerController;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroConfig;
 import me.stolyy.heroes.hero.HeroManager;
+import me.stolyy.heroes.hero.minion.MinionHero;
 import me.stolyy.heroes.hero.minion.MinionManager;
-import me.stolyy.heroes.control.PlayerController;
 import me.stolyy.heroes.npc.NpcHandle;
 import me.stolyy.heroes.npc.NpcServiceProvider;
 import me.stolyy.heroes.util.GameConfigManager;
@@ -61,7 +67,7 @@ public class PracticeManager {
     public static void spawnDummies() {
         for (PracticeArena arena : GameConfigManager.getPracticeArenas()) {
             for (Location loc : arena.dummyLocations()) {
-                DummySlot slot = new DummySlot(loc);
+                DummySlot slot = new DummySlot(arena, loc);
                 slot.spawn();
                 dummies.add(slot);
             }
@@ -88,9 +94,30 @@ public class PracticeManager {
         return practicing.get(player.getUniqueId());
     }
 
-    /** Practice combat gate: a practicing player hitting a target dummy (no game involved). */
+    private static UUID practiceOwnerId(LivingEntity entity) {
+        if (HeroManager.getHero(entity) instanceof MinionHero minion) {
+            return minion.getOwnerId();
+        }
+        return entity.getUniqueId();
+    }
+
+    /** Practice combat gate: a practicing player (or their summoned minion) hitting a target dummy (no game involved). */
     public static boolean isPracticeHit(LivingEntity attacker, LivingEntity victim) {
-        return practicing.containsKey(attacker.getUniqueId()) && dummyIds.contains(victim.getUniqueId());
+        return practicing.containsKey(practiceOwnerId(attacker))
+                && dummyIds.contains(victim.getUniqueId());
+    }
+
+    /** Live target dummies in {@code entity}'s practice arena (unwrapping summoned minions), or empty if not practicing. */
+    public static List<LivingEntity> enemiesFor(LivingEntity entity) {
+        PracticeArena arena = practicing.get(practiceOwnerId(entity));
+        if (arena == null) return List.of();
+        List<LivingEntity> result = new ArrayList<>();
+        for (DummySlot slot : dummies) {
+            if (!slot.arena.name().equals(arena.name())) continue;
+            LivingEntity dummy = slot.liveEntity();
+            if (dummy != null) result.add(dummy);
+        }
+        return result;
     }
 
     /** True if this entity is a practice dummy. Dummies live outside any Game by design. */
@@ -131,6 +158,13 @@ public class PracticeManager {
         // interaction range while in-game players run at jab_range (5.5), so practice exercised a
         // structurally different reach and hit path from the thing it is meant to rehearse.
         hero.resetStats(hero.getController());
+        Ability smash = hero.getSmashAbility();
+        if (smash != null) {
+            smash.getAllCooldowns().forEach(Cooldown::forceReady);
+            if (smash instanceof BaseAbility base && base.getAmmo() != null) {
+                base.getAmmo().refill();
+            }
+        }
         CosmeticManager.apply(hero.getController(), hero);
         // Hero construction raised MAX_HEALTH (e.g. to 100) but left current health at the old
         // 20 — the scaled bar sat at ~20% until first heal. Games fix this via applyEffects;
@@ -182,6 +216,10 @@ public class PracticeManager {
                     p.setFlying(false);
                     p.setAllowFlight(false);
                 }
+                if (hero != null) {
+                    MinionManager.despawnAll(hero);
+                    HeroManager.removeHero(uuid);
+                }
                 practicing.remove(uuid);
                 continue;
             }
@@ -197,6 +235,16 @@ public class PracticeManager {
             }
             practicing.put(uuid, arena);
             hero.tick();
+            for (MinionHero minion : new ArrayList<>(MinionManager.getMinions(hero))) {
+                Controller mc = minion.getController();
+                if (mc == null) {
+                    throw new IllegalStateException("Active practice minion " + minion.getName() + " has no controller");
+                }
+                minion.tick();
+                if (mc instanceof BotController bot) {
+                    bot.tickAI(minion);
+                }
+            }
         }
         for (DummySlot slot : dummies) {
             slot.tick();
@@ -208,27 +256,38 @@ public class PracticeManager {
     public static class QuitListener implements Listener {
         @EventHandler
         public void onQuit(PlayerQuitEvent event) {
-            if (practicing.remove(event.getPlayer().getUniqueId()) != null) {
+            Player player = event.getPlayer();
+            if (practicing.remove(player.getUniqueId()) != null) {
                 // abilities.mayfly is persisted in player.dat and PlayerQuitEvent fires before
                 // PlayerList#save, so quitting mid-practice used to hand the flight permission back
                 // on the next login — hero-less, in the lobby.
-                event.getPlayer().setFlying(false);
-                event.getPlayer().setAllowFlight(false);
+                player.setFlying(false);
+                player.setAllowFlight(false);
             }
             // Hero teardown happens in PlayerLeaveListener via GameManager.detach ->
             // HeroManager.removePlayer is a no-op there for practice players, so do it here.
-            HeroManager.removePlayer(event.getPlayer());
+            Hero hero = HeroManager.getHero(player);
+            if (hero != null) MinionManager.despawnAll(hero);
+            HeroManager.removePlayer(player);
         }
     }
 
     /** One configured dummy point: keeps a target NPC alive there, respawning after death. */
     private static class DummySlot {
+        private final PracticeArena arena;
         private final Location location;
         private NpcHandle handle;
         private int respawnCountdown = -1;
 
-        DummySlot(Location location) {
+        DummySlot(PracticeArena arena, Location location) {
+            this.arena = arena;
             this.location = location;
+        }
+
+        LivingEntity liveEntity() {
+            if (handle == null) return null;
+            LivingEntity entity = NpcServiceProvider.get().getBukkitEntity(handle);
+            return (entity != null && entity.isValid() && !entity.isDead()) ? entity : null;
         }
 
         void spawn() {

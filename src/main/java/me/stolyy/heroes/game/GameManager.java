@@ -189,7 +189,9 @@ public class GameManager {
     }
 
     public static List<LivingEntity> getEnemies(LivingEntity entity) {
-        return getEntityGame(entity.getUniqueId()).getEnemies(entity.getUniqueId());
+        Game game = getEntityGame(entity.getUniqueId());
+        if (game != null) return game.getEnemies(entity.getUniqueId());
+        return PracticeManager.enemiesFor(entity);
     }
 
     public static boolean canTarget(LivingEntity attacker, LivingEntity victim, Boolean overrideFriendlyFire) {

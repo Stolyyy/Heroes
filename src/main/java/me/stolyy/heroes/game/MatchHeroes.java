@@ -14,6 +14,7 @@ import me.stolyy.heroes.hero.HeroManager;
 import me.stolyy.heroes.hero.minion.MinionManager;
 import me.stolyy.heroes.npc.NpcServiceProvider;
 import me.stolyy.heroes.progression.PlayerStatsManager;
+import me.stolyy.heroes.util.BotConfig;
 import me.stolyy.heroes.util.ErrorReporter;
 import me.stolyy.heroes.util.GameConfigManager;
 import me.stolyy.heroes.util.GameModeConfigManager;
@@ -185,6 +186,12 @@ final class MatchHeroes {
             order = new ArrayList<>(sharedEvolutionOrder);
         } else {
             order = buildEvolutionOrder();
+        }
+        if (gamePlayer.isBot()) {
+            order.removeIf(BotConfig::isDisabledForBots);
+            if (order.isEmpty()) {
+                throw new IllegalStateException("No heroes eligible for bot Evolution order (check bots.yml disabled_heroes)");
+            }
         }
         int ladder = game.modeConfig().killLimit();
         if (ladder > 0 && ladder < order.size()) order = new ArrayList<>(order.subList(0, ladder));

@@ -33,7 +33,7 @@ abilities:
   primary:
     type: skullfiredeagle
     name: Deagle
-    description: ''
+    description: Fire a pinpoint hitscan shot — sneak to unload a rapid burst.
     cooldown: 0.35 # per-shot interval (cooldown now gates primaries) — FILL/tune
     active_duration: 0.0
     damage: 3
@@ -66,7 +66,7 @@ abilities:
   secondary:
     type: skullfiregrenade
     name: Grenade
-    description: ''
+    description: Hurl a grenade that explodes on contact, blasting enemies back.
     cooldown: 9.0
     damage: 7.0
     knockback: 4.0
@@ -107,6 +107,7 @@ abilities:
   smash:
     type: skullfireblazingdeagle
     name: Blazing Deagle
+    description: Expand and refill your clip — stacking hits slows enemies until they are stunned and blasted.
     cooldown: 110.0
     active_duration: 10.0
     bonus_ammo: 5
@@ -139,7 +140,7 @@ abilities:
   passives:
   - type: skullfirebullseye
     name: Bullseye
-    description: null
+    description: Mid-air Deagle hits grant extra double jumps, and consecutive hits without missing reset Grenade.
     hits_for_reset: 3
 
 skins:

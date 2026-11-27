@@ -16,6 +16,7 @@ abilities:
   primary:
     type: bugdash
     name: Mothwing Cloak
+    description: Dash sharply forward through the air.
     cooldown: 2.0
     damage: 5.0
     knockback: 2.0
@@ -36,6 +37,7 @@ abilities:
   secondary:
     type: bugspell
     name: Focus
+    description: Channel Soul into a spell — aim neutral to blast ahead, up to howl skyward, or down to dive and shatter the ground.
     # Tier one: the floor shared by all three spells. Tier two is the per-variant cooldown below,
     # which nerfs spamming one spell without slowing the other two. Energy cost stays here so
     # Soul Twister's discount applies to every cast.
@@ -148,6 +150,7 @@ abilities:
   smash:
     type: bugvoidbeast
     name: Void Beast
+    description: Embrace the void, temporarily activating every charm you do not have equipped.
     cooldown: 105.0
     active_duration: 8.0
     visuals:
@@ -167,6 +170,7 @@ abilities:
   passives:
   - type: bugcharms
     name: Charms
+    description: Build Soul by landing jabs and customize your charm loadout with /charms.
     base_soul_per_hit: 17
 
 skins:

@@ -23,6 +23,7 @@ abilities:
   primary:
     type: tinlaser
     name: Pew Pew maker
+    description: Rapid-fire laser bolts from your blaster clip.
     cooldown: 0.105 # per-shot interval (cooldown now gates primaries) — FILL/tune
     active_duration: 0.0
     damage: 2.0
@@ -50,6 +51,7 @@ abilities:
   secondary:
     type: rocketpunch
     name: Rocket Punch
+    description: Charge by landing laser shots, then fire an explosive rocket straight ahead.
     charges: 5
     charge_on_primary_hit: true
     damage: 12.0
@@ -93,6 +95,7 @@ abilities:
   smash:
     type: nukeseekingmissiles
     name: Noob Seeking Missiles
+    description: Launch a salvo of homing missiles from above that rain down on enemies.
     cooldown: 100.0
     # Counted per enemy PLAYER only — enemy minions are still valid missile targets but do not
     # add to the salvo, or a summoner's minions would triple it.
@@ -131,7 +134,7 @@ abilities:
   passives:
   - type: overload
     name: Overload
-    description: null
+    description: Spend energy to launch yourself forward and upward with a shockwave around you.
     activation: SNEAK
     energy_cost: 60
     damage: 6.0

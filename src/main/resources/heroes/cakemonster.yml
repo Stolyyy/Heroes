@@ -72,6 +72,7 @@ abilities:
   primary:
     type: rollingpin
     name: Rolling Pin
+    description: Lunge forward swinging your rolling pin at enemies in front of you.
     cooldown: 2.0
     damage: 6.0
     knockback: 1.5
@@ -92,6 +93,7 @@ abilities:
   secondary:
     type: regurgicake
     name: Regurgicake
+    description: Spew a rapid spread of flying cakes in front of you.
     cooldown: 5.5
     damage: 2.0
     knockback: 0.6
@@ -127,6 +129,7 @@ abilities:
   smash:
     type: cakestorm
     name: Cake Storm
+    description: Unleash a relentless torrent of flying cakes wherever you aim.
     cooldown: 100.0
     active_duration: 9.0
     damage: 2.0

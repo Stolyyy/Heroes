@@ -22,6 +22,7 @@ abilities:
   primary:
     type: bulkcar
     name: Bulk Car
+    description: Hurl a massive car in a heavy arc that explodes on impact.
     cooldown: 5.5
     damage: 8.0
     knockback: 2.5
@@ -69,6 +70,7 @@ abilities:
   secondary:
     type: bulkdash
     name: Bulk Dash
+    description: Charge forward in a reckless shoulder tackle, knocking aside anyone in your path.
     cooldown: 5.5
     damage: 8
     knockback: 2.5
@@ -86,6 +88,7 @@ abilities:
   smash:
     type: bulksmash
     name: Bulk Smash
+    description: Repeatedly leap skyward and crash down in devastating shockwaves.
     cooldown: 110
     damage: 10.0
     knockback: 2.5
@@ -124,6 +127,7 @@ abilities:
   passives:
   - type: bulkslam
     name: Bulk Slam
+    description: Landing after a double jump unleashes a shockwave around you.
     energy_cost: 65
     radius: 3.5
     height: 2.0

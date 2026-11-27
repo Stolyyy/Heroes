@@ -2,6 +2,7 @@ package me.stolyy.heroes.hero;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.util.Configs;
+import me.stolyy.heroes.util.PatchNotesLog;
 import me.stolyy.heroes.util.YmlSurgeon;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -276,9 +277,13 @@ public class HeroConfig {
         // The path must already resolve to a scalar leaf — the surgeon walks the document by
         // first match, and a strict pre-check keeps an invalid path (typo'd level) from ever
         // landing on some deeper line that happens to share the key name.
-        if (getValue(heroName, path) == null) {
+        String oldValue = getValue(heroName, path);
+        if (oldValue == null) {
             throw new IllegalStateException("'" + path + "' is not an existing value in "
                     + heroName + " — /balance can edit existing keys only");
+        }
+        if (oldValue.equalsIgnoreCase(value)) {
+            return true;
         }
 
         String original;
@@ -304,6 +309,7 @@ public class HeroConfig {
             throw new IllegalStateException("Edit verification failed ('" + path + "' reads back as "
                     + now + ") — " + file.getName() + " was restored unchanged");
         }
+        PatchNotesLog.record(heroName.toLowerCase(Locale.ROOT), path, oldValue, now);
         return true;
     }
 

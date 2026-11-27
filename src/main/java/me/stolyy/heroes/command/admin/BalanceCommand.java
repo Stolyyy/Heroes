@@ -19,7 +19,7 @@ public class BalanceCommand extends HeroesCommand {
 
     public BalanceCommand() {
         super("balance", "Admin command for balancing hero stats",
-                "/balance <hero|default|list|reload> [path...] [value]",
+                "/balance <hero|default|templates|list|reload> [path...] [value]",
                 List.of("bal", "herobalance"), "heroes.balance", true);
     }
 
@@ -29,9 +29,9 @@ public class BalanceCommand extends HeroesCommand {
             player.sendMessage(Component.text("Usage: " + getUsage(), NamedTextColor.YELLOW));
             player.sendMessage(Component.text("  /balance list - List all heroes", NamedTextColor.GRAY));
             player.sendMessage(Component.text("  /balance reload - Reload all configs", NamedTextColor.GRAY));
-            player.sendMessage(Component.text("  /balance <hero|default> - Show top-level keys", NamedTextColor.GRAY));
-            player.sendMessage(Component.text("  /balance <hero|default> <path> - Get value", NamedTextColor.GRAY));
-            player.sendMessage(Component.text("  /balance <hero|default> <path> <value> - Set value", NamedTextColor.GRAY));
+            player.sendMessage(Component.text("  /balance <hero|default|templates> - Show top-level keys", NamedTextColor.GRAY));
+            player.sendMessage(Component.text("  /balance <hero|default|templates> <path> - Get value", NamedTextColor.GRAY));
+            player.sendMessage(Component.text("  /balance <hero|default|templates> <path> <value> - Set value", NamedTextColor.GRAY));
             return;
         }
 
@@ -46,6 +46,11 @@ public class BalanceCommand extends HeroesCommand {
             TemplateConfig.reload();
             HeroConfig.load();
             player.sendMessage(Component.text("Hero and template configurations reloaded.", NamedTextColor.GREEN));
+            return;
+        }
+
+        if (heroName.equals("templates")) {
+            TemplateConfig.handleConfigCommand(player, Arrays.copyOfRange(args, 1, args.length));
             return;
         }
 
@@ -64,19 +69,25 @@ public class BalanceCommand extends HeroesCommand {
             options.add("list");
             options.add("reload");
             options.add("default");
+            options.add("templates");
             return TabComplete.startsWith(options, args[0]);
         }
 
         String heroName = args[0].toLowerCase(Locale.ROOT);
-        if (heroName.equals("list") || !HeroConfig.exists(heroName)) {
+        if (heroName.equals("list") || heroName.equals("reload")) {
             return Collections.emptyList();
         }
 
-        if (args.length == 2) {
-            return TabComplete.startsWith(HeroConfig.getConfigKeys(heroName, ""), args[1]);
+        String path = args.length == 2
+                ? ""
+                : String.join(".", Arrays.copyOfRange(args, 1, args.length - 1));
+        if (heroName.equals("templates")) {
+            return TabComplete.startsWith(TemplateConfig.getConfigKeys(path), args[args.length - 1]);
         }
 
-        String path = String.join(".", Arrays.copyOfRange(args, 1, args.length - 1));
+        if (!HeroConfig.exists(heroName)) {
+            return Collections.emptyList();
+        }
         return TabComplete.startsWith(HeroConfig.getConfigKeys(heroName, path), args[args.length - 1]);
     }
 }

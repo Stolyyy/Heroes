@@ -26,7 +26,7 @@ How code in this repository is written, where things go, and what to check befor
   - `bots.yml` (`util/BotConfig`) — global bot cadence, disabled heroes, difficulty tiers
   - `progression.yml` (`progression/ProgressionConfig`) — XP curve, tokens, starting roster
   - `templates.yml` (`util/TemplateConfig`) — ability template defaults
-  - `lobby.yml` (`npc/NpcConfig`, `LeaderboardDisplay`, `LevelLeaderboardDisplay`, `MemorialDisplays`) — lobby spawn, NPCs, leaderboards
+  - `lobby.yml` (`npc/NpcConfig`, `vfx/ui/visual/BoardDisplay` with `EloBoardSource` and `LevelBoardSource`, `vfx/ui/visual/MemorialDisplays`) — lobby spawn, NPCs, leaderboards
   - `messages.yml` (`GameConfigManager.getMessage*`) — player-facing strings
   - `bot-names.yml` (`util/BotNameManager`) — read directly from the plugin jar (not extracted to `plugins/Heroes/`)
 - `# FILL` comments in YML files mark balance/tuning placeholder values intended to be dialed in via playtests and `/balance` — they are not syntax errors.

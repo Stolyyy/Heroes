@@ -859,3 +859,12 @@ gui:
       - "<gray>Configure your preferences"
       - ""
       - "<yellow>Click to open!"
+
+# Discord Webhook Messages
+discord:
+  status:
+    header: "**Players online ({online})**"
+    player-list: "||{players}||"
+    queue-line: "**{mode}:** in queue ({queued}) | in game ({ingame})"
+    custom-line: "**Custom:** in game ({ingame})"
+  mastery: "🏆 **{player}** mastered **{hero}** (level {level})"

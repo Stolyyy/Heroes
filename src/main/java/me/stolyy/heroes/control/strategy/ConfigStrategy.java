@@ -60,9 +60,10 @@ public abstract class ConfigStrategy implements Strategy {
         return Configs.requireBoolean(config, "can_double_jump");
     }
 
-    /** Faces {@code target} before jumping so double-jump velocity aims toward them if safe. */
+    /** Faces {@code target} before jumping so double-jump velocity aims toward them if safe and unobstructed. */
     protected boolean tryChaseJump(Hero hero, BotController controller, LivingEntity target) {
         if (!JumpSafety.isChaseJumpSafe(hero, controller, target)) return false;
+        if (!JumpSafety.hasHeadroom(hero, controller)) return false;
         controller.lookAt(target.getEyeLocation());
         hero.getMobility().performJump(hero);
         return true;

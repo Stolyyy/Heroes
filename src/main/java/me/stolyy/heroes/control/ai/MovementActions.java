@@ -27,7 +27,7 @@ public class MovementActions {
             "jump", "primary", "secondary", "smash", "sneak", "drop", "swap"
     );
 
-    private record MovementAction(String action, int priority, int delayAfterTicks) {}
+    private record MovementAction(String action, int priority, int delayAfterTicks, boolean evadeOnly) {}
 
     private final List<MovementAction> actions = new ArrayList<>();
     private final Set<String> slots = new HashSet<>();
@@ -52,12 +52,13 @@ public class MovementActions {
                 if (!(delay instanceof Number delayNum)) {
                     throw new IllegalArgumentException("movement.actions entry '" + slot + "' is missing numeric 'delay_after_ticks'");
                 }
+                boolean evadeOnly = Boolean.TRUE.equals(raw.get("evade_only"));
                 slots.add(slot);
-                actions.add(new MovementAction(slot, priorityNum.intValue(), delayNum.intValue()));
+                actions.add(new MovementAction(slot, priorityNum.intValue(), delayNum.intValue(), evadeOnly));
             }
         }
         if (actions.isEmpty()) {
-            actions.add(new MovementAction("jump", 1, 8));
+            actions.add(new MovementAction("jump", 1, 8, false));
         }
         actions.sort(Comparator.comparingInt(MovementAction::priority));
     }
@@ -73,21 +74,22 @@ public class MovementActions {
 
     /** Fires the first usable movement tool once any post-fire commit delay has elapsed. */
     public void tick(Hero hero, BotController controller, boolean allowAirborneJumps) {
-        runActions(slot -> fire(hero, controller, slot, allowAirborneJumps));
+        runActions(action -> !(allowAirborneJumps && action.evadeOnly())
+                && fire(hero, controller, action.action(), allowAirborneJumps));
     }
 
     /** Gap-closer toward {@code approachTarget} during far FIGHT chases, vetting landing safety. */
     public boolean tryApproach(Hero hero, BotController controller, LivingEntity approachTarget) {
-        return runActions(slot -> fireApproach(hero, controller, slot, approachTarget));
+        return runActions(action -> fireApproach(hero, controller, action.action(), approachTarget));
     }
 
-    private boolean runActions(Predicate<String> dispatcher) {
+    private boolean runActions(Predicate<MovementAction> dispatcher) {
         if (delayLeft > 0) {
             delayLeft--;
             return false;
         }
         for (MovementAction action : actions) {
-            if (dispatcher.test(action.action())) {
+            if (dispatcher.test(action)) {
                 delayLeft = action.delayAfterTicks();
                 return true;
             }
@@ -102,9 +104,9 @@ public class MovementActions {
             case "primary" -> fireAbility(hero, controller, hero.getPrimaryAbility(), hero::usePrimary, safetyDir);
             case "secondary" -> fireAbility(hero, controller, hero.getSecondaryAbility(), hero::useSecondary, safetyDir);
             case "smash" -> fireAbility(hero, controller, hero.getSmashAbility(), hero::useSmash, safetyDir);
-            case "sneak" -> firePassive(hero, AbilityType.PASSIVE_SNEAK, hero::onSneak);
-            case "drop" -> firePassive(hero, AbilityType.PASSIVE_DROP, hero::onDrop);
-            case "swap" -> firePassive(hero, AbilityType.PASSIVE_SWAP, hero::onSwap);
+            case "sneak" -> firePassive(hero, controller, AbilityType.PASSIVE_SNEAK, hero::onSneak, safetyDir);
+            case "drop" -> firePassive(hero, controller, AbilityType.PASSIVE_DROP, hero::onDrop, safetyDir);
+            case "swap" -> firePassive(hero, controller, AbilityType.PASSIVE_SWAP, hero::onSwap, safetyDir);
             default -> throw new IllegalStateException("Unknown movement action: " + action);
         };
     }
@@ -132,9 +134,13 @@ public class MovementActions {
         return true;
     }
 
-    private boolean firePassive(Hero hero, AbilityType type, Runnable input) {
+    private boolean firePassive(Hero hero, BotController controller, AbilityType type,
+                                Runnable input, @Nullable Vector safetyDirection) {
         for (Ability passive : hero.getPassiveAbilities()) {
             if (passive.getType() == type && passive.canExecute(hero)) {
+                if (safetyDirection != null && !DashSafety.isLandingSafe(hero, controller, passive, safetyDirection)) {
+                    continue;
+                }
                 input.run();
                 return true;
             }

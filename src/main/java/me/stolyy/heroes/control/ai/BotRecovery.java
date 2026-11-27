@@ -59,9 +59,6 @@ public class BotRecovery {
         }
 
         if (self.isInsideVehicle()) {
-            if (!WallDetection.isAboveVoid(controller.getLocation())) {
-                hero.onSneak();
-            }
             return;
         }
 

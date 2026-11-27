@@ -130,51 +130,49 @@ sound:
   scope: LOCAL
 
 status:
+  defaults:                     # the generic effect: restricts nothing
+    block_move: false           # cannot walk or ground-jump; still falls, still takes knockback
+    block_jump: false           # no double jumps
+    block_abilities: false      # no primary / secondary / smash / passive inputs (primary override still fires)
+    block_jab: false
+    hold: false                 # pinned in place: no gravity, no knockback, displacement undone
+    break_on_knockback: false   # ends when hit by something that carries knockback
+    loop_interval_ticks: 10
+    apply_sound:                # every effect has an apply sound unless its block or preset replaces it
+      sound: "block.note_block.bass"   # FILL
+      volume: 0.6                      # FILL
+      pitch: 1.0                       # FILL
+      scope: PLAYER
   presets:
     stun:
-      move: false
-      jump: false
-      abilities: true
-      jab: true
-      hold: false
+      block_move: true
+      block_jump: true
       break_on_knockback: true
-      indicator_sound:
+      apply_sound:
         sound: "block.anvil.land"        # FILL
         volume: 0.6                      # FILL
         pitch: 1.6                       # FILL
         scope: PLAYER
     pin:
-      move: false
-      jump: false
-      abilities: true
-      jab: true
+      block_move: true
+      block_jump: true
       hold: true
-      break_on_knockback: false
-      indicator_sound:
+      apply_sound:
         sound: "block.chain.place"       # FILL
         volume: 0.8                      # FILL
         pitch: 0.8                       # FILL
         scope: PLAYER
     root:
-      move: true
-      jump: false
-      abilities: true
-      jab: true
-      hold: false
-      break_on_knockback: false
-      indicator_sound:
+      block_jump: true
+      apply_sound:
         sound: "block.rooted_dirt.place" # FILL
         volume: 0.8                      # FILL
         pitch: 0.9                       # FILL
         scope: PLAYER
     disable:
-      move: true
-      jump: true
-      abilities: false
-      jab: false
-      hold: false
-      break_on_knockback: false
-      indicator_sound:
+      block_abilities: true
+      block_jab: true
+      apply_sound:
         sound: "entity.elder_guardian.curse" # FILL
         volume: 0.5                          # FILL
         pitch: 1.8                           # FILL

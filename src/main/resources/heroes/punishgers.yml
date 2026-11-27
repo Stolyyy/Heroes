@@ -153,7 +153,7 @@ abilities:
       effect_radius: 3.5
       launch_knockback: 1.75 # FILL - static upward knockback lifting a default-weight hero ~3 blocks
       status:
-        id: root
+        preset: root
         duration: 1.2
       disorient_ms: 500
       disorient_effect: NAUSEA   # NAUSEA or BLINDNESS

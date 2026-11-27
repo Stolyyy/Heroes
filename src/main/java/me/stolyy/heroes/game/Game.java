@@ -579,6 +579,17 @@ public class Game {
     }
 
     public void removeBot(UUID botUUID) {
+        detachBot(botUUID);
+        if (gameState == GameState.IN_PROGRESS || gameState == GameState.STARTING) checkEnd();
+    }
+
+    /**
+     * Removes a bot's roster and hero state without the end-of-match check. For
+     * {@link MatchHeroes#initBots()}, which runs one check after every bot has had its turn:
+     * mid-loop the bots still waiting are not in {@code aliveIds} yet, so a check there sees
+     * only the real players and ends the match on the spot.
+     */
+    void detachBot(UUID botUUID) {
         for (Team team : teams.values()) team.remove(botUUID);
         GamePlayer gamePlayer = gamePlayers.get(botUUID);
         if (gamePlayer != null) gamePlayer.markLeft();
@@ -587,7 +598,6 @@ public class Game {
         HeroManager.removeHero(botUUID);
         aliveIds.remove(botUUID);
         tickedHeroIds.remove(botUUID);
-        if (gameState == GameState.IN_PROGRESS || gameState == GameState.STARTING) checkEnd();
     }
 
     public void changeBotTeam(UUID botUUID, TeamColor teamColor) {

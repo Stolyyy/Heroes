@@ -4,14 +4,15 @@ import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.control.BotController;
 import me.stolyy.heroes.physics.WallDetection;
 import me.stolyy.heroes.util.BotConfig;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
 /**
  * Prevention half of the bot off-map work: veto strategy jumps whose projected landing is
- * over the void. A vetoed chase jump is a PRESERVED double jump — recovery fuel the bot
- * would otherwise have burned hurling itself after a target it can't reach.
+ * over the void or whose upward arc would slam into a ceiling. A vetoed chase jump is a
+ * PRESERVED double jump — recovery fuel the bot would otherwise have burned.
  *
  * <p>Reach projection is deliberately rough: {@code xStrength × airtime}, airtime from the
  * jump's launch velocity against the standard 0.08/tick gravity. It only has to be right
@@ -19,6 +20,7 @@ import org.bukkit.util.Vector;
  */
 public final class JumpSafety {
     private static final double GRAVITY_PER_TICK = 0.08;
+    private static final Vector UP = new Vector(0, 1, 0);
 
     private JumpSafety() {
     }
@@ -37,6 +39,21 @@ public final class JumpSafety {
         double reach = jumpReach(hero);
         if (!landsOverVoid(botLoc, toTarget.normalize(), reach)) return true;
         return botLoc.distance(target.getLocation()) <= reach + BotConfig.preventionReachMargin();
+    }
+
+    /**
+     * True when the space straight above the bot's eyes is clear up to its jump apex
+     * ({@code yStrength² / (2 × 0.08)}, capped at {@code prevention.headroom_max_check}).
+     */
+    public static boolean hasHeadroom(Hero hero, BotController controller) {
+        if (!BotConfig.isJumpVetoEnabled()) return true;
+        double yStrength = hero.getMobility().getYStrength();
+        double apex = (yStrength * yStrength) / (2.0 * GRAVITY_PER_TICK);
+        double checkHeight = Math.min(apex, BotConfig.preventionHeadroomMaxCheck());
+        if (checkHeight <= 0) return true;
+
+        Location eye = controller.getEyeLocation();
+        return eye.getWorld().rayTraceBlocks(eye, UP, checkHeight, FluidCollisionMode.NEVER, true) == null;
     }
 
     private static double jumpReach(Hero hero) {

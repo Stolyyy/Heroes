@@ -8,6 +8,7 @@ import me.stolyy.heroes.progression.PlayerStatsManager;
 import me.stolyy.heroes.progression.ProgressionConfig;
 import me.stolyy.heroes.util.GameConfigManager;
 import me.stolyy.heroes.vfx.ui.visual.Broadcast;
+import me.stolyy.heroes.vfx.ui.visual.HeroNpcSkins;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -149,6 +150,7 @@ final class MatchRewards {
                     NamedTextColor.AQUA));
             if (level == ProgressionConfig.getMasterSkinLevel()) {
                 stats.setSkinForHero(heroName, MASTER_SKIN_ID);
+                HeroNpcSkins.refresh(player, heroName);
                 player.sendMessage(Component.text("You mastered " + heroDisplay
                         + " — Master Skin unlocked!", NamedTextColor.LIGHT_PURPLE));
                 Broadcast.chat(GameConfigManager.getMessage("progression.master-skin-broadcast", Map.of(

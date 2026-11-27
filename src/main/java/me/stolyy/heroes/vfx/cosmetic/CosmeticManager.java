@@ -16,9 +16,11 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +46,42 @@ public class CosmeticManager {
         ConfigurationSection section = config.getConfigurationSection("skins." + skinId);
         if (section == null) return null;
         return new HeroSkin(skinId, section);
+    }
+
+    /** Resolves a hero's skin section by ID, falling back to {@code skins.default} if missing. */
+    public static HeroSkin resolveSkin(String heroId, String skinId) {
+        YamlConfiguration config = HeroConfig.getConfig(heroId);
+        if (config == null) return null;
+        String effectiveId = skinId;
+        ConfigurationSection section = effectiveId != null ? config.getConfigurationSection("skins." + effectiveId) : null;
+        if (section == null) {
+            effectiveId = "default";
+            section = config.getConfigurationSection("skins.default");
+        }
+        if (section == null) return null;
+        return new HeroSkin(effectiveId, section);
+    }
+
+    /** Builds the four armor slots (HEAD/CHEST/LEGS/FEET) for {@code skin}, using empty items when unarmored. */
+    public static Map<EquipmentSlot, ItemStack> buildArmorEquipment(String heroId, HeroSkin skin) {
+        String assetHero = HeroConfig.assetKey(heroId);
+        Map<EquipmentSlot, ItemStack> equipment = new EnumMap<>(EquipmentSlot.class);
+        equipment.put(EquipmentSlot.HEAD, HeroSkin.modelItem(
+                skin.getHeadOverride(), Material.SPONGE, assetHero, "head", skin.getId()).build());
+        ConfigurationSection armor = skin.getArmor();
+        if (armor != null) {
+            equipment.put(EquipmentSlot.CHEST,
+                    parseArmorPiece(armor, "chest", Material.LEATHER_CHESTPLATE, assetHero + " Chest").build());
+            equipment.put(EquipmentSlot.LEGS,
+                    parseArmorPiece(armor, "legs", Material.LEATHER_LEGGINGS, assetHero + " Legs").build());
+            equipment.put(EquipmentSlot.FEET,
+                    parseArmorPiece(armor, "boots", Material.LEATHER_BOOTS, assetHero + " Boots").build());
+        } else {
+            equipment.put(EquipmentSlot.CHEST, ItemStack.empty());
+            equipment.put(EquipmentSlot.LEGS, ItemStack.empty());
+            equipment.put(EquipmentSlot.FEET, ItemStack.empty());
+        }
+        return equipment;
     }
 
     public static void apply(Controller controller, Hero hero) {

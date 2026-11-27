@@ -65,6 +65,7 @@ import me.stolyy.heroes.vfx.ui.prompt.PromptManager;
 import me.stolyy.heroes.vfx.ui.visual.BoardDisplay;
 import me.stolyy.heroes.vfx.ui.visual.EloBoardSource;
 import me.stolyy.heroes.vfx.ui.visual.HeroNpcLevelTags;
+import me.stolyy.heroes.vfx.ui.visual.HeroNpcSkins;
 import me.stolyy.heroes.vfx.ui.visual.LevelBoardSource;
 import me.stolyy.heroes.vfx.ui.visual.LobbyScoreboard;
 import me.stolyy.heroes.vfx.ui.visual.MemorialDisplays;
@@ -148,6 +149,7 @@ public final class Heroes extends JavaPlugin {
 
         NpcManager.initialize();
         HeroNpcLevelTags.initialize();
+        HeroNpcSkins.initialize();
         PracticeManager.initialize();
         AbstractDisplayBuilder.sweepOrphans();
 
@@ -156,6 +158,7 @@ public final class Heroes extends JavaPlugin {
         memorialDisplays = new MemorialDisplays();
         Bukkit.getScheduler().runTaskLater(this, () -> {
             NpcManager.spawnLobbyNpcs();
+            HeroNpcSkins.refreshAll();
             BoardDisplay.spawnAll();
             memorialDisplays.spawn();
             PracticeManager.spawnDummies();

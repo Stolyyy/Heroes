@@ -7,6 +7,7 @@ import me.stolyy.heroes.progression.ProgressionConfig;
 import me.stolyy.heroes.vfx.effect.ItemBuilder;
 import me.stolyy.heroes.vfx.effect.SoundBuilder;
 import me.stolyy.heroes.vfx.ui.GuiText;
+import me.stolyy.heroes.vfx.ui.visual.HeroNpcSkins;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -99,6 +100,7 @@ public class SkinSelectGUI extends GUI {
         }
 
         PlayerStatsManager.getStats(player).setSkinForHero(heroName, skinId);
+        HeroNpcSkins.refresh(player, heroName);
         player.sendMessage(GuiText.component("gui.skins.changed",
                 "hero", HeroConfig.formatName(heroName),
                 "skin", formatSkinName(skinId)));

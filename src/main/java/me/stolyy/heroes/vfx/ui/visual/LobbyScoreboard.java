@@ -47,6 +47,7 @@ public class LobbyScoreboard {
         }
 
         HeroNpcLevelTags.refresh(player);
+        HeroNpcSkins.refresh(player);
 
         int score = 13;
 

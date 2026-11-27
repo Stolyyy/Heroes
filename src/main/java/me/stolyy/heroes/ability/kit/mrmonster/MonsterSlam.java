@@ -1,5 +1,7 @@
 package me.stolyy.heroes.ability.kit.mrmonster;
 
+import me.stolyy.heroes.game.PracticeArena;
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.BaseAbility;
 import me.stolyy.heroes.physics.Hitbox;
@@ -119,7 +121,13 @@ public class MonsterSlam extends BaseAbility {
         }
 
         double previousFront = waveFront;
-        waveFront = Math.min(range, waveFront + waveSpeed);
+        double nextFront = Math.min(range, waveFront + waveSpeed);
+        double maxFront = PracticeManager.clampPracticeRange(hero, waveOrigin, waveDirection, nextFront);
+        if (maxFront <= previousFront) {
+            waveActive = false;
+            return;
+        }
+        waveFront = maxFront;
 
         double width = widthAt(waveFront);
         Location segmentStart = waveOrigin.clone()
@@ -128,6 +136,7 @@ public class MonsterSlam extends BaseAbility {
         Hitbox.box(segmentStart, waveDirection, width, height, waveFront - previousFront)
                 .exclude(self)
                 .excludeTeammates(self)
+                .filter(victim -> PracticeManager.isWithinPracticeBounds(hero, victim.getLocation()))
                 .shareHitHistory(waveHits)
                 .onHit(victim -> {
                     hitSound.play(victim.getEyeLocation(), hero.getController());
@@ -140,21 +149,27 @@ public class MonsterSlam extends BaseAbility {
                 })
                 .check();
 
-        if (waveFront >= range) waveActive = false;
+        Location frontPoint = waveOrigin.clone().add(waveDirection.clone().multiply(waveFront));
+        if (waveFront >= range || waveFront < nextFront) waveActive = false;
 
-        spawnBlockFront(waveFront, width);
-        waveVisual.play(waveOrigin.clone().add(waveDirection.clone().multiply(waveFront)));
+        spawnBlockFront(hero, waveFront, width);
+        if (PracticeManager.isWithinPracticeBounds(hero, frontPoint)) {
+            waveVisual.play(frontPoint);
+        }
     }
 
     private double widthAt(double distance) {
         return minWidth + (distance / range) * (maxWidth - minWidth);
     }
 
-    private void spawnBlockFront(double front, double width) {
+    private void spawnBlockFront(Hero hero, double front, double width) {
+        PracticeArena arena = PracticeManager.practiceArenaOf(hero);
         Vector side = waveDirection.clone().crossProduct(new Vector(0, 1, 0)).normalize();
         Location center = waveOrigin.clone().add(waveDirection.clone().multiply(front));
         for (double w = -width / 2.0; w <= width / 2.0; w += blockSpacing) {
-            Location loc = center.clone().add(side.clone().multiply(w)).add(0, -1, 0);
+            Location surface = center.clone().add(side.clone().multiply(w));
+            if (arena != null && !arena.contains(surface)) continue;
+            Location loc = surface.add(0, -1, 0);
             BlockDisplayBuilder.riseAndFall(loc, (float) height, blockDisplayTicks);
         }
     }
@@ -163,11 +178,15 @@ public class MonsterSlam extends BaseAbility {
         LivingEntity self = hero.getController().getEntity();
         Location eye = hero.getController().getEyeLocation();
         Vector direction = eye.getDirection();
+        double reach = PracticeManager.clampPracticeRange(hero, eye, direction, airRange);
+        if (reach <= 0) return;
+        double endRadius = airMinRadius + (reach / airRange) * (airRadius - airMinRadius);
         airSound.play(eye, hero.getController());
-        airVisual.playAlong(eye, direction, airRange, airVisualSpacing, hero.getSkin().getId(), airVisualSpacing);
-        Hitbox.cone(eye, direction, airMinRadius, airRadius, airRange)
+        airVisual.playAlong(eye, direction, reach, airVisualSpacing, hero.getSkin().getId(), airVisualSpacing);
+        Hitbox.cone(eye, direction, airMinRadius, endRadius, reach)
                 .exclude(self)
                 .excludeTeammates(self)
+                .filter(victim -> PracticeManager.isWithinPracticeBounds(hero, victim.getLocation()))
                 .checkWalls(true)
                 .onHit(victim -> {
                     hitSound.play(victim.getEyeLocation(), hero.getController());

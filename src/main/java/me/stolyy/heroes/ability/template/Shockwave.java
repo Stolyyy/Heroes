@@ -2,6 +2,8 @@ package me.stolyy.heroes.ability.template;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.ability.AbilityType;
+import me.stolyy.heroes.game.PracticeArena;
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.physics.Hitbox;
 import me.stolyy.heroes.physics.Interactions;
@@ -55,24 +57,31 @@ public class Shockwave extends BaseAbility {
     }
 
     public void perform(Hero hero, @Nullable Map<UUID, Long> sharedHitHistory) {
-        activationSound.play(hero.getController().getLocation(), hero.getController());
         Location center = hero.getController().getLocation();
-        new ShockwaveTask(hero, center, sharedHitHistory).runTaskTimer(Heroes.getInstance(), 0, 1);
+        PracticeArena arena = PracticeManager.practiceArenaOf(hero);
+        if (arena != null && !arena.contains(center)) return;
+
+        activationSound.play(center, hero.getController());
+        new ShockwaveTask(hero, center, arena, sharedHitHistory).runTaskTimer(Heroes.getInstance(), 0, 1);
     }
 
     private class ShockwaveTask extends BukkitRunnable {
         private final Hero hero;
         private final Location center;
+        private final @Nullable PracticeArena arena;
         private double currentRadius = 0;
         private final double expansionPerTick = radius / 5.0;
         private final Hitbox hitbox;
 
-        public ShockwaveTask(Hero hero, Location center, @Nullable Map<UUID, Long> sharedHitHistory) {
+        public ShockwaveTask(Hero hero, Location center, @Nullable PracticeArena arena,
+                             @Nullable Map<UUID, Long> sharedHitHistory) {
             this.hero = hero;
             this.center = center;
+            this.arena = arena;
             this.hitbox = Hitbox.cylinder(center, new Vector(0, 1, 0), radius, height)
                     .exclude(hero.getController().getEntity())
                     .excludeTeammates(hero.getController().getEntity())
+                    .filter(victim -> arena == null || arena.contains(victim.getLocation()))
                     .checkWalls(!piercesWalls)
                     .onHit((victim) -> onHit(hero, victim, center));
             if (sharedHitHistory != null) {
@@ -90,9 +99,13 @@ public class Shockwave extends BaseAbility {
             }
             currentRadius += expansionPerTick;
             hitbox.check();
-            
-            // Wave Visual
-            waveVisual.play(center, new Vector(0, 1, 0), currentRadius, hero.getSkin().getId());
+
+            double visualRadius = arena != null
+                    ? Math.min(currentRadius, arena.maxRadiusInsideXZ(center))
+                    : currentRadius;
+            if (visualRadius > 0) {
+                waveVisual.play(center, new Vector(0, 1, 0), visualRadius, hero.getSkin().getId());
+            }
 
             if (showBlockWave) {
                 spawnBlockWave(currentRadius);
@@ -105,6 +118,9 @@ public class Shockwave extends BaseAbility {
                 double angle = (2 * Math.PI / points) * i;
                 double x = center.getX() + Math.cos(angle) * r;
                 double z = center.getZ() + Math.sin(angle) * r;
+                if (arena != null && !arena.contains(new Location(center.getWorld(), x, center.getY(), z))) {
+                    continue;
+                }
                 Location loc = new Location(center.getWorld(), x, center.getY() - 1, z);
                 BlockDisplayBuilder.riseAndFall(loc, 1.0f, 5);
             }

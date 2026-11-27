@@ -10,7 +10,6 @@ import me.stolyy.heroes.physics.Hitbox;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 /**
@@ -36,14 +35,15 @@ public class Hitscan extends RangedAbility {
 
         shot.fireSound().play(controller.getLocation(), controller);
 
-        // A practicing owner's ray stops at the arena wall instead of reaching across the lobby.
-        double reach = shooter instanceof Player owner && PracticeManager.isPracticing(owner)
-                ? PracticeManager.arenaOf(owner).clampRange(start, direction.clone().normalize(), range)
-                : range;
+        // A practicing caster's ray stops at the arena wall instead of reaching across the lobby.
+        Vector normalizedDir = direction.clone().normalize();
+        double reach = PracticeManager.clampPracticeRange(hero, start, normalizedDir, range);
+        if (reach <= 0) return;
 
         withActiveShot(shot, () -> {
             Hitbox hitbox = Hitbox.cylinder(start, direction, Math.max(0.1, radius), reach)
                     .exclude(shooter)
+                    .filter(victim -> PracticeManager.isWithinPracticeBounds(hero, victim.getLocation()))
                     .checkWalls(!piercesWalls)
                     .pierce(piercesPlayers)
                     .onHit((victim, loc) -> {

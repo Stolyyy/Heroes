@@ -1,6 +1,7 @@
 package me.stolyy.heroes.ability.kit.botmon;
 
 import me.stolyy.heroes.ability.template.ActiveAbility;
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.physics.Hitbox;
 import me.stolyy.heroes.physics.WallDetection;
@@ -116,6 +117,10 @@ public class Botmobile extends ActiveAbility {
         Vector safeMove = WallDetection.clampToWalls(player.getWorld(), expanded, intendedMove);
 
         Location newLoc = ride.location().add(safeMove);
+        if (!PracticeManager.isWithinPracticeBounds(hero, newLoc)) {
+            newLoc = ride.location();
+            safeMove = new Vector(0, 0, 0);
+        }
         if (safeMove.lengthSquared() > 0.01) {
             lastMoveDirection = safeMove.clone().normalize();
             ride.moveTo(newLoc, lastMoveDirection);

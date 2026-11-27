@@ -1,11 +1,14 @@
 package me.stolyy.heroes.game;
 
 import me.stolyy.heroes.Heroes;
+import me.stolyy.heroes.control.BotController;
+import me.stolyy.heroes.control.Controller;
+import me.stolyy.heroes.control.PlayerController;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroConfig;
 import me.stolyy.heroes.hero.HeroManager;
+import me.stolyy.heroes.hero.minion.MinionHero;
 import me.stolyy.heroes.hero.minion.MinionManager;
-import me.stolyy.heroes.control.PlayerController;
 import me.stolyy.heroes.npc.NpcHandle;
 import me.stolyy.heroes.npc.NpcServiceProvider;
 import me.stolyy.heroes.util.GameConfigManager;
@@ -21,6 +24,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -86,6 +90,32 @@ public class PracticeManager {
     /** The arena a practicing player is currently standing in; null when they are not practicing. */
     public static PracticeArena arenaOf(Player player) {
         return practicing.get(player.getUniqueId());
+    }
+
+    /** The arena owning {@code hero} (unwrapping minions to their owner), or null when not practicing. */
+    public static PracticeArena practiceArenaOf(Hero hero) {
+        if (hero == null) return null;
+        if (hero instanceof MinionHero minion && minion.getOwner() != null) {
+            hero = minion.getOwner();
+        }
+        if (hero.getController() instanceof PlayerController pc) {
+            return arenaOf(pc.getPlayer());
+        }
+        return null;
+    }
+
+    /** True when {@code hero} is not in practice mode or {@code loc} stays inside its practice arena. */
+    public static boolean isWithinPracticeBounds(Hero hero, Location loc) {
+        PracticeArena arena = practiceArenaOf(hero);
+        return arena == null || (loc != null && arena.contains(loc));
+    }
+
+    /** Clamps {@code range} along {@code direction} from {@code start} to the arena boundary (0 if outside). */
+    public static double clampPracticeRange(Hero hero, Location start, Vector direction, double range) {
+        PracticeArena arena = practiceArenaOf(hero);
+        if (arena == null) return range;
+        if (start == null || !arena.contains(start) || direction.lengthSquared() < 1.0E-9) return 0.0;
+        return arena.clampRange(start, direction.clone().normalize(), range);
     }
 
     /** Practice combat gate: a practicing player hitting a target dummy (no game involved). */
@@ -197,6 +227,17 @@ public class PracticeManager {
             }
             practicing.put(uuid, arena);
             hero.tick();
+            for (MinionHero minion : new ArrayList<>(MinionManager.getMinions(hero))) {
+                Controller mc = minion.getController();
+                if (mc == null || mc.getEntity() == null) continue;
+                if (!arena.contains(mc.getLocation())) {
+                    mc.teleport(p.getLocation());
+                }
+                minion.tick();
+                if (mc instanceof BotController bot) {
+                    bot.tickAI(minion);
+                }
+            }
         }
         for (DummySlot slot : dummies) {
             slot.tick();

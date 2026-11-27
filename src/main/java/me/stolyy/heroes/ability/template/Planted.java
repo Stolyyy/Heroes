@@ -1,5 +1,7 @@
 package me.stolyy.heroes.ability.template;
 
+import me.stolyy.heroes.game.PracticeManager;
+import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.vfx.effect.AbstractDisplayBuilder;
 import org.bukkit.Location;
 import org.bukkit.entity.ItemDisplay;
@@ -34,6 +36,10 @@ public class Planted {
     }
 
     public Location location() { return location; }
+
+    public boolean isWithin(Hero owner) {
+        return PracticeManager.isWithinPracticeBounds(owner, location);
+    }
 
     public boolean isAttached() { return attached != null; }
 

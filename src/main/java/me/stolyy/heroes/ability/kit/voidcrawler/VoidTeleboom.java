@@ -1,6 +1,7 @@
 package me.stolyy.heroes.ability.kit.voidcrawler;
 
 import me.stolyy.heroes.ability.template.Hitscan;
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.physics.WallDetection;
 import me.stolyy.heroes.util.Configs;
@@ -34,6 +35,9 @@ public class VoidTeleboom extends Hitscan {
         Location teleportLocation = location.clone().subtract(direction.multiply(distanceToTeleportLocation));
         teleportLocation.setYaw(playerLoc.getYaw());
         teleportLocation.setPitch(playerLoc.getPitch());
+        if (!PracticeManager.isWithinPracticeBounds(attacker, teleportLocation)) {
+            teleportLocation = playerLoc.clone();
+        }
         WallDetection.safeTeleport(attacker.getController(), teleportLocation);
     }
 }

@@ -1,6 +1,7 @@
 package me.stolyy.heroes.ability.kit.shoop;
 
 import me.stolyy.heroes.ability.template.Hitscan;
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
@@ -30,6 +31,15 @@ public class ShoopSmash extends Hitscan {
     @Override
     protected void onBurstEnd(Hero hero) {
         beam.clear();
+    }
+
+    @Override
+    protected void fireSingleShot(Hero hero) {
+        if (!PracticeManager.isWithinPracticeBounds(hero, getStartLocation(hero))) {
+            beam.clear();
+            return;
+        }
+        super.fireSingleShot(hero);
     }
 
     @Override

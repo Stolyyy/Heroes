@@ -23,6 +23,7 @@ A hero has three related identifiers — keep them consistent:
    - Constructor signature must match `(ConfigurationSection config, HeroSkin skin)` and pass both to `super(config, skin)`.
    - Always read config values from `this.config` (not the raw constructor `config` parameter) so per-skin ability overrides apply.
    - Read required values with `Configs.require*` — no silent fallbacks.
+   - If the kit builds its own `Hitbox`, add the practice-arena victim filter and clamp its own ranges (see [docs/DEVELOPMENT.md](DEVELOPMENT.md) §6, "Practice arena").
    - If the ability owns inner template instances, delegate `tick`, `onDeath`, and `onOwnerLost` to them, and override `isIndependent()` if detached projectiles/hazards should keep resolving while the hero is eliminated.
 3. Register every ability type (lowercase key) in `AbilityRegistry.registerAll()`:
    - Add the kit package import at the top of `AbilityRegistry.java`.
@@ -41,7 +42,7 @@ Copy `src/main/resources/example-hero.yml` to `src/main/resources/heroes/<id>.ym
 - `skins.default` and `skins.masterskin`: armor pieces (`chest`, `legs`, `boots`) as leather RGB dyes (`R,G,B`) or sections with optional `material:`, `color:`, `equipment:` (custom worn-armor texture asset key in the resource pack), and `model: true` (sets item `custom_model_data` to `<asset>_<chest|legs|boots>_<skin>`), plus optional `hand:` or `piece_visuals:` overrides.
 - `unlock:`: `default-unlocked`, `token-cost`, and `smash-level-requirement`.
 - `admin-only: true`: optional flag that hides work-in-progress heroes from non-ops in `/hero` and `HeroSelectGUI`.
-- `bot:`, `ai:`, `movement:`, `strategy:`: per-hero bot config (see [docs/BOTS.md](BOTS.md)). If the hero cannot be played by bots yet (e.g. player-packet bow mechanics), add `<id>` to `disabled_heroes:` in `src/main/resources/bots.yml`.
+- `bot:`, `ai:`, `movement:`, `strategy:`: per-hero bot config (see [docs/BOTS.md](BOTS.md)). If the hero cannot be played by bots yet (e.g. player-packet bow mechanics), add `<id>` to `disabled_heroes:` in `src/main/resources/bots.yml`. Bots never roll `admin-only` or `disabled_heroes` heroes (`BotConfig.eligibleHeroes()`).
 
 > **Reminder:** `Heroes.extractHeroResources()` calls `saveResource(path, false)` on startup, so an existing test server's `plugins/Heroes/heroes/<id>.yml` is never overwritten automatically. When editing an existing hero's YML, either edit the live file directly (or `/balance`) or delete the live copy before restarting.
 
@@ -62,6 +63,7 @@ Every toggle and feedback key resolves in three layers — highest wins:
 - `preset:` is optional. `id:` names the effect — it selects the action bar label (`messages.yml` `status.indicator.<id>`) and is matched by `hero.status().has(id)`.
 - `id:` defaults to the `preset:` name. A block with neither `preset:` nor `id:`, an unknown `preset:`, or an `id:` without a `messages.yml` `status.indicator.<id>` entry fails loudly during `HeroBuilder.validateAll()`.
 - Never hardcode preset ids or toggle combinations in Java.
+- Kit-side rules (apply after the ability's own `execute()`, remove with `StatusEffects.removeAllFrom(this)` in `onDeath` / `onOwnerLost`, no private stun flags) are in [docs/DEVELOPMENT.md](DEVELOPMENT.md) §6, "Status effects".
 
 ### Toggles (`true` enables the restriction / behaviour)
 

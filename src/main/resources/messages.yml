@@ -868,6 +868,10 @@ discord:
     queue-line: "**{mode}:** in queue ({queued}) | in game ({ingame})"
     custom-line: "**Custom:** in game ({ingame})"
   mastery: "🏆 **{player}** mastered **{hero}** (level {level})"
+  bot:
+    unknown-player: "No player named **{player}** has played here."
+    wrong-channel: "Use commands in <#{channel}>."
+    cooldown: "Slow down a little."
 
 # Status Effect Indicators (action bar)
 status:

@@ -28,6 +28,7 @@ import me.stolyy.heroes.command.general.SpectateCommand;
 import me.stolyy.heroes.command.general.StatsCommand;
 import me.stolyy.heroes.command.general.StuckCommand;
 import me.stolyy.heroes.command.general.VersionCommand;
+import me.stolyy.heroes.discord.DiscordBot;
 import me.stolyy.heroes.game.AutoSpectate;
 import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.game.MapSkipPoll;
@@ -154,6 +155,7 @@ public final class Heroes extends JavaPlugin {
         HeroNpcSkins.initialize();
         PracticeManager.initialize();
         DiscordStatus.start();
+        DiscordBot.start();
         AbstractDisplayBuilder.sweepOrphans();
 
         new BoardDisplay<>(new EloBoardSource(), DisplayTags.LEADERBOARD);
@@ -172,6 +174,7 @@ public final class Heroes extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        DiscordBot.shutdown();
         DiscordStatus.shutdown();
         GUIManager.clear();
         MapSkipPoll.clear();

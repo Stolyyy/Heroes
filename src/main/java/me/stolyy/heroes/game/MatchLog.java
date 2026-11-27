@@ -38,6 +38,21 @@ import java.util.logging.Level;
  */
 public final class MatchLog {
 
+    public enum MatchOutcome { WIN, LOSS, DRAW }
+
+    /** Summary of one finished game from a single participant's perspective, read from {@code match-log/*.jsonl}. */
+    public record PlayerGameRecord(
+            long endedAt,
+            String mode,
+            String map,
+            long durationMs,
+            String hero,
+            int kills,
+            int deaths,
+            double damageDealt,
+            MatchOutcome outcome
+    ) {}
+
     private record CustomMatchRecord(long endedAt, @Nullable String winner, Map<UUID, String> humanTeams) {}
 
     private static final Gson GSON = new GsonBuilder().serializeNulls().create();
@@ -69,6 +84,95 @@ public final class MatchLog {
 
     public static void clear() {
         recentCustomGames.clear();
+    }
+
+    /**
+     * Scans up to {@code lookbackMonths} monthly log files backwards from the current UTC month,
+     * newest line first, collecting up to {@code limit} finished games containing {@code playerId}.
+     * Call from an async task.
+     */
+    public static List<PlayerGameRecord> recentGamesForPlayer(UUID playerId, int limit, int lookbackMonths) {
+        if (limit <= 0 || lookbackMonths <= 0) return List.of();
+        Path dir = Heroes.getInstance().getDataFolder().toPath().resolve("match-log");
+        if (!Files.isDirectory(dir)) return List.of();
+
+        String targetUuid = playerId.toString();
+        List<PlayerGameRecord> results = new ArrayList<>(limit);
+        YearMonth current = YearMonth.now(ZoneOffset.UTC);
+
+        for (int offset = 0; offset < lookbackMonths && results.size() < limit; offset++) {
+            Path file = dir.resolve(current.minusMonths(offset) + ".jsonl");
+            if (!Files.exists(file)) continue;
+            List<String> lines;
+            try {
+                lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                Heroes.getInstance().getLogger().log(Level.WARNING,
+                        "Failed to read match log " + file + " for player history", e);
+                continue;
+            }
+            for (int i = lines.size() - 1; i >= 0 && results.size() < limit; i--) {
+                String rawLine = lines.get(i);
+                if (rawLine.isBlank()) continue;
+                try {
+                    PlayerGameRecord record = parsePlayerGameRecord(rawLine, targetUuid);
+                    if (record != null) results.add(record);
+                } catch (JsonParseException | IllegalStateException | ClassCastException
+                        | IllegalArgumentException e) {
+                    Heroes.getInstance().getLogger().log(Level.WARNING,
+                            "Skipping malformed match log entry in " + file.getFileName() + ":" + (i + 1), e);
+                }
+            }
+        }
+        return results;
+    }
+
+    private static @Nullable PlayerGameRecord parsePlayerGameRecord(String rawLine, String targetUuid) {
+        JsonObject obj = JsonParser.parseString(rawLine).getAsJsonObject();
+        JsonElement participantsEl = obj.get("participants");
+        if (participantsEl == null || !participantsEl.isJsonArray()) return null;
+
+        JsonObject matched = null;
+        for (JsonElement element : participantsEl.getAsJsonArray()) {
+            JsonObject p = element.getAsJsonObject();
+            JsonElement botEl = p.get("isBot");
+            if (botEl != null && !botEl.isJsonNull() && botEl.getAsBoolean()) continue;
+            JsonElement uuidEl = p.get("uuid");
+            if (uuidEl != null && !uuidEl.isJsonNull() && targetUuid.equals(uuidEl.getAsString())) {
+                matched = p;
+                break;
+            }
+        }
+        if (matched == null) return null;
+
+        long endedAt = requireElement(obj, "endedAt").getAsLong();
+        String mode = requireElement(obj, "mode").getAsString();
+        String map = requireElement(obj, "map").getAsString();
+        long durationMs = obj.has("durationMs") && !obj.get("durationMs").isJsonNull()
+                ? obj.get("durationMs").getAsLong() : 0L;
+        JsonElement winnerEl = obj.get("winner");
+        String winner = (winnerEl != null && !winnerEl.isJsonNull()) ? winnerEl.getAsString() : null;
+        String team = requireElement(matched, "team").getAsString();
+        JsonElement heroEl = matched.get("hero");
+        String hero = (heroEl != null && !heroEl.isJsonNull()) ? heroEl.getAsString() : "unknown";
+        int kills = requireElement(matched, "kills").getAsInt();
+        int deaths = requireElement(matched, "deaths").getAsInt();
+        double damageDealt = requireElement(matched, "damageDealt").getAsDouble();
+
+        MatchOutcome outcome;
+        if (winner == null) outcome = MatchOutcome.DRAW;
+        else if (winner.equals(team)) outcome = MatchOutcome.WIN;
+        else outcome = MatchOutcome.LOSS;
+
+        return new PlayerGameRecord(endedAt, mode, map, durationMs, hero, kills, deaths, damageDealt, outcome);
+    }
+
+    private static JsonElement requireElement(JsonObject obj, String field) {
+        JsonElement el = obj.get(field);
+        if (el == null || el.isJsonNull()) {
+            throw new JsonParseException("Missing required field '" + field + "'");
+        }
+        return el;
     }
 
     private static List<CustomMatchRecord> loadRecentFromDisk(Path dir, long cutoff, long maxEndedAt) {

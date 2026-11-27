@@ -170,6 +170,12 @@ discord:
     update-seconds: 30
     offline-text: "Server offline"
   mastery-webhook: ""        # general channel; one post per hero mastered
+  bot:
+    token: ""                    # SECRET. Live config only, never commit a real value. Empty = bot off.
+    guild-id: ""                 # the Discord server the commands are registered on
+    channel-id: ""               # optional: restrict commands to this channel
+    command-cooldown-seconds: 3
+    games-lookback-months: 3
 
 restart:
   # Seconds of the final countdown before Bukkit.shutdown(); titles at 30/10/5/4/3/2/1.

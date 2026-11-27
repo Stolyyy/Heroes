@@ -21,8 +21,8 @@ import java.util.Map;
  * Central loader and typed accessor for {@code game-config.yml} and {@code messages.yml}.
  */
 public class GameConfigManager {
-    private static FileConfiguration gameConfig;
-    private static FileConfiguration messagesConfig;
+    private static volatile FileConfiguration gameConfig;
+    private static volatile FileConfiguration messagesConfig;
     private static List<PracticeArena> practiceArenas;
     private static SoundEffect chatPingSound;
 
@@ -175,6 +175,28 @@ public class GameConfigManager {
 
     public static String getDiscordMasteryWebhook() {
         return gameConfig.getString("discord.mastery-webhook", "");
+    }
+
+    // --- Discord bot ---
+
+    public static String getDiscordBotToken() {
+        return gameConfig.getString("discord.bot.token", "");
+    }
+
+    public static String getDiscordBotGuildId() {
+        return gameConfig.getString("discord.bot.guild-id", "");
+    }
+
+    public static String getDiscordBotChannelId() {
+        return gameConfig.getString("discord.bot.channel-id", "");
+    }
+
+    public static int getDiscordBotCommandCooldownSeconds() {
+        return Configs.requireInt(gameConfig, "discord.bot.command-cooldown-seconds");
+    }
+
+    public static int getDiscordBotGamesLookbackMonths() {
+        return Configs.requireInt(gameConfig, "discord.bot.games-lookback-months");
     }
 
     /** Formats a required message from {@code messages.yml} using legacy {@code &} color codes. */

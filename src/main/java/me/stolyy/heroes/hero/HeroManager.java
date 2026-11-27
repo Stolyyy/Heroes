@@ -8,6 +8,7 @@ import me.stolyy.heroes.ability.kit.mrmonster.MonsterGrab;
 import me.stolyy.heroes.control.Controller;
 import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.hero.mechanics.JabListener;
+import me.stolyy.heroes.hero.mechanics.LobbyMobility;
 import me.stolyy.heroes.hero.mechanics.MovementListener;
 import me.stolyy.heroes.progression.PlayerStatsManager;
 import org.bukkit.Bukkit;
@@ -158,6 +159,7 @@ public class HeroManager {
         AbilityListener.clear();
         GreenHoodListener.clear();
         MonsterGrab.clear();
+        LobbyMobility.clear();
     }
 
     /** Unlock check: default-unlocked in the YML or purchased/granted on the player's stats. */

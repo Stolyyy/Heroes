@@ -10,6 +10,7 @@ import me.stolyy.heroes.control.PlayerController;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroConfig;
 import me.stolyy.heroes.hero.HeroManager;
+import me.stolyy.heroes.hero.mechanics.LobbyMobility;
 import me.stolyy.heroes.hero.minion.MinionHero;
 import me.stolyy.heroes.hero.minion.MinionManager;
 import me.stolyy.heroes.npc.NpcHandle;
@@ -182,6 +183,7 @@ public class PracticeManager {
             return;
         }
 
+        LobbyMobility.reset(player);
         Hero hero = HeroManager.createHero(heroName, new PlayerController(player));
         // Games do this at countdown end; without it practice players kept vanilla's 3.0 entity
         // interaction range while in-game players run at jab_range (5.5), so practice exercised a
@@ -231,6 +233,8 @@ public class PracticeManager {
         player.sendMessage(Component.text("Left practice mode.", NamedTextColor.YELLOW));
         if (toLobby) {
             Heroes.teleportToLobby(player);
+        } else {
+            LobbyMobility.apply(player);
         }
     }
 
@@ -289,18 +293,18 @@ public class PracticeManager {
         @EventHandler
         public void onQuit(PlayerQuitEvent event) {
             Player player = event.getPlayer();
-            if (practicing.remove(player.getUniqueId()) != null) {
-                // abilities.mayfly is persisted in player.dat and PlayerQuitEvent fires before
-                // PlayerList#save, so quitting mid-practice used to hand the flight permission back
-                // on the next login — hero-less, in the lobby.
-                player.setFlying(false);
-                player.setAllowFlight(false);
-            }
+            boolean wasPracticing = practicing.remove(player.getUniqueId()) != null;
             // Hero teardown happens in PlayerLeaveListener via GameManager.detach ->
             // HeroManager.removePlayer is a no-op there for practice players, so do it here.
             Hero hero = HeroManager.getHero(player);
             if (hero != null) MinionManager.despawnAll(hero);
             HeroManager.removePlayer(player);
+            if (wasPracticing) {
+                // resetStats() inside HeroManager.removePlayer re-applied hero attributes/flight,
+                // so restore vanilla defaults before PlayerList#save persists player.dat.
+                GameEffects.removeEffects(player);
+                LobbyMobility.reset(player);
+            }
         }
     }
 

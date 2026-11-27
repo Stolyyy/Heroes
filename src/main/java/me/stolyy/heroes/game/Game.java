@@ -13,6 +13,7 @@ import me.stolyy.heroes.game.settings.GameSettings;
 import me.stolyy.heroes.game.settings.PlayerSettings;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroManager;
+import me.stolyy.heroes.hero.mechanics.LobbyMobility;
 import me.stolyy.heroes.hero.minion.MinionHero;
 import me.stolyy.heroes.hero.minion.MinionManager;
 import me.stolyy.heroes.npc.NpcServiceProvider;
@@ -415,6 +416,7 @@ public class Game {
 
     public void addPlayer(Player player, TeamColor teamColor) {
         PracticeManager.exitPractice(player, false);
+        LobbyMobility.reset(player);
 
         if (gameState != GameState.WAITING) teamColor = TeamColor.SPECTATOR;
 

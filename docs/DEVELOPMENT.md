@@ -105,6 +105,7 @@ How code in this repository is written, where things go, and what to check befor
 - Everything a hero does to its body goes through `control/Controller` (velocity, messages, action bar, titles, sounds, equipment), never `Player` directly. Bots share the same interface.
 - `physics/Hitbox` shapes (box sweep, cone, sphere, cylinder) are the hit tests; `physics/Interactions.on(attacker, victim)` is the only way to deal damage or knockback and must name the ability.
 - `tools/matchlog.py` summarises match logs; `tools/yml_keys.py` lists config keys read by code with inferred units; `tools/patchnotes.py <old-ref> [new-ref]` prints patch-note lines for hero and template YML changes between two git refs (the same format `/balance` appends to `plugins/Heroes/patch-notes.yml` through `util/PatchNotesLog`).
+- `tools/config_check.py <live plugins/Heroes dir>` lists keys a live server is missing, has left over from a rename, or (with `--values`) has changed, compared with `src/main/resources/`; run it before deploying a build that adds or renames keys. `tools/check_yml.py` parses every resource YML and rejects duplicate keys and tab indentation; CI runs it before the build.
 
 ## 8. Before you call it done
 

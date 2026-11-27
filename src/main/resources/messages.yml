@@ -868,3 +868,11 @@ discord:
     queue-line: "**{mode}:** in queue ({queued}) | in game ({ingame})"
     custom-line: "**Custom:** in game ({ingame})"
   mastery: "🏆 **{player}** mastered **{hero}** (level {level})"
+
+# Status Effect Indicators (action bar)
+status:
+  indicator:
+    stun: "&e&l⚡ STUNNED &f{seconds}s"
+    pin: "&c&l✖ PINNED &f{seconds}s"
+    root: "&6&l⬇ ROOTED &f{seconds}s"
+    disable: "&d&l✦ DISABLED &f{seconds}s"

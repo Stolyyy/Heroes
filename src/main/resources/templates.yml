@@ -138,6 +138,11 @@ status:
       jab: true
       hold: false
       break_on_knockback: true
+      indicator_sound:
+        sound: "block.anvil.land"        # FILL
+        volume: 0.6                      # FILL
+        pitch: 1.6                       # FILL
+        scope: PLAYER
     pin:
       move: false
       jump: false
@@ -145,6 +150,11 @@ status:
       jab: true
       hold: true
       break_on_knockback: false
+      indicator_sound:
+        sound: "block.chain.place"       # FILL
+        volume: 0.8                      # FILL
+        pitch: 0.8                       # FILL
+        scope: PLAYER
     root:
       move: true
       jump: false
@@ -152,6 +162,11 @@ status:
       jab: true
       hold: false
       break_on_knockback: false
+      indicator_sound:
+        sound: "block.rooted_dirt.place" # FILL
+        volume: 0.8                      # FILL
+        pitch: 0.9                       # FILL
+        scope: PLAYER
     disable:
       move: true
       jump: true
@@ -159,4 +174,9 @@ status:
       jab: false
       hold: false
       break_on_knockback: false
+      indicator_sound:
+        sound: "entity.elder_guardian.curse" # FILL
+        volume: 0.5                          # FILL
+        pitch: 1.8                           # FILL
+        scope: PLAYER
 

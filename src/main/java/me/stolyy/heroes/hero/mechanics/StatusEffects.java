@@ -5,7 +5,9 @@ import me.stolyy.heroes.control.Controller;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroManager;
 import me.stolyy.heroes.util.Configs;
+import me.stolyy.heroes.util.GameConfigManager;
 import me.stolyy.heroes.util.TemplateConfig;
+import me.stolyy.heroes.vfx.effect.SoundEffect;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
@@ -46,6 +48,31 @@ public final class StatusEffects {
     // Non-hero victims (practice dummies): no inputs to block, but timers, hold, knockback break,
     // and onExpire callbacks run identically so finishers work in practice.
     private static final Map<UUID, List<ActiveEffect>> NON_HERO_EFFECTS = new HashMap<>();
+    // Per-preset indicator sounds loaded from templates.yml status.presets.<id>.indicator_sound.
+    private static final Map<String, SoundEffect> INDICATOR_SOUNDS = new HashMap<>();
+
+    /**
+     * Validates that every preset under {@code templates.yml status.presets} declares both a
+     * {@code status.indicator.<id>} message in {@code messages.yml} and an {@code indicator_sound}
+     * block, caching the parsed sounds.
+     */
+    public static void reloadPresets() {
+        INDICATOR_SOUNDS.clear();
+        for (String id : TemplateConfig.getConfigKeys("status.presets")) {
+            String key = id.toLowerCase(Locale.ROOT);
+            GameConfigManager.getMessageString("status.indicator." + key);
+            SoundEffect sound = new SoundEffect(TemplateConfig.requireSection("status.presets." + id + ".indicator_sound"));
+            INDICATOR_SOUNDS.put(key, sound);
+        }
+    }
+
+    private static SoundEffect indicatorSound(String presetId) {
+        SoundEffect cached = INDICATOR_SOUNDS.get(presetId);
+        if (cached != null) return cached;
+        SoundEffect loaded = new SoundEffect(TemplateConfig.requireSection("status.presets." + presetId + ".indicator_sound"));
+        INDICATOR_SOUNDS.put(presetId, loaded);
+        return loaded;
+    }
 
     public enum Restriction {
         MOVE,
@@ -343,12 +370,15 @@ public final class StatusEffects {
     // --- Instance lifecycle (called by Hero) ---
 
     private void apply(Hero hero, ActiveEffect effect) {
-        effects.removeIf(e -> e.source == effect.source);
+        boolean isRefresh = effects.removeIf(e -> e.source == effect.source);
         effects.add(effect);
         ACTIVE_HEROES.add(hero);
         syncModifiers(hero);
         if (effect.spec.hold()) {
             hero.getController().setVelocity(new Vector(0, 0, 0));
+        }
+        if (!isRefresh && effect.applier() != hero) {
+            indicatorSound(effect.id()).play(hero.getController());
         }
     }
 

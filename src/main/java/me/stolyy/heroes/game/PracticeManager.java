@@ -61,7 +61,7 @@ public class PracticeManager {
     public static void spawnDummies() {
         for (PracticeArena arena : GameConfigManager.getPracticeArenas()) {
             for (Location loc : arena.dummyLocations()) {
-                DummySlot slot = new DummySlot(loc);
+                DummySlot slot = new DummySlot(arena, loc);
                 slot.spawn();
                 dummies.add(slot);
             }
@@ -221,13 +221,15 @@ public class PracticeManager {
         }
     }
 
-    /** One configured dummy point: keeps a target NPC alive there, respawning after death. */
+    /** One configured dummy point: keeps a target NPC alive inside its arena, respawning after death or knock-out. */
     private static class DummySlot {
+        private final PracticeArena arena;
         private final Location location;
         private NpcHandle handle;
         private int respawnCountdown = -1;
 
-        DummySlot(Location location) {
+        DummySlot(PracticeArena arena, Location location) {
+            this.arena = arena;
             this.location = location;
         }
 
@@ -274,7 +276,7 @@ public class PracticeManager {
             }
             if (handle == null) return;
             LivingEntity entity = NpcServiceProvider.get().getBukkitEntity(handle);
-            if (entity == null || entity.isDead()) {
+            if (entity == null || entity.isDead() || !arena.contains(entity.getLocation())) {
                 despawn();
                 respawnCountdown = DUMMY_RESPAWN_TICKS;
             }

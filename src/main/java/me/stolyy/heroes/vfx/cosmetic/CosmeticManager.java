@@ -10,6 +10,7 @@ import me.stolyy.heroes.hero.minion.MinionHero;
 import me.stolyy.heroes.progression.PlayerStatsManager;
 import me.stolyy.heroes.util.ColorParser;
 import me.stolyy.heroes.vfx.effect.ItemBuilder;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
@@ -70,12 +71,15 @@ public class CosmeticManager {
                 skin.getHeadOverride(), Material.SPONGE, assetHero, "head", skin.getId()).build());
         ConfigurationSection armor = skin.getArmor();
         if (armor != null) {
-            equipment.put(EquipmentSlot.CHEST,
-                    parseArmorPiece(armor, "chest", Material.LEATHER_CHESTPLATE, assetHero + " Chest").build());
-            equipment.put(EquipmentSlot.LEGS,
-                    parseArmorPiece(armor, "legs", Material.LEATHER_LEGGINGS, assetHero + " Legs").build());
-            equipment.put(EquipmentSlot.FEET,
-                    parseArmorPiece(armor, "boots", Material.LEATHER_BOOTS, assetHero + " Boots").build());
+            equipment.put(EquipmentSlot.CHEST, parseArmorPiece(
+                    armor, "chest", EquipmentSlot.CHEST, Material.LEATHER_CHESTPLATE,
+                    assetHero + " Chest", assetHero, skin.getId()).build());
+            equipment.put(EquipmentSlot.LEGS, parseArmorPiece(
+                    armor, "legs", EquipmentSlot.LEGS, Material.LEATHER_LEGGINGS,
+                    assetHero + " Legs", assetHero, skin.getId()).build());
+            equipment.put(EquipmentSlot.FEET, parseArmorPiece(
+                    armor, "boots", EquipmentSlot.FEET, Material.LEATHER_BOOTS,
+                    assetHero + " Boots", assetHero, skin.getId()).build());
         } else {
             equipment.put(EquipmentSlot.CHEST, ItemStack.empty());
             equipment.put(EquipmentSlot.LEGS, ItemStack.empty());
@@ -257,9 +261,16 @@ public class CosmeticManager {
     private static void applyArmor(Controller controller, HeroSkin skin, String heroName) {
         ConfigurationSection armor = skin.getArmor();
         if (armor == null) return;
-        controller.setChestplate(parseArmorPiece(armor, "chest", Material.LEATHER_CHESTPLATE, heroName + " Chest").build());
-        controller.setLeggings(parseArmorPiece(armor, "legs", Material.LEATHER_LEGGINGS, heroName + " Legs").build());
-        controller.setBoots(parseArmorPiece(armor, "boots", Material.LEATHER_BOOTS, heroName + " Boots").build());
+        String assetHero = HeroConfig.assetKey(heroName);
+        controller.setChestplate(parseArmorPiece(
+                armor, "chest", EquipmentSlot.CHEST, Material.LEATHER_CHESTPLATE,
+                heroName + " Chest", assetHero, skin.getId()).build());
+        controller.setLeggings(parseArmorPiece(
+                armor, "legs", EquipmentSlot.LEGS, Material.LEATHER_LEGGINGS,
+                heroName + " Legs", assetHero, skin.getId()).build());
+        controller.setBoots(parseArmorPiece(
+                armor, "boots", EquipmentSlot.FEET, Material.LEATHER_BOOTS,
+                heroName + " Boots", assetHero, skin.getId()).build());
     }
 
     private static void setupAbilitySlot(Controller controller, Ability ability, int slot, Hero hero) {
@@ -305,30 +316,45 @@ public class CosmeticManager {
         controller.setInventoryItem(slot, builder.build());
     }
 
-    private static ItemBuilder parseArmorPiece(ConfigurationSection armorSection, String key, Material defaultMat, String name) {
+    private static ItemBuilder parseArmorPiece(ConfigurationSection armorSection, String key, EquipmentSlot slot,
+                                               Material defaultMat, String name, String assetHero, String skinId) {
         Material material = defaultMat;
         String colorData = null;
+        String equipmentKey = null;
+        boolean customModel = false;
 
         if (armorSection.contains(key)) {
             if (armorSection.isConfigurationSection(key)) {
                 ConfigurationSection sec = armorSection.getConfigurationSection(key);
                 material = parseMaterial(sec.getString("material"), defaultMat);
                 colorData = sec.getString("color");
+                equipmentKey = sec.getString("equipment");
+                customModel = sec.getBoolean("model", false);
             } else if (armorSection.isString(key)) {
                 colorData = armorSection.getString(key);
             } else {
                 throw new IllegalArgumentException("Malformed armor entry '" + key + "' at '"
-                        + armorSection.getCurrentPath() + "': expected color string or {material, color} section");
+                        + armorSection.getCurrentPath() + "': expected color string or {material, color, equipment, model} section");
             }
         }
 
-        if (colorData == null && material == defaultMat) {
+        if (colorData == null && material == defaultMat && equipmentKey == null && !customModel) {
             return ItemBuilder.from(material).name(Component.text(name));
         }
 
         ItemBuilder builder = ItemBuilder.from(material).unbreakable(true).name(Component.text(name));
         if (colorData != null) {
             builder.color(ColorParser.parse(colorData));
+        }
+        if (equipmentKey != null) {
+            if (equipmentKey.isEmpty() || !Key.parseable(equipmentKey)) {
+                throw new IllegalArgumentException("Invalid equipment asset key '" + equipmentKey
+                        + "' for hero '" + assetHero + "', skin '" + skinId + "', piece '" + key + "'");
+            }
+            builder.equippable(Key.key(equipmentKey), slot);
+        }
+        if (customModel) {
+            builder.modelData(assetHero, key, skinId);
         }
         return builder;
     }

@@ -30,6 +30,7 @@ import me.stolyy.heroes.command.general.VersionCommand;
 import me.stolyy.heroes.game.AutoSpectate;
 import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.game.MapSkipPoll;
+import me.stolyy.heroes.game.MatchLog;
 import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.game.SpawnProtection;
 import me.stolyy.heroes.game.map.GameMapManager;
@@ -126,6 +127,7 @@ public final class Heroes extends JavaPlugin {
         Interactions.initialize();
         HeroManager.initialize();
         GameManager.initialize();
+        MatchLog.initialize();
         GameManager.onRosterChange(TabList::refreshAll);
         QueueManager.initialize();
         PartyManager.initialize();
@@ -165,6 +167,7 @@ public final class Heroes extends JavaPlugin {
         GUIManager.clear();
         MapSkipPoll.clear();
         GameManager.clear();
+        MatchLog.clear();
         HeroManager.clear();
         MinionManager.clear();
         PracticeManager.clear();

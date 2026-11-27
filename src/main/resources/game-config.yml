@@ -185,3 +185,7 @@ lobby:
 poll:
   # /skipmap closes itself after this many seconds if the leader never runs /skipmap end
   timeout-seconds: 60
+
+# Custom-game auto-balance: rolling window (hours) of recent Custom match results used to rank players.
+team-balance:
+  session-window-hours: 12

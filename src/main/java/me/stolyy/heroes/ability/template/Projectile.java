@@ -16,7 +16,6 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
@@ -87,9 +86,11 @@ public class Projectile extends RangedAbility {
 
     @Override
     protected void fireSingleShot(Hero hero) {
+        Location start = getStartLocation(hero);
+        if (!PracticeManager.isWithinPracticeBounds(hero, start)) return;
         ShotParams shot = shotParamsFor(hero);
         shot.fireSound().play(hero.getController().getLocation(), hero.getController());
-        activeProjectiles.add(createInstance(hero, getStartLocation(hero), shot));
+        activeProjectiles.add(createInstance(hero, start, shot));
     }
 
     @Override
@@ -162,6 +163,7 @@ public class Projectile extends RangedAbility {
             this.hitbox = Hitbox.cylinder(start, velocity, radius, velocity.length())
                     .exclude(hero.getController().getEntity())
                     .excludeTeammates(hero.getController().getEntity())
+                    .filter(victim -> PracticeManager.isWithinPracticeBounds(hero, victim.getLocation()))
                     .checkWalls(!piercesWalls)
                     .pierce(piercesPlayers)
                     .trackHits()
@@ -212,6 +214,10 @@ public class Projectile extends RangedAbility {
                 }
                 return true;
             }
+            if (leftPracticeArena()) {
+                cleanup();
+                return true;
+            }
             if (returning && (currentLoc.distanceSquared(returnAnchor()) < catchRadius * catchRadius
                     || returnDistance > flightRange() * returnRangeMult)) {
                 onCaught();
@@ -246,9 +252,7 @@ public class Projectile extends RangedAbility {
         }
 
         private boolean leftPracticeArena() {
-            return hero.getController().getEntity() instanceof Player owner
-                    && PracticeManager.isPracticing(owner)
-                    && !PracticeManager.arenaOf(owner).contains(currentLoc);
+            return !PracticeManager.isWithinPracticeBounds(hero, currentLoc);
         }
 
         /**

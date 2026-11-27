@@ -1,5 +1,6 @@
 package me.stolyy.heroes.ability.kit.greenhood;
 
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.BaseAbility;
 import me.stolyy.heroes.physics.Hitbox;
@@ -146,15 +147,20 @@ public class SkyfallVolley extends BaseAbility {
     }
 
     private void paintBeam(Hero hero, Location eye, Vector direction) {
-        drawVisual.playAlong(eye, direction, range, beamSpacing, hero.getSkin().getId(),
+        double reach = PracticeManager.clampPracticeRange(hero, eye, direction, range);
+        if (reach <= 0) return;
+        drawVisual.playAlong(eye, direction, reach, beamSpacing, hero.getSkin().getId(),
                 Math.max(beamSpacing, beamVisualStartOffset));
     }
 
     private void sweepDrawBeam(Hero hero, Location eye, Vector direction) {
+        double reach = PracticeManager.clampPracticeRange(hero, eye, direction, range);
+        if (reach <= 0) return;
         LivingEntity self = hero.getController().getEntity();
-        Hitbox.cylinder(eye, direction, beamRadius, range)
+        Hitbox.cylinder(eye, direction, beamRadius, reach)
                 .exclude(self)
                 .excludeTeammates(self)
+                .filter(victim -> PracticeManager.isWithinPracticeBounds(hero, victim.getLocation()))
                 .shareHitHistory(drawHitTimestamps, drawHitIntervalMs)
                 .onHit(victim -> hit(hero, victim).damage(drawDamage).execute())
                 .check();
@@ -166,19 +172,23 @@ public class SkyfallVolley extends BaseAbility {
     }
 
     private void fireBurst(Hero hero, Location eye, Vector direction) {
+        double reach = PracticeManager.clampPracticeRange(hero, eye, direction, range);
         LivingEntity self = hero.getController().getEntity();
         burstSound.play(eye, hero.getController());
-        burstVisual.playAlong(eye, direction, range, beamSpacing, hero.getSkin().getId(),
-                Math.max(beamSpacing, beamVisualStartOffset));
-        Hitbox.cylinder(eye, direction, burstRadius, range)
-                .exclude(self)
-                .excludeTeammates(self)
-                .onHit(victim -> hit(hero, victim)
-                        .damage(burstDamage)
-                        .knockback(burstKnockback)
-                        .direction(direction)
-                        .execute())
-                .check();
+        if (reach > 0) {
+            burstVisual.playAlong(eye, direction, reach, beamSpacing, hero.getSkin().getId(),
+                    Math.max(beamSpacing, beamVisualStartOffset));
+            Hitbox.cylinder(eye, direction, burstRadius, reach)
+                    .exclude(self)
+                    .excludeTeammates(self)
+                    .filter(victim -> PracticeManager.isWithinPracticeBounds(hero, victim.getLocation()))
+                    .onHit(victim -> hit(hero, victim)
+                            .damage(burstDamage)
+                            .knockback(burstKnockback)
+                            .direction(direction)
+                            .execute())
+                    .check();
+        }
 
         drawTicks = -1;
         drawHitTimestamps.clear();

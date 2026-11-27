@@ -1,6 +1,7 @@
 package me.stolyy.heroes.ability.kit.bulk;
 
 import me.stolyy.heroes.ability.AbilityType;
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.CompositeAbility;
 import me.stolyy.heroes.ability.template.Shockwave;
@@ -171,6 +172,7 @@ public class BulkSmash extends CompositeAbility {
         Hitbox.sphere(center, radius)
                 .exclude(entity)
                 .excludeTeammates(entity)
+                .filter(victim -> PracticeManager.isWithinPracticeBounds(hero, victim.getLocation()))
                 .shareHitHistory(descentHitHistory)
                 .onHit((victim, loc) -> onDescentHit(hero, victim))
                 .check();

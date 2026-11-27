@@ -1,6 +1,7 @@
 package me.stolyy.heroes.ability.kit.sgt;
 
 import me.stolyy.heroes.ability.template.Projectile;
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.physics.Hitbox;
 import me.stolyy.heroes.util.Configs;
@@ -99,6 +100,7 @@ public class Ricochet extends Projectile {
             return seeker
                     .exclude(self)
                     .excludeTeammates(self)
+                    .filter(e -> PracticeManager.isWithinPracticeBounds(hero, e.getLocation()))
                     .get().stream()
                     .filter(e -> !hitbox.hasHit(e.getUniqueId()))
                     .min(Comparator.comparingDouble(e -> e.getLocation().distanceSquared(currentLoc)))

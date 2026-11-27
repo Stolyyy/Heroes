@@ -67,6 +67,14 @@ public record PracticeArena(String name, String worldName,
         return Math.max(0, exit);
     }
 
+    /** Maximum horizontal circle radius around {@code center} that stays inside XZ bounds. */
+    public double maxRadiusInsideXZ(Location center) {
+        if (!contains(center)) return 0.0;
+        double dx = Math.min(center.getX() - minX, maxX - center.getX());
+        double dz = Math.min(center.getZ() - minZ, maxZ - center.getZ());
+        return Math.max(0.0, Math.min(dx, dz));
+    }
+
     private static double slabExit(double origin, double dir, double min, double max) {
         if (dir > 1.0E-9) return (max - origin) / dir;
         if (dir < -1.0E-9) return (min - origin) / dir;

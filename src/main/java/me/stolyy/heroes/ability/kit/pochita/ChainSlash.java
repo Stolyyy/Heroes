@@ -1,5 +1,6 @@
 package me.stolyy.heroes.ability.kit.pochita;
 
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.BaseAbility;
 import me.stolyy.heroes.physics.Hitbox;
@@ -51,6 +52,7 @@ public class ChainSlash extends BaseAbility {
         Hitbox.sphere(hero.getController().getCenter(), radius)
                 .exclude(self)
                 .excludeTeammates(self)
+                .filter(victim -> PracticeManager.isWithinPracticeBounds(hero, victim.getLocation()))
                 .onHit(victim -> {
                     hitSound.play(victim.getEyeLocation(), hero.getController());
                     hit(hero, victim)

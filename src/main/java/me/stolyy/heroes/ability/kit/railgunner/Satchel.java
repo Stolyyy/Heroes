@@ -3,6 +3,7 @@ package me.stolyy.heroes.ability.kit.railgunner;
 import me.stolyy.heroes.ability.template.Planted;
 import me.stolyy.heroes.ability.template.Projectile;
 import me.stolyy.heroes.game.GameManager;
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.physics.Hitbox;
 import me.stolyy.heroes.physics.Interactions;
@@ -97,6 +98,11 @@ public class Satchel extends Projectile {
     protected void onProjectileTick(Hero hero) {
         if (planted != null) {
             planted.sync();
+            if (!planted.isWithin(hero)) {
+                planted.cleanup();
+                planted = null;
+                return;
+            }
             if (System.currentTimeMillis() - plantedAtMs > stickyDuration) {
                 detonate(hero);
             }
@@ -125,6 +131,7 @@ public class Satchel extends Projectile {
     }
 
     private void plant(Hero hero, Location loc, @Nullable LivingEntity attached) {
+        if (!PracticeManager.isWithinPracticeBounds(hero, loc)) return;
         ItemDisplay display = projVisual.spawnDisplay(loc, hero.getSkin().getId());
         planted = new Planted(loc, attached, display);
         plantedAtMs = System.currentTimeMillis();
@@ -139,11 +146,13 @@ public class Satchel extends Projectile {
     }
 
     private void detonateAt(Hero hero, Location center) {
+        if (!PracticeManager.isWithinPracticeBounds(hero, center)) return;
         popSound.play(center);
         hitVisual.play(center);
         hitSound.play(hero.getController().getLocation(), hero.getController());
 
         Hitbox.sphere(center, explosionRadius)
+                .filter(victim -> PracticeManager.isWithinPracticeBounds(hero, victim.getLocation()))
                 .onHit((victim) -> {
                     double dist = victim.getLocation().distance(center);
                     double factor = 1.0 - Math.min(1.0, dist / explosionRadius);

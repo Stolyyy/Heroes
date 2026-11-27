@@ -1,5 +1,6 @@
 package me.stolyy.heroes.ability.kit.sgt;
 
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.BaseAbility;
 import me.stolyy.heroes.physics.Hitbox;
@@ -44,6 +45,7 @@ public class ShieldOfJustice extends BaseAbility {
         Hitbox.sphere(hero.getController().getCenter(), radius)
                 .exclude(self)
                 .excludeTeammates(self)
+                .filter(victim -> PracticeManager.isWithinPracticeBounds(hero, victim.getLocation()))
                 .onHit(victim -> {
                     hitSound.play(victim.getEyeLocation(), hero.getController());
                     Vector direction = victim.getBoundingBox().getCenter()

@@ -2,6 +2,7 @@ package me.stolyy.heroes.ability.kit.greenhood;
 
 import me.stolyy.heroes.ability.Ability;
 import me.stolyy.heroes.ability.template.BaseAbility;
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.physics.Hitbox;
 import me.stolyy.heroes.util.Configs;
@@ -120,6 +121,11 @@ public class GreenHoodBow extends BaseAbility {
     public void handleEntityHit(Hero hero, AbstractArrow arrow, LivingEntity victim) {
         TrackedArrow tracked = activeArrows.remove(arrow.getUniqueId());
         if (tracked != null) {
+            if (!PracticeManager.isWithinPracticeBounds(hero, arrow.getLocation())
+                    || !PracticeManager.isWithinPracticeBounds(hero, victim.getLocation())) {
+                arrow.remove();
+                return;
+            }
             tracked.shot.onEntityHit(hero, victim, arrow);
         }
     }
@@ -127,6 +133,10 @@ public class GreenHoodBow extends BaseAbility {
     public void handleGroundHit(Hero hero, AbstractArrow arrow) {
         TrackedArrow tracked = activeArrows.remove(arrow.getUniqueId());
         if (tracked != null) {
+            if (!PracticeManager.isWithinPracticeBounds(hero, arrow.getLocation())) {
+                arrow.remove();
+                return;
+            }
             tracked.shot.onGroundHit(hero, arrow);
         }
     }
@@ -146,6 +156,11 @@ public class GreenHoodBow extends BaseAbility {
                 continue;
             }
             Location current = arrow.getLocation();
+            if (!PracticeManager.isWithinPracticeBounds(hero, current)) {
+                activeArrows.remove(arrow.getUniqueId());
+                arrow.remove();
+                continue;
+            }
             Vector delta = current.toVector().subtract(tracked.prevLoc.toVector());
             if (delta.lengthSquared() < 0.0001) {
                 tracked.prevLoc = current;
@@ -155,6 +170,7 @@ public class GreenHoodBow extends BaseAbility {
             Set<LivingEntity> victims = Hitbox.box(tracked.prevLoc, delta, hitRadius, hitRadius, delta.length())
                     .exclude(shooter)
                     .excludeTeammates(shooter)
+                    .filter(victim -> PracticeManager.isWithinPracticeBounds(hero, victim.getLocation()))
                     .pierce(false)
                     .get();
             tracked.prevLoc = current;

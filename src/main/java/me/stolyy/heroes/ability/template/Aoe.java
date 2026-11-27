@@ -2,6 +2,8 @@ package me.stolyy.heroes.ability.template;
 
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.Ability;
+import me.stolyy.heroes.game.PracticeArena;
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.physics.Interactions;
 import me.stolyy.heroes.physics.WallDetection;
 import me.stolyy.heroes.util.Configs;
@@ -86,6 +88,10 @@ public class Aoe {
                          @Nullable BiConsumer<LivingEntity, Location> onHitCallback) {
 
         Location center = resolveCenter(rawCenter, trajectory, attacker);
+        PracticeArena arena = PracticeManager.practiceArenaOf(attacker);
+        if (arena != null && !arena.contains(center)) {
+            return;
+        }
 
         centerVisual.play(center, attacker.getSkin().getId());
         centerSound.play(center, attacker.getController());
@@ -99,6 +105,7 @@ public class Aoe {
         Hitbox hitbox = Hitbox.sphere(center, radius)
                 .exclude(attacker.getController().getEntity())
                 .excludeTeammates(attacker.getController().getEntity())
+                .filter(target -> arena == null || arena.contains(target.getLocation()))
                 .checkWalls(!piercesWalls)
                 .pierce(true);
 

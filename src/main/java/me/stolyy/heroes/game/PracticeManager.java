@@ -94,8 +94,7 @@ public class PracticeManager {
 
     /** The arena owning {@code hero} (unwrapping minions to their owner), or null when not practicing. */
     public static PracticeArena practiceArenaOf(Hero hero) {
-        if (hero == null) return null;
-        if (hero instanceof MinionHero minion && minion.getOwner() != null) {
+        if (hero instanceof MinionHero minion) {
             hero = minion.getOwner();
         }
         if (hero.getController() instanceof PlayerController pc) {
@@ -107,14 +106,14 @@ public class PracticeManager {
     /** True when {@code hero} is not in practice mode or {@code loc} stays inside its practice arena. */
     public static boolean isWithinPracticeBounds(Hero hero, Location loc) {
         PracticeArena arena = practiceArenaOf(hero);
-        return arena == null || (loc != null && arena.contains(loc));
+        return arena == null || arena.contains(loc);
     }
 
     /** Clamps {@code range} along {@code direction} from {@code start} to the arena boundary (0 if outside). */
     public static double clampPracticeRange(Hero hero, Location start, Vector direction, double range) {
         PracticeArena arena = practiceArenaOf(hero);
         if (arena == null) return range;
-        if (start == null || !arena.contains(start) || direction.lengthSquared() < 1.0E-9) return 0.0;
+        if (!arena.contains(start) || direction.lengthSquared() < 1.0E-9) return 0.0;
         return arena.clampRange(start, direction.clone().normalize(), range);
     }
 
@@ -229,7 +228,9 @@ public class PracticeManager {
             hero.tick();
             for (MinionHero minion : new ArrayList<>(MinionManager.getMinions(hero))) {
                 Controller mc = minion.getController();
-                if (mc == null || mc.getEntity() == null) continue;
+                if (mc == null) {
+                    throw new IllegalStateException("Active practice minion " + minion.getName() + " has no controller");
+                }
                 if (!arena.contains(mc.getLocation())) {
                     mc.teleport(p.getLocation());
                 }

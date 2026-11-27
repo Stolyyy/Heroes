@@ -1,6 +1,5 @@
 package me.stolyy.heroes.ability.kit.karakot;
 
-import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.template.BaseAbility;
 import me.stolyy.heroes.util.Configs;
@@ -35,14 +34,11 @@ public class Teleport extends BaseAbility {
     public void perform(Hero hero) {
         Location start = hero.getController().getEyeLocation();
         Vector dir = start.getDirection();
-        double maxDist = PracticeManager.practiceArenaOf(hero) != null
-                ? Math.max(0.0, PracticeManager.clampPracticeRange(hero, start, dir, distance) - 0.5)
-                : distance;
 
         activationSound.play(start);
         initialVisual.play(start);
 
-        Hitbox check = Hitbox.cylinder(start, dir, 0.5, maxDist)
+        Hitbox check = Hitbox.cylinder(start, dir, 0.5, distance)
             .checkWalls(true)
             .pierce(true);
 
@@ -50,12 +46,9 @@ public class Teleport extends BaseAbility {
 
         Location target = check.getWallHitLocation();
         if (target == null) {
-            target = start.clone().add(dir.clone().multiply(maxDist));
+            target = start.clone().add(dir.clone().multiply(distance));
         } else {
             target.subtract(dir.clone().normalize().multiply(0.5));
-        }
-        if (!PracticeManager.isWithinPracticeBounds(hero, target)) {
-            target = hero.getController().getLocation();
         }
 
         WallDetection.safeTeleport(hero.getController(), target);

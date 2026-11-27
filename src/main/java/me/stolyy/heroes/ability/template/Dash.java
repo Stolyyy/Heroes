@@ -1,7 +1,6 @@
 package me.stolyy.heroes.ability.template;
 
 import me.stolyy.heroes.ability.AbilityType;
-import me.stolyy.heroes.game.PracticeArena;
 import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
@@ -158,13 +157,6 @@ public abstract class Dash extends BaseAbility {
         public boolean tick() {
             Location center = hero.getController().getCenter();
             if (center == null) {
-                cleanup();
-                return true;
-            }
-
-            PracticeArena arena = PracticeManager.practiceArenaOf(hero);
-            if (arena != null && (!arena.contains(center) || (!inGracePhase && !arena.contains(center.clone().add(velocity))))) {
-                hero.getController().setVelocity(new Vector(0, 0, 0));
                 cleanup();
                 return true;
             }

@@ -40,6 +40,7 @@ public class PlayerStats {
 
     // Read by the async chat renderer, hence volatile.
     private volatile boolean seasonChampion;
+    private volatile boolean chatPingsEnabled = true;
 
     private GameMode currentMode;
     private String currentHero;
@@ -173,6 +174,9 @@ public class PlayerStats {
 
     public boolean isSeasonChampion() { return seasonChampion; }
     public void setSeasonChampion(boolean seasonChampion) { this.seasonChampion = seasonChampion; }
+
+    public boolean isChatPingsEnabled() { return chatPingsEnabled; }
+    public void setChatPingsEnabled(boolean chatPingsEnabled) { this.chatPingsEnabled = chatPingsEnabled; }
 
     public int getTokenBalance() { return tokenBalance; }
     public void setTokenBalance(int tokenBalance) { this.tokenBalance = tokenBalance; }

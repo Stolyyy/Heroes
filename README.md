@@ -58,6 +58,7 @@ A fast-paced arena PvP minigame plugin for **PaperMC**, inspired by Hypixel's *S
 | `/autospectate <player\|off>` | `/autospec`, `/aspec`, `/as` | Automatically spectate a player whenever their match starts |
 | `/leave` | `/lobby`, `/hub`, `/l`, `/gg` | Return to the lobby |
 | `/practice [arena]` | — | Enter/leave the practice range |
+| `/settings` | `/prefs`, `/preferences` | Open personal preferences |
 | `/stats [player]` | — | View player and hero stats |
 | `/leaderboard` | `/lb`, `/elo` | View rankings |
 | `/charms` | `/charm`, `/bugcharms` | Open Bug's charm loadout menu |

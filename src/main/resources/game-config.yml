@@ -185,3 +185,12 @@ lobby:
 poll:
   # /skipmap closes itself after this many seconds if the leader never runs /skipmap end
   timeout-seconds: 60
+
+chat:
+  pings:
+    highlight-color: "&e&l"
+    sound:
+      sound: "entity.experience_orb.pickup"
+      volume: 1.0
+      pitch: 1.5
+      scope: PLAYER

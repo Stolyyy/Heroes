@@ -107,10 +107,13 @@ public class PracticeManager {
                 && dummyIds.contains(victim.getUniqueId());
     }
 
-    /** Live target dummies in {@code entity}'s practice arena (unwrapping summoned minions), or empty if not practicing. */
+    /** Live target dummies in {@code entity}'s practice arena (unwrapping summoned minions). */
     public static List<LivingEntity> enemiesFor(LivingEntity entity) {
         PracticeArena arena = practicing.get(practiceOwnerId(entity));
-        if (arena == null) return List.of();
+        if (arena == null) {
+            throw new IllegalStateException("Entity " + entity.getName() + " (" + entity.getUniqueId()
+                    + ") is neither in a game nor practicing");
+        }
         List<LivingEntity> result = new ArrayList<>();
         for (DummySlot slot : dummies) {
             if (!slot.arena.name().equals(arena.name())) continue;

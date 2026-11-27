@@ -6,6 +6,8 @@ import me.stolyy.heroes.progression.HeroLevel;
 import me.stolyy.heroes.progression.PlayerStats;
 import me.stolyy.heroes.progression.PlayerStatsManager;
 import me.stolyy.heroes.progression.ProgressionConfig;
+import me.stolyy.heroes.util.GameConfigManager;
+import me.stolyy.heroes.vfx.ui.visual.Broadcast;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -134,13 +136,18 @@ final class MatchRewards {
     }
 
     private void handleLevelUps(Player player, String heroName, List<Integer> newLevels, PlayerStats stats) {
+        String heroDisplay = HeroConfig.formatName(heroName);
         for (int level : newLevels) {
-            player.sendMessage(Component.text(HeroConfig.formatName(heroName) + " reached level " + level + "!",
+            player.sendMessage(Component.text(heroDisplay + " reached level " + level + "!",
                     NamedTextColor.AQUA));
             if (level == ProgressionConfig.getMasterSkinLevel()) {
                 stats.setSkinForHero(heroName, MASTER_SKIN_ID);
-                player.sendMessage(Component.text("You mastered " + HeroConfig.formatName(heroName)
+                player.sendMessage(Component.text("You mastered " + heroDisplay
                         + " — Master Skin unlocked!", NamedTextColor.LIGHT_PURPLE));
+                Broadcast.chat(GameConfigManager.getMessage("progression.master-skin-broadcast", Map.of(
+                        "player", player.getName(),
+                        "hero", heroDisplay,
+                        "level", String.valueOf(level))));
             }
         }
     }

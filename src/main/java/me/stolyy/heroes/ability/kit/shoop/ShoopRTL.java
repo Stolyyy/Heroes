@@ -11,7 +11,6 @@ import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.util.Vector;
 
 public class ShoopRTL extends Projectile {
     private boolean isRiding = false;
@@ -35,7 +34,7 @@ public class ShoopRTL extends Projectile {
     @Override
     protected boolean tryRecast(Hero hero) {
         if (System.currentTimeMillis() - lastToggle > reactivationWindow) {
-            dismount(hero);
+            dismount(hero, true);
             return true;
         }
         return false;
@@ -54,8 +53,8 @@ public class ShoopRTL extends Projectile {
         Location eye = hero.getController().getEyeLocation();
         Location feet = hero.getController().getLocation();
         LivingEntity entity = hero.getController().getEntity();
-        double width = entity != null ? entity.getWidth() : 0.6;
-        double height = entity != null ? entity.getHeight() : 1.8;
+        double width = entity.getWidth();
+        double height = entity.getHeight();
         World world = eye.getWorld();
 
         if (WallDetection.isStandingClear(world, eye, width, height)) {
@@ -84,7 +83,7 @@ public class ShoopRTL extends Projectile {
     @Override
     protected void onInstanceEnded(Hero hero, ProjectileInstance instance) {
         if (instance == currentProjectile) {
-            dismount(hero);
+            dismount(hero, true);
         }
     }
 
@@ -93,7 +92,7 @@ public class ShoopRTL extends Projectile {
         if (!isRiding) return;
 
         if (currentProjectile == null || currentProjectile.expired() || currentProjectile.isRiderGone()) {
-            dismount(hero);
+            dismount(hero, false);
             return;
         }
 
@@ -102,42 +101,43 @@ public class ShoopRTL extends Projectile {
         if (distance >= 1.0) {
             float cost = (float) (distance * energyPerBlock);
             if (!hero.getEnergy().tryConsume(hero.getController(), cost)) {
-                dismount(hero);
+                dismount(hero, true);
                 return;
             }
             lastEnergyLoc = currentLoc.clone();
         }
     }
 
-    private void dismount(Hero hero) {
+    private void dismount(Hero hero, boolean reposition) {
         if (!isRiding) return;
         isRiding = false;
-        Location safeLoc = currentProjectile != null ? currentProjectile.resolveSafeDismountLocation() : null;
+        Location safeLoc = reposition && currentProjectile != null
+                ? currentProjectile.resolveSafeDismountLocation()
+                : null;
         if (currentProjectile != null) {
             currentProjectile.cleanup();
             currentProjectile = null;
         }
-        if (safeLoc != null && hero.getController() != null) {
-            LivingEntity entity = hero.getController().getEntity();
-            if (entity != null && entity.isValid() && !entity.isDead() && !hero.isRespawning()) {
-                safeLoc.setYaw(entity.getLocation().getYaw());
-                safeLoc.setPitch(entity.getLocation().getPitch());
-                hero.getController().teleport(safeLoc);
-            }
+        if (safeLoc != null) {
+            Location current = hero.getController().getLocation();
+            safeLoc.setYaw(current.getYaw());
+            safeLoc.setPitch(current.getPitch());
+            hero.getController().teleport(safeLoc);
         }
         resolveCooldown(hero);
     }
 
     @Override
     public void onDeath(Hero hero) {
+        dismount(hero, false);
         super.onDeath(hero);
-        dismount(hero);
     }
 
     @Override
     public void onOwnerLost(Hero hero) {
+        // Dismount without repositioning before super cleans up activeProjectiles and fires onInstanceEnded.
+        dismount(hero, false);
         super.onOwnerLost(hero);
-        dismount(hero);
     }
 
     private class RideableInstance extends ProjectileInstance {
@@ -148,9 +148,9 @@ public class ShoopRTL extends Projectile {
 
         RideableInstance(Hero hero, Location start, ShotParams shot) {
             super(hero, start, shot);
-            LivingEntity entity = hero.getController() != null ? hero.getController().getEntity() : null;
-            this.riderWidth = entity != null ? entity.getWidth() : 0.6;
-            this.riderHeight = entity != null ? entity.getHeight() : 1.8;
+            LivingEntity entity = hero.getController().getEntity();
+            this.riderWidth = entity.getWidth();
+            this.riderHeight = entity.getHeight();
             this.lastSafeLoc = start.clone();
             ItemDisplay spawned = projVisual.spawnDisplay(start, hero.getSkin().getId());
             this.ride = spawned != null ? RideDisplay.mount(hero, spawned) : null;

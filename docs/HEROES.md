@@ -47,7 +47,42 @@ Copy `src/main/resources/example-hero.yml` to `src/main/resources/heroes/<id>.ym
 
 ---
 
-## 4. Optional Wiring
+## 4. Status Effects
+
+Abilities that crowd-control or restrict targets declare a status block (typically `status:`, or a custom key such as `victim_status:` / `self_status:`) and load it with `StatusEffects.Spec.fromConfig(config)` (requires `duration:` in seconds) or `StatusEffects.Spec.fromConfigIndefinite(config, key)` (for effects removed explicitly by the ability; rejects `duration:`).
+
+### Three-Layer Resolution
+
+Every toggle and feedback key resolves in three layers — highest wins:
+
+1. **Ability block** (e.g. `abilities.secondary.status.*` in `heroes/<hero>.yml`)
+2. **Named preset** (`templates.yml` `status.presets.<preset>.*`, if `preset:` is set)
+3. **Defaults** (`templates.yml` `status.defaults.*` — all six toggles `false`, `loop_interval_ticks: 10`, default `apply_sound`)
+
+- `preset:` is optional. `id:` names the effect — it selects the action bar label (`messages.yml` `status.indicator.<id>`) and is matched by `hero.status().has(id)`.
+- `id:` defaults to the `preset:` name. A block with neither `preset:` nor `id:`, an unknown `preset:`, or an `id:` without a `messages.yml` `status.indicator.<id>` entry fails loudly during `HeroBuilder.validateAll()`.
+- Never hardcode preset ids or toggle combinations in Java.
+
+### Toggles (`true` enables the restriction / behaviour)
+
+- `block_move` — prevents walking and ground-jumping; victim still falls and takes knockback.
+- `block_jump` — blocks double jumps (including hero-specific mobility variants).
+- `block_abilities` — blocks primary, secondary, smash, and passive inputs (an active primary override still fires).
+- `block_jab` — blocks left-click jabs.
+- `hold` — pins the victim in place (zero gravity, ignores knockback, undoes displacement); implies `block_move` and `block_jump`.
+- `break_on_knockback` — ends the effect early when the victim takes knockback.
+
+### Feedback Keys
+
+All sound and visual blocks use the same `SoundEffect` / `VisualEffect` formats as ability `visuals:` (so `templates.yml` `sound:` and `visual:` defaults apply inside them). Visuals play at the victim's location; sounds play through `SoundEffect.play(location, controller)` so each block's `scope` controls who hears it. Feedback and action bar labels are skipped when an ability applies a status to its own caster, and practice dummies receive sounds and visuals too.
+
+- `apply_sound` (always resolves via `status.defaults`) / `apply_visual` (optional) — played once when the effect starts; not replayed when the same source refreshes it.
+- `end_sound` / `end_visual` (optional) — played when the effect ends by expiry, knockback break, or explicit source removal; skipped when cleared by death, respawn, elimination, or cleanup.
+- `loop_sound` / `loop_visual` (optional) and `loop_interval_ticks` — played every `loop_interval_ticks` ticks while active.
+
+---
+
+## 5. Optional Wiring
 
 - **Chat aliases:** Add shortcuts in `HeroConfig.HERO_ALIASES` if desired (must resolve to the lowercase hero ID filename).
 - **Lobby NPC:** Add an entry under `heroes:` in `src/main/resources/lobby.yml` if you want a physical lobby display NPC for the hero (`HeroSelectGUI` lists all heroes dynamically without this).
@@ -58,7 +93,7 @@ Copy `src/main/resources/example-hero.yml` to `src/main/resources/heroes/<id>.ym
 
 ---
 
-## 5. Verify
+## 6. Verify
 
 1. Run `./gradlew compileJava` (or `.\gradlew.bat compileJava` on Windows).
 2. Boot a test server — `HeroBuilder.validateAll()` builds every hero at enable time and logs any missing/unregistered keys immediately.

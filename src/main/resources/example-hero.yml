@@ -79,6 +79,25 @@ abilities:
     radius: 1.2
     speed: 1.4
     duration: 6                  # ticks
+    # Optional status block (read with StatusEffects.Spec.fromConfig / fromConfigIndefinite).
+    # Layers: ability block > templates.yml status.presets.<preset> > status.defaults.
+    # status:
+    #   preset: stun             # optional preset (stun | pin | root | disable); id defaults to preset
+    #   duration: 0.6            # seconds (required by fromConfig; omit for fromConfigIndefinite)
+    #   break_on_knockback: false  # override any toggle: block_move, block_jump, block_abilities, block_jab, hold, break_on_knockback
+    #   apply_sound:             # SoundEffect block (defaults to preset / status.defaults.apply_sound)
+    #     sound: block.anvil.land
+    #     pitch: 2.0
+    #   apply_visual:            # optional VisualEffect block (also: end_sound, end_visual, loop_sound, loop_visual, loop_interval_ticks)
+    #     type: PARTICLE
+    #     particle: CRIT
+    #     count: 8
+    #
+    # Custom effect without a preset (starts from status.defaults with all toggles false; requires messages.yml status.indicator.<id>):
+    # status:
+    #   id: disarmed
+    #   duration: 1.5
+    #   block_jab: true
     visuals:
       activation_sound:
         sound: entity.player.attack.sweep

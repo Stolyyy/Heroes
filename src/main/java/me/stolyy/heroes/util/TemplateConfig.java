@@ -2,7 +2,6 @@ package me.stolyy.heroes.util;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.hero.HeroConfig;
-import me.stolyy.heroes.hero.mechanics.StatusEffects;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.configuration.ConfigurationSection;
@@ -38,7 +37,6 @@ public final class TemplateConfig {
         File file = getFile();
         if (!file.exists()) plugin.saveResource("templates.yml", false);
         config = YamlConfiguration.loadConfiguration(file);
-        StatusEffects.reloadPresets();
     }
 
     public static double requireDouble(String path) {

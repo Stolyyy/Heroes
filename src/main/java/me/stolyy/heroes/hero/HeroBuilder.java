@@ -7,6 +7,7 @@ import me.stolyy.heroes.control.Controller;
 import me.stolyy.heroes.control.strategy.Strategy;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.hero.mechanics.DoubleJump;
+import me.stolyy.heroes.hero.mechanics.StatusEffects;
 import me.stolyy.heroes.hero.minion.MinionHero;
 import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.effect.SoundBuilder;
@@ -354,6 +355,13 @@ public class HeroBuilder {
      */
     public static void validateAll() {
         int failures = 0;
+        try {
+            StatusEffects.validatePresets();
+        } catch (Exception e) {
+            failures++;
+            Heroes.getInstance().getLogger().log(Level.SEVERE,
+                    "Status presets in templates.yml invalid: " + e.getMessage(), e);
+        }
         for (String heroName : HeroConfig.getAvailableNames()) {
             ConfigurationSection config = HeroConfig.getConfig(heroName);
             try {

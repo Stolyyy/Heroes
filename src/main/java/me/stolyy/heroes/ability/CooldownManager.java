@@ -258,7 +258,7 @@ public class CooldownManager {
         int chosenRank = Integer.MAX_VALUE;
         for (StatusEffects.ActiveEffect effect : hero.status().active()) {
             if (effect.applier() == hero) continue;
-            int rank = statusDisplayPriority(effect.id());
+            int rank = statusDisplayPriority(effect.spec());
             if (rank < chosenRank) {
                 chosen = effect;
                 chosenRank = rank;
@@ -275,14 +275,12 @@ public class CooldownManager {
         return LegacyComponentSerializer.legacyAmpersand().deserialize(raw);
     }
 
-    private static int statusDisplayPriority(String presetId) {
-        return switch (presetId) {
-            case "pin" -> 0;
-            case "stun" -> 1;
-            case "disable" -> 2;
-            case "root" -> 3;
-            default -> 4;
-        };
+    private static int statusDisplayPriority(StatusEffects.Spec spec) {
+        if (spec.hold()) return 0;
+        if (spec.blockMove()) return 1;
+        if (spec.blockAbilities()) return 2;
+        if (spec.blockJab() || spec.blockJump()) return 3;
+        return 4;
     }
 
     private static NamedTextColor ammoColor(int current, int max) {

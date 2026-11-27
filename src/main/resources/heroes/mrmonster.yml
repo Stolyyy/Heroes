@@ -111,6 +111,13 @@ abilities:
     throw_damage: 8.0 # FILL
     throw_knockback: 5.0 # FILL — along your aim at throw time
     throw_lift: 1.2 # FILL — additive upward component on the hurl
+    victim_status:
+      id: grabbed
+      block_abilities: true
+      block_jab: true
+      block_jump: true
+    self_status:
+      preset: disable
     visuals:
       activation_sound:
         sound: mrmonster.crystal # pack ult-activation sound

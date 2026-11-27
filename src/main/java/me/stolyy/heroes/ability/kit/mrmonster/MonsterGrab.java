@@ -34,9 +34,8 @@ public class MonsterGrab extends BaseAbility {
     private final SoundEffect activationSound;
     private final SoundEffect grabSound;
     private final SoundEffect throwSound;
-    private final StatusEffects.Spec disableSpec;
-    private final StatusEffects.Spec rootSpec;
-    private final Object victimRootKey = new Object();
+    private final StatusEffects.Spec victimStatus;
+    private final StatusEffects.Spec selfStatus;
 
     private int armTicksLeft = -1;
     private boolean grabbing;
@@ -76,8 +75,8 @@ public class MonsterGrab extends BaseAbility {
         this.activationSound = new SoundEffect(Configs.requireSection(this.config, "visuals.activation_sound"));
         this.grabSound = new SoundEffect(Configs.requireSection(this.config, "visuals.grab_sound"));
         this.throwSound = new SoundEffect(Configs.requireSection(this.config, "visuals.throw_sound"));
-        this.disableSpec = StatusEffects.Spec.preset("disable");
-        this.rootSpec = StatusEffects.Spec.preset("root");
+        this.victimStatus = StatusEffects.Spec.fromConfigIndefinite(this.config, "victim_status");
+        this.selfStatus = StatusEffects.Spec.fromConfigIndefinite(this.config, "self_status");
     }
 
     @Override
@@ -108,9 +107,8 @@ public class MonsterGrab extends BaseAbility {
         GRABBED.add(grabbed.getUniqueId());
         hero.getController().addPassenger(grabbed);
 
-        StatusEffects.applyTo(hero.getController().getEntity(), disableSpec, this, hero, null);
-        StatusEffects.applyTo(grabbed, disableSpec, this, hero, null);
-        StatusEffects.applyTo(grabbed, rootSpec, victimRootKey, hero, null);
+        StatusEffects.applyTo(hero.getController().getEntity(), selfStatus, this, hero, null);
+        StatusEffects.applyTo(grabbed, victimStatus, this, hero, null);
 
         hero.setPrimaryOverride(() -> executeThrow(hero));
         grabSound.play(hero.getController().getLocation(), hero.getController());
@@ -167,7 +165,6 @@ public class MonsterGrab extends BaseAbility {
             if (hero.getController() != null) hero.getController().removePassenger(held);
         }
         StatusEffects.removeAllFrom(this);
-        StatusEffects.removeAllFrom(victimRootKey);
         hero.clearPrimaryOverride();
     }
 

@@ -72,7 +72,7 @@ abilities:
     radius: 2.0
     range: 18
     status:
-      id: pin
+      preset: pin
       duration: 0.6
     pierces_players: true
     visuals:

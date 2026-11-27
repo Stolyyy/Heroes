@@ -121,7 +121,7 @@ abilities:
     max_stage: 3
     decay_duration: 3
     status:
-      id: stun
+      preset: stun
       duration: 0.2
     blast_damage: 2.0
     blast_knockback: 2.0

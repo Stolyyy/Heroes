@@ -880,3 +880,4 @@ status:
     pin: "&c&l✖ PINNED &f{seconds}s"
     root: "&6&l⬇ ROOTED &f{seconds}s"
     disable: "&d&l✦ DISABLED &f{seconds}s"
+    grabbed: "&c&l✊ GRABBED"

@@ -2,6 +2,8 @@ package me.stolyy.heroes.ability.template;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.ability.AbilityType;
+import me.stolyy.heroes.game.PracticeArena;
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.physics.Hitbox;
 import me.stolyy.heroes.physics.Interactions;
@@ -67,12 +69,17 @@ public abstract class Cone extends BaseAbility {
 
     @Override
     public void perform(Hero hero) {
-        activationSound.play(hero.getController().getLocation(), hero.getController());
         Location start = hero.getController().getEyeLocation();
         lingerDirection = start.getDirection();
+        double effectiveRange = PracticeManager.clampPracticeRange(hero, start, lingerDirection, range);
+        if (effectiveRange <= 0) return;
+
+        activationSound.play(hero.getController().getLocation(), hero.getController());
+        double endRadius = minRadius + (effectiveRange / range) * (radius - minRadius);
         // The onHit lambda reads the FIELD so lingering ticks knock back along the current aim.
-        Hitbox hitbox = Hitbox.cone(start, lingerDirection, minRadius, radius, range)
+        Hitbox hitbox = Hitbox.cone(start, lingerDirection, minRadius, endRadius, effectiveRange)
                 .exclude(hero.getController().getEntity())
+                .filter(victim -> PracticeManager.isWithinPracticeBounds(hero, victim.getLocation()))
                 .checkWalls(!piercesWalls)
                 .trackHits()
                 .onHit((victim) -> onHit(hero, victim, lingerDirection));
@@ -127,16 +134,25 @@ public abstract class Cone extends BaseAbility {
     }
 
     protected void displayVisuals(Hero hero, Location start, Vector direction) {
+        double effectiveRange = PracticeManager.clampPracticeRange(hero, start, direction, range);
+        if (effectiveRange <= 0) return;
+
+        PracticeArena arena = PracticeManager.practiceArenaOf(hero);
         // Cone Visual loop — same frustum taper as the hitbox, so what you see is what hits.
-        for (double d = spacing; d <= range; d += spacing) {
+        for (double d = spacing; d <= effectiveRange; d += spacing) {
             double r = minRadius + (d / range) * (radius - minRadius);
             Location loc = start.clone().add(direction.clone().multiply(d));
-            coneVisual.play(loc, direction, r, hero.getSkin().getId());
+            if (arena == null || arena.contains(loc)) {
+                coneVisual.play(loc, direction, r, hero.getSkin().getId());
+            }
         }
-        
+
         // Ring at end
-        Location endLoc = start.clone().add(direction.clone().multiply(range));
-        ringVisual.play(endLoc, direction, radius, hero.getSkin().getId());
+        Location endLoc = start.clone().add(direction.clone().multiply(effectiveRange));
+        if (arena == null || arena.contains(endLoc)) {
+            double endRadius = minRadius + (effectiveRange / range) * (radius - minRadius);
+            ringVisual.play(endLoc, direction, endRadius, hero.getSkin().getId());
+        }
     }
 
     protected void applyInteraction(Hero hero, LivingEntity victim, Vector direction) {

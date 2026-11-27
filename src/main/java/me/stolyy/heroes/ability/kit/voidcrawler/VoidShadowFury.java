@@ -5,6 +5,7 @@ import me.stolyy.heroes.ability.template.ActiveAbility;
 import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.game.GameManager;
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.physics.Hitbox;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
@@ -52,6 +53,7 @@ public class VoidShadowFury extends ActiveAbility {
             Hitbox.sphere(hero.getController().getLocation(), radius)
                     .exclude(hero.getController().getEntity())
                     .excludeTeammates(hero.getController().getEntity())
+                    .filter(victim -> PracticeManager.isWithinPracticeBounds(hero, victim.getLocation()))
                     .onHit(victim -> applyDarkness(hero, victim))
                     .check();
         }

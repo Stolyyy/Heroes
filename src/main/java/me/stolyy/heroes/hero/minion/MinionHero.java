@@ -12,6 +12,7 @@ import me.stolyy.heroes.vfx.cosmetic.MinionBodyDisplay;
 import me.stolyy.heroes.hero.mechanics.DoubleJump;
 import me.stolyy.heroes.game.Game;
 import me.stolyy.heroes.game.GameManager;
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.game.Team;
 import me.stolyy.heroes.game.TeamColor;
 import me.stolyy.heroes.npc.NpcHandle;
@@ -71,8 +72,11 @@ public class MinionHero extends Hero {
      * "forgot to setAI -> silently frozen" failure mode).
      */
     public void spawn(Location location, BotAI ai) {
+        Location spawnLoc = PracticeManager.isWithinPracticeBounds(owner, location)
+                ? location
+                : owner.getController().getLocation();
         NpcHandle handle = NpcServiceProvider.get().create(
-                "minion_" + UUID.randomUUID().toString().substring(0, 8), location);
+                "minion_" + UUID.randomUUID().toString().substring(0, 8), spawnLoc);
         if (handle == null) {
             Heroes.getInstance().getLogger().severe(
                     "Minion '" + getName() + "' could not be created by the NPC service.");

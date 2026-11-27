@@ -40,6 +40,7 @@ abilities:
   primary:
     type: botrang
     name: BOTARANG!
+    description: Hurl a rapid burst of botarangs straight ahead.
     cooldown: 1.5
     damage: 4
     knockback: 2.0
@@ -67,6 +68,7 @@ abilities:
   secondary:
     type: botclaw
     name: bot claw!
+    description: Fire a grappling hook that pulls you across the arena, dropping bombs along the way.
     cooldown: 8.0
     grapple_range: 50
     max_grapple_range: 50.0
@@ -142,7 +144,7 @@ abilities:
   smash:
     type: botmobile
     name: The Botmobile.
-    description: prepare for the awesome botmobile
+    description: Take flight in the Botmobile, steering through the air and slamming into enemies.
     cooldown: 110.0
     active_duration: 8.0
     damage: 8.0

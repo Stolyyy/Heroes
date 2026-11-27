@@ -23,6 +23,7 @@ abilities:
   primary:
     type: voiddash
     name: Spacial Slash
+    description: Dash forward in a swift slash, cutting through enemies in your path.
     cooldown: 2.0
     damage: 6.0
     knockback: 2.0
@@ -43,6 +44,7 @@ abilities:
   secondary:
     type: voidteleboom
     name: Telebom
+    description: Blink instantly along your aim, exploding at your destination.
     cooldown: 5.0
     damage: 7.0
     knockback: 2.0
@@ -79,6 +81,7 @@ abilities:
   smash:
     type: voidshadowfury
     name: Shadow Furry
+    description: Fill your Void Energy, surge with speed, and cloak nearby enemies in flickering darkness.
     cooldown: 120.0
     active_duration: 9.0
     radius: 40
@@ -97,7 +100,7 @@ abilities:
   passives:
   - type: voidenergy
     name: Void Energy
-    description: null
+    description: Landing jabs builds Void Energy — the more energy you hold, the harder your attacks hit.
     energy_per_jab: 20
     max_damage_dealt_multiplier: 1.25
 

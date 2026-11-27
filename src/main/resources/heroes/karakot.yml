@@ -22,6 +22,7 @@ abilities:
   primary:
     type: kiblast
     name: Ki Blast
+    description: Fire alternating bursts of explosive ki straight ahead.
     cooldown: 1.0
     damage: 4.0
     knockback: 1.0
@@ -60,6 +61,7 @@ abilities:
   secondary:
     type: kamedo
     name: Kame Do
+    description: Charge by landing Ki Blasts, then unleash a massive explosive energy blast.
     charges: 3
     charge_on_primary_hit: true
     damage: 12.0
@@ -101,6 +103,7 @@ abilities:
   smash:
     type: karakotultimate
     name: True Power
+    description: Ascend into true power — slashing incoming damage, Ki Blast cooldown, and Instant Transmission energy cost.
     cooldown: 90.0
     active_duration: 10.0
     ult_skin: ult
@@ -124,7 +127,7 @@ abilities:
   passives:
   - type: karakotteleport
     name: Instant Transmission
-    description: null
+    description: Spend energy to blink instantly in the direction you are aiming.
     activation: SNEAK
     energy_cost: 40
     distance: 9.0

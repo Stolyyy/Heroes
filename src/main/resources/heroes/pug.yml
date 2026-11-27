@@ -17,6 +17,7 @@ abilities:
   primary:
     type: pugdash
     name: Bash
+    description: Dash forward and ram enemies with a heavy bite.
     cooldown: 2.0
     damage: 6.0
     knockback: 2.0
@@ -37,6 +38,7 @@ abilities:
   secondary:
     type: pugbork
     name: Sonic Bork
+    description: Unleash a wall-piercing cone of sonic waves in front of you.
     cooldown: 5.0
     active_duration: 0.20   # 5-tick linger; second visual pulse timed by visuals.replay_delay_ticks
     damage: 8
@@ -67,6 +69,7 @@ abilities:
   smash:
     type: pugintruders
     name: Intruders!
+    description: Summon loyal mini-pugs to chase down and harass your enemies.
     cooldown: 100.0
     active_duration: 11.0
     visuals:
@@ -217,7 +220,7 @@ abilities:
   passives:
   - type: pugpounce
     name: Pounce
-    description: null
+    description: Hold sneak to burn energy and charge, then release to catapult forward and empower your next Bash.
     activation: SNEAK
     energy_cost: 30
     charging_regen: -1.25

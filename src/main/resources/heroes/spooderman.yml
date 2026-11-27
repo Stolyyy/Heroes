@@ -23,6 +23,7 @@ abilities:
   primary:
     type: spooderdash
     name: SPOODA KICK
+    description: Lunge forward with a sharp kick that spikes enemies downward.
     cooldown: 2.0
     damage: 7
     knockback: 2.5
@@ -44,6 +45,7 @@ abilities:
   secondary:
     type: spooderweb
     name: Shooting Ropes
+    description: Fire a web line that yanks enemies toward you; missing adds a cooldown penalty.
     cooldown: 2.5
     damage: 8
     knockback: 2.25
@@ -92,7 +94,7 @@ abilities:
   passives:
   - type: spooderfriends
     name: Friends
-    description: null
+    description: Landing jabs spawns spooder buddies to hunt down your opponents.
     jabs_per_minion: 3
     max_minions: 3
     minion_duration: 7
@@ -156,7 +158,7 @@ abilities:
   - type: spooderclimb
     name: Climb
     activation: SNEAK
-    description: null
+    description: Hold sneak against a wall to spend energy and climb straight up it.
     climb_speed: 0.4
     climb_cost: 4.0
 

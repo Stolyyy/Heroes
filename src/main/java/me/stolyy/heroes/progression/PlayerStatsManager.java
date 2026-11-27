@@ -192,6 +192,7 @@ public class PlayerStatsManager {
         config.set("equipped-charms", stats.equippedCharms().stream().toList());
         config.set("token-balance", stats.getTokenBalance());
         config.set("season-champion", stats.isSeasonChampion());
+        config.set("chat-pings", stats.isChatPingsEnabled());
         config.set("unlocked-heroes", new ArrayList<>(stats.getUnlockedHeroes()));
         for (Map.Entry<String, String> skinEntry : stats.selectedSkins().entrySet()) {
             config.set("selected-skins." + skinEntry.getKey(), skinEntry.getValue());
@@ -244,6 +245,7 @@ public class PlayerStatsManager {
         // seed — that IS the migration path for existing players.
         stats.setTokenBalance(config.getInt("token-balance", ProgressionConfig.getStartingTokens()));
         stats.setSeasonChampion(config.getBoolean("season-champion", false));
+        stats.setChatPingsEnabled(config.getBoolean("chat-pings", true));
         List<String> unlocked = config.getStringList("unlocked-heroes");
         if (unlocked.isEmpty()) {
             stats.setUnlockedHeroes(new HashSet<>(ProgressionConfig.getStartingHeroes()));

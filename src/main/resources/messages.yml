@@ -327,6 +327,21 @@ gui:
     next-page: "<white>Next Page"
 
   settings:
+    preferences:
+      title: "Player Settings"
+      chat-pings:
+        "on": "<green>Chat Pings: Enabled"
+        on-lore:
+          - "<gray>Highlight and play a sound when"
+          - "<gray>someone mentions <yellow>@you <gray>in chat."
+          - ""
+          - "<yellow>Click to disable"
+        "off": "<red>Chat Pings: Disabled"
+        off-lore:
+          - "<gray>Mentions of <yellow>@you <gray>appear"
+          - "<gray>normally with no sound."
+          - ""
+          - "<yellow>Click to enable"
     player:
       team-title: "{team} Team Settings"
       player-title: "Player Settings: {player}"

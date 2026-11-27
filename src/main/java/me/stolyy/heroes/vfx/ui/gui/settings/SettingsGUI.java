@@ -2,29 +2,29 @@ package me.stolyy.heroes.vfx.ui.gui.settings;
 
 import me.stolyy.heroes.game.Game;
 import me.stolyy.heroes.game.GameState;
-import me.stolyy.heroes.vfx.ui.gui.CustomGameGUI;
 import me.stolyy.heroes.vfx.ui.gui.GUI;
 import me.stolyy.heroes.vfx.ui.gui.GUIManager;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Shared base for custom-match settings GUIs: enforces the {@link GameState#WAITING} gate,
- * renders registered {@link Row}s, places the Back/Close button, and fills empty slots.
+ * Shared base for settings GUIs: enforces the {@link GameState#WAITING} gate for match-scoped
+ * GUIs, renders registered {@link Row}s, places the Back/Close button, and fills empty slots.
  */
 public abstract class SettingsGUI extends GUI {
-    protected final Game game;
-    protected final CustomGameGUI parentGUI;
+    protected final @Nullable Game game;
+    protected final @Nullable GUI parentGUI;
     private final int backSlot;
     private final boolean closeStyle;
     private final List<Row> rows = new ArrayList<>();
 
-    protected SettingsGUI(Game game, Player player, int size, String title,
-                          CustomGameGUI parentGUI, int backSlot, boolean closeStyle) {
+    protected SettingsGUI(@Nullable Game game, Player player, int size, String title,
+                          @Nullable GUI parentGUI, int backSlot, boolean closeStyle) {
         super(player, size, title);
         this.game = game;
         this.parentGUI = parentGUI;
@@ -67,7 +67,8 @@ public abstract class SettingsGUI extends GUI {
         }
         int slot = event.getSlot();
         if (slot == backSlot) {
-            GUIManager.open(player, parentGUI);
+            if (parentGUI != null) GUIManager.open(player, parentGUI);
+            else GUIManager.close(player);
             return;
         }
         if (handleExtraClick(slot, event.getClick())) {

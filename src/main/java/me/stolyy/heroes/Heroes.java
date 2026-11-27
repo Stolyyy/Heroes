@@ -22,6 +22,7 @@ import me.stolyy.heroes.command.general.PartyChatCommand;
 import me.stolyy.heroes.command.general.PartyCommand;
 import me.stolyy.heroes.command.general.PracticeCommand;
 import me.stolyy.heroes.command.general.SetHeroCommand;
+import me.stolyy.heroes.command.general.SettingsCommand;
 import me.stolyy.heroes.command.general.SkipMapCommand;
 import me.stolyy.heroes.command.general.SpectateCommand;
 import me.stolyy.heroes.command.general.StatsCommand;
@@ -217,6 +218,7 @@ public final class Heroes extends JavaPlugin {
         registerCommand(new UnlockCommand());
         registerCommand(new TokenCommand());
         registerCommand(new PracticeCommand());
+        registerCommand(new SettingsCommand());
         registerCommand(new VersionCommand());
         registerCommand(new RestartCommand());
         registerCommand(new SkipMapCommand());

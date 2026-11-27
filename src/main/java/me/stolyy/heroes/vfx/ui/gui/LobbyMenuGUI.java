@@ -4,10 +4,9 @@ import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.game.GameMode;
 import me.stolyy.heroes.game.queue.QueueManager;
 import me.stolyy.heroes.vfx.effect.ItemBuilder;
-import me.stolyy.heroes.vfx.effect.SoundBuilder;
 import me.stolyy.heroes.vfx.ui.GuiText;
+import me.stolyy.heroes.vfx.ui.gui.settings.PreferencesGUI;
 import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 
@@ -39,10 +38,7 @@ public class LobbyMenuGUI extends GUI {
                 GameManager.joinGame(player, GameMode.CUSTOM);
             }
             case SLOT_HERO_SELECT -> GUIManager.open(player, HeroSelectGUI.lobby(player));
-            case SLOT_SETTINGS -> {
-                player.sendMessage(GuiText.component("gui.lobby-menu.coming-soon"));
-                SoundBuilder.of(Sound.BLOCK_NOTE_BLOCK_BASS).pitch(0.5f).play(player);
-            }
+            case SLOT_SETTINGS -> GUIManager.open(player, new PreferencesGUI(player, this));
         }
     }
 

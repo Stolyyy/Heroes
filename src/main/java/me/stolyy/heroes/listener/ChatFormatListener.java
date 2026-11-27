@@ -1,38 +1,101 @@
 package me.stolyy.heroes.listener;
 
 import io.papermc.paper.event.player.AsyncChatEvent;
+import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.Game;
 import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.progression.PlayerStatsManager;
 import me.stolyy.heroes.util.GameConfigManager;
+import me.stolyy.heroes.vfx.effect.SoundEffect;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Chat as {@code [level] name: message} with the level prefix configured in {@code messages.yml}
- * ({@code chat.level-prefix}) and the name coloured per viewer: teammates and opponents of the
- * same game see the sender's team colour; everyone else sees white for an in-game sender and green
- * for a lobby sender. A season champion's name is gold wherever the team colour does not apply.
+ * ({@code chat.level-prefix}), per-viewer name colouring, and {@code @username} pings (highlighted
+ * and accompanied by a sound only for mentioned players who have pings enabled).
  */
 public class ChatFormatListener implements Listener {
+    private static final Pattern MENTION_PATTERN =
+            Pattern.compile("(?<![A-Za-z0-9_])@([A-Za-z0-9_]{1,16})(?![A-Za-z0-9_])");
 
     @EventHandler
     public void onChat(AsyncChatEvent event) {
         int smashLevel = PlayerStatsManager.getStats(event.getPlayer().getUniqueId()).smashLevel();
         Component levelPrefix = GameConfigManager.getMessage("chat.level-prefix",
                 Map.of("level", String.valueOf(smashLevel)));
-        event.renderer((source, displayName, message, viewer) ->
-                Component.empty()
-                        .append(levelPrefix)
-                        .append(Component.text(source.getName(), nameColor(source, viewer)))
-                        .append(Component.text(": ", NamedTextColor.GRAY))
-                        .append(message));
+
+        String plain = PlainTextComponentSerializer.plainText().serialize(event.message());
+        Set<UUID> pingedIds = findPingedViewers(plain, event.getPlayer(), event.viewers());
+
+        String highlightColor = null;
+        if (!pingedIds.isEmpty()) {
+            highlightColor = GameConfigManager.getChatPingHighlightColor();
+            SoundEffect pingSound = GameConfigManager.getChatPingSound();
+            Set<UUID> soundTargets = new HashSet<>(pingedIds);
+            Bukkit.getScheduler().runTask(Heroes.getInstance(), () -> {
+                for (UUID targetId : soundTargets) {
+                    Player p = Bukkit.getPlayer(targetId);
+                    if (p != null && p.isOnline()) pingSound.play(p);
+                }
+            });
+        }
+
+        String finalHighlight = highlightColor;
+        event.renderer((source, displayName, message, viewer) -> {
+            Component renderedMessage = message;
+            if (finalHighlight != null && viewer instanceof Player vp && pingedIds.contains(vp.getUniqueId())) {
+                Pattern ownMention = Pattern.compile(
+                        "(?i)(?<![A-Za-z0-9_])@" + Pattern.quote(vp.getName()) + "(?![A-Za-z0-9_])");
+                renderedMessage = message.replaceText(TextReplacementConfig.builder()
+                        .match(ownMention)
+                        .replacement((match, builder) ->
+                                LegacyComponentSerializer.legacyAmpersand().deserialize(finalHighlight + match.group()))
+                        .build());
+            }
+            return Component.empty()
+                    .append(levelPrefix)
+                    .append(Component.text(source.getName(), nameColor(source, viewer)))
+                    .append(Component.text(": ", NamedTextColor.GRAY))
+                    .append(renderedMessage);
+        });
+    }
+
+    private static Set<UUID> findPingedViewers(String plain, Player sender, Set<Audience> viewers) {
+        UUID senderId = sender.getUniqueId();
+        Map<String, UUID> viewersByName = new HashMap<>();
+        for (Audience audience : viewers) {
+            if (audience instanceof Player p && !p.getUniqueId().equals(senderId)) {
+                viewersByName.put(p.getName().toLowerCase(Locale.ROOT), p.getUniqueId());
+            }
+        }
+        Set<UUID> pinged = new HashSet<>();
+        Matcher matcher = MENTION_PATTERN.matcher(plain);
+        while (matcher.find()) {
+            UUID targetId = viewersByName.get(matcher.group(1).toLowerCase(Locale.ROOT));
+            if (targetId == null) continue;
+            if (PlayerStatsManager.getStats(targetId).isChatPingsEnabled()) {
+                pinged.add(targetId);
+            }
+        }
+        return pinged;
     }
 
     private static NamedTextColor nameColor(Player sender, Audience viewer) {

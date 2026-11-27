@@ -189,3 +189,12 @@ poll:
 # Custom-game auto-balance: rolling window (hours) of recent Custom match results used to rank players.
 team-balance:
   session-window-hours: 12
+
+chat:
+  pings:
+    highlight-color: "&e&l"
+    sound:
+      sound: "entity.experience_orb.pickup"
+      volume: 1.0
+      pitch: 1.5
+      scope: PLAYER

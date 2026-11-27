@@ -3,6 +3,7 @@ package me.stolyy.heroes.util;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.GameMode;
 import me.stolyy.heroes.game.PracticeArena;
+import me.stolyy.heroes.vfx.effect.SoundEffect;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Location;
@@ -23,6 +24,7 @@ public class GameConfigManager {
     private static FileConfiguration gameConfig;
     private static FileConfiguration messagesConfig;
     private static List<PracticeArena> practiceArenas;
+    private static SoundEffect chatPingSound;
 
     /** Loads (or extracts defaults for) {@code game-config.yml}, {@code messages.yml}, and {@code templates.yml}. */
     public static void reload() {
@@ -30,6 +32,7 @@ public class GameConfigManager {
         gameConfig = loadOrCreateConfig(plugin, "game-config.yml");
         messagesConfig = loadOrCreateConfig(plugin, "messages.yml");
         practiceArenas = null;
+        chatPingSound = null;
         TemplateConfig.reload();
     }
 
@@ -141,6 +144,19 @@ public class GameConfigManager {
     /** Fraction of K removed at (or beyond) the gap cap. */
     public static double getEloMaxGapReduction() {
         return Configs.requireDouble(gameConfig, "elo.team-gap-damping.max-reduction");
+    }
+
+    // --- Chat pings ---
+
+    public static String getChatPingHighlightColor() {
+        return Configs.requireString(gameConfig, "chat.pings.highlight-color");
+    }
+
+    public static SoundEffect getChatPingSound() {
+        if (chatPingSound == null) {
+            chatPingSound = new SoundEffect(Configs.requireSection(gameConfig, "chat.pings.sound"));
+        }
+        return chatPingSound;
     }
 
     /** Formats a required message from {@code messages.yml} using legacy {@code &} color codes. */

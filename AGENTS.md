@@ -33,7 +33,7 @@ Old pre-rewrite code may sit in `.legacy/` (gitignored, outside `src/`, not comp
 - **Entry point:** `me.stolyy.heroes.Heroes` (initializes managers and their domain listeners, registers cross-cutting listeners, commands via CommandMap, op permissions, optional LuckPerms context, lobby displays/NPCs).
 - **Core packages:** `hero/` (+ `mechanics/`, `minion/`), `ability/` (+ `template/`, `kit/<hero>/`), `control/` (+ `ai/`, `strategy/`), `game/` (+ `map/`, `queue/`, `rules/`, `series/`, `settings/`), `physics/`, `progression/`, `vfx/` (+ `cosmetic/`, `effect/`, `glow/`, `ui/gui/`, `ui/prompt/`, `ui/visual/`), `npc/`, `command/` (`admin/`, `general/`), `listener/`, `party/`, `util/`.
 - **Key GUIs:** `HeroSelectGUI`, `HeroInfoGUI`, `SkinSelectGUI`, `CustomGameGUI`, `GameMapGUI`, `GameModeGUI`, `BotSettingsGUI`, `SpectateGUI`, plus `vfx/ui/gui/settings/` (`SettingsGUI` DSL for `GameSettingsGUI`, `PlayerSettingsGUI`, and mode settings GUIs).
-- **Helper scripts:** `tools/matchlog.py` (match log summary), `tools/yml_keys.py` (config key & unit audit).
+- **Helper scripts:** `tools/matchlog.py` (match log summary), `tools/yml_keys.py` (config key & unit audit), `tools/patchnotes.py` (patch-note lines for hero/template YML changes between two git refs).
 
 ## Issue Tracking & Workflow
 

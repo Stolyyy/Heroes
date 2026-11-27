@@ -17,6 +17,10 @@ import org.bukkit.entity.Player;
  * override), so "refresh" updates the player's own entry for all viewers.
  */
 public final class TabList {
+    // Minecraft 1.21.2+ tab list sorts highest player-list order first (non-negative).
+    private static final int ORDER_LOBBY = 1;
+    private static final int ORDER_IN_GAME = 0;
+
     private TabList() {}
 
     public static void refreshAll() {
@@ -27,14 +31,17 @@ public final class TabList {
         if (!Interactions.isRealPlayer(player)) return;
 
         Game game = GameManager.getPlayerGame(player);
-        Component name = game != null && GameManager.getActiveGames().contains(game)
+        boolean inActiveGame = game != null && GameManager.getActiveGames().contains(game);
+        Component name = inActiveGame
                 ? Component.text(player.getName()).append(Component.space())
                         .append(Component.text(glyph(game.gameMode()), NamedTextColor.GRAY))
                 : Component.text(player.getName());
 
-        // Changing the name sends a list update to everyone; skip no-ops so a lobby-wide refresh
-        // does not become N-squared packets.
+        // Changing the name or order sends a list update to everyone; skip no-ops to avoid N-squared packets.
         if (!name.equals(player.playerListName())) player.playerListName(name);
+
+        int order = inActiveGame ? ORDER_IN_GAME : ORDER_LOBBY;
+        if (player.getPlayerListOrder() != order) player.setPlayerListOrder(order);
     }
 
     private static String glyph(GameMode mode) {

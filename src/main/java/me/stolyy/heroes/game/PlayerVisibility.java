@@ -61,7 +61,16 @@ public final class PlayerVisibility {
 
     private static boolean canSee(Player viewer, Player target) {
         Game viewerGame = GameManager.getPlayerGame(viewer);
-        if (viewerGame != GameManager.getPlayerGame(target)) return false;
+        Game targetGame = GameManager.getPlayerGame(target);
+        if (viewerGame != targetGame) {
+            // Lobby viewers keep real players in active matches shown (different world, so no entity renders)
+            // so tab entries, mode glyphs, and player-list order flow through the normal server path.
+            return viewerGame == null
+                    && targetGame != null
+                    && Interactions.isRealPlayer(target)
+                    && GameManager.getActiveGames().contains(targetGame)
+                    && !viewer.getWorld().equals(target.getWorld());
+        }
         if (viewerGame == null) return true;
         return !hiddenWhileRespawning(viewerGame, viewer, target);
     }

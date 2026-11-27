@@ -347,10 +347,6 @@ material" simplification — one selector file instead of ~45.
   **bug → `bug_head_default` MISSING** — the Bug NPC currently shows a plain sponge.
 - **Announcer NPC**: holds a plain BOOK — no model key, nothing needed.
 - **Leaderboard**: TextDisplay entity stack — no models involved.
-- **`NpcCosmeticHelper` is dead code** (zero call sites). Its `buildWeapon` would emit the
-  legacy key shape `<hero>_hand_<skin>` (note `hand`, not the live `item` texture) on STICK,
-  and `buildHelmet` duplicates CosmeticManager's head logic. If NPC weapons ever get wired
-  up, update it to `_item_` first — do NOT create `hero_hand_*` pack entries.
 
 ---
 

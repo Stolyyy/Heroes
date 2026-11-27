@@ -223,6 +223,7 @@ movement:
   - action: sneak # Return To Ludus — mounts the rideable rocket toward the aim
     priority: 1
     delay_after_ticks: 20 # FILL — the ride needs time to carry before the next decision
+    evade_only: true
   - action: jump
     priority: 2
     delay_after_ticks: 8 # FILL

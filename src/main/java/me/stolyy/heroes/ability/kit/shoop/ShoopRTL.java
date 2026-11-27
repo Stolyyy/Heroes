@@ -1,5 +1,6 @@
 package me.stolyy.heroes.ability.kit.shoop;
 
+import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.ability.template.Projectile;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.util.Configs;
@@ -8,6 +9,7 @@ import me.stolyy.heroes.vfx.effect.RideDisplay;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ItemDisplay;
+import org.bukkit.util.Vector;
 
 public class ShoopRTL extends Projectile {
     private boolean isRiding = false;
@@ -21,6 +23,45 @@ public class ShoopRTL extends Projectile {
         super(config, skin);
         this.reactivationWindow = Configs.requireInt(this.config, "reactivation_window_ms");
         this.energyPerBlock = (float) Configs.requireDouble(this.config, "energy_per_block");
+    }
+
+    public boolean isRiding() {
+        return isRiding && currentProjectile != null && !currentProjectile.expired();
+    }
+
+    public Location rideLocation() {
+        return isRiding() ? currentProjectile.getLocation() : null;
+    }
+
+    public Vector rideVelocity() {
+        return isRiding() ? currentProjectile.getVelocity() : null;
+    }
+
+    /** Distance covered during the mandatory pre-cancel window (plus 1 tick margin). */
+    public double minCancelDistance() {
+        int minTicks = (int) Math.ceil(reactivationWindow / (double) Heroes.MS_PER_TICK) + 1;
+        return Math.min(range, speed * minTicks);
+    }
+
+    /** Total straight-line travel distance affordable from current energy after paying activation cost. */
+    public double projectedDistance(Hero hero) {
+        double postCost = hero.getEnergy().getCurrentEnergy() - getEnergyCost();
+        if (postCost < 0) return 0;
+        return projectedForEnergy(hero, postCost, range);
+    }
+
+    /** Remaining straight-line distance an active ride can cover before running out of energy or range. */
+    public double remainingProjectedDistance(Hero hero) {
+        if (!isRiding()) return 0;
+        double remainingRange = Math.max(0, range - currentProjectile.getDistanceTraveled());
+        return projectedForEnergy(hero, hero.getEnergy().getCurrentEnergy(), remainingRange);
+    }
+
+    private double projectedForEnergy(Hero hero, double energyAvailable, double maxRange) {
+        double regenPerTick = hero.getEnergy().canRegen() ? hero.getEnergy().getRegenPerTick() : 0.0;
+        double netDrain = energyPerBlock - (regenPerTick / speed);
+        if (netDrain <= 0) return maxRange;
+        return Math.min(maxRange, Math.max(0, energyAvailable / netDrain));
     }
 
     @Override
@@ -115,6 +156,14 @@ public class ShoopRTL extends Projectile {
             if (ride != null) return ride.isRiderGone(hero);
             return hero.getController() == null || hero.getController().getEntity() == null
                     || hero.getController().getEntity().isDead() || hero.isRespawning();
+        }
+
+        Vector getVelocity() {
+            return velocity;
+        }
+
+        double getDistanceTraveled() {
+            return distanceTraveled;
         }
 
         @Override

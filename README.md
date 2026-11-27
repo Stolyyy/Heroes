@@ -74,6 +74,7 @@ A fast-paced arena PvP minigame plugin for **PaperMC**, inspired by Hypixel's *S
 | `/mappool <mode> <add\|remove>` | `/mp`, `/map_pool` | `heroes.mappool` | Manage which maps rotate in each mode |
 | `/forceready` | `/fr`, `/ready` | `heroes.forceready` | Reset ability cooldowns / charge ultimate |
 | `/forceend` | `/fe`, `/endgame` | `heroes.forceend` | Cancel an ongoing match without recording stats/Elo |
+| `/forcehero <player> <hero>` | `/forceselect` | `heroes.forcehero` | Forcibly select any hero for a player (bypasses unlocks and admin-only) |
 | `/token <give\|set\|check>` | `/tokens` | `heroes.token` | Manage hero unlock tokens |
 | `/unlock <player> <hero>` | `/unlockhero` | `heroes.unlock` | Unlock a hero for a player |
 | `/heroesrestart <now\|drain>` | `/hrestart` | `heroes.restart` | Gracefully drain ranked games and restart the server |

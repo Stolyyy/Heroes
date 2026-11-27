@@ -4,7 +4,6 @@ import io.papermc.paper.event.player.AsyncChatEvent;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.Game;
 import me.stolyy.heroes.game.GameManager;
-import me.stolyy.heroes.physics.Interactions;
 import me.stolyy.heroes.progression.PlayerStatsManager;
 import me.stolyy.heroes.util.GameConfigManager;
 import me.stolyy.heroes.vfx.effect.SoundEffect;
@@ -19,7 +18,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -36,7 +38,7 @@ public class ChatFormatListener implements Listener {
     @EventHandler
     public void onChat(AsyncChatEvent event) {
         String plain = PlainTextComponentSerializer.plainText().serialize(event.message());
-        Set<UUID> pingedIds = findPingedViewers(plain, event.viewers());
+        Set<UUID> pingedIds = findPingedViewers(plain, event.getPlayer(), event.viewers());
 
         String highlightColor = null;
         if (!pingedIds.isEmpty()) {
@@ -69,20 +71,21 @@ public class ChatFormatListener implements Listener {
         });
     }
 
-    private static Set<UUID> findPingedViewers(String plain, Set<Audience> viewers) {
-        Set<UUID> viewerIds = new HashSet<>();
+    private static Set<UUID> findPingedViewers(String plain, Player sender, Set<Audience> viewers) {
+        UUID senderId = sender.getUniqueId();
+        Map<String, UUID> viewersByName = new HashMap<>();
         for (Audience audience : viewers) {
-            if (audience instanceof Player p && Interactions.isRealPlayer(p)) {
-                viewerIds.add(p.getUniqueId());
+            if (audience instanceof Player p && !p.getUniqueId().equals(senderId)) {
+                viewersByName.put(p.getName().toLowerCase(Locale.ROOT), p.getUniqueId());
             }
         }
         Set<UUID> pinged = new HashSet<>();
         Matcher matcher = MENTION_PATTERN.matcher(plain);
         while (matcher.find()) {
-            Player target = Bukkit.getPlayerExact(matcher.group(1));
-            if (target == null || !viewerIds.contains(target.getUniqueId())) continue;
-            if (PlayerStatsManager.getStats(target.getUniqueId()).isChatPingsEnabled()) {
-                pinged.add(target.getUniqueId());
+            UUID targetId = viewersByName.get(matcher.group(1).toLowerCase(Locale.ROOT));
+            if (targetId == null) continue;
+            if (PlayerStatsManager.getStats(targetId).isChatPingsEnabled()) {
+                pinged.add(targetId);
             }
         }
         return pinged;

@@ -55,8 +55,19 @@ public final class PlayerVisibility {
     }
 
     private static void applyVisibility(Player viewer, Player target) {
-        if (canSee(viewer, target)) viewer.showPlayer(Heroes.getInstance(), target);
-        else viewer.hidePlayer(Heroes.getInstance(), target);
+        if (canSee(viewer, target)) {
+            viewer.showPlayer(Heroes.getInstance(), target);
+        } else {
+            viewer.hidePlayer(Heroes.getInstance(), target);
+            if (GameManager.getPlayerGame(viewer) == null
+                    && Interactions.isRealPlayer(target)
+                    && GameManager.getPlayerGame(target) != null) {
+                viewer.listPlayer(target);
+            } else {
+                // Explicit unlist: hidePlayer is a no-op when viewer was already hiding target from the lobby.
+                viewer.unlistPlayer(target);
+            }
+        }
     }
 
     private static boolean canSee(Player viewer, Player target) {

@@ -69,7 +69,14 @@ final class MatchRewards {
             else stats.recordLoss();
 
             if (p == null) continue;
-            boolean present = !game.getGamePlayer(uuid).leftGame();
+            GamePlayer gamePlayer = game.getGamePlayer(uuid);
+            if (game.gameMode() == GameMode.CUSTOM
+                    && gamePlayer.leftGame()
+                    && gamePlayer.kills() == 0
+                    && gamePlayer.damageDealt() <= 0.0) {
+                continue;
+            }
+            boolean present = !gamePlayer.leftGame();
             awardXp(p, scaleXp((present ? ProgressionConfig.getGameReward() : 0)
                     + (won ? ProgressionConfig.getWinReward() : 0)));
         }

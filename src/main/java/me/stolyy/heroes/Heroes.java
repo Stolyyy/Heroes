@@ -64,6 +64,7 @@ import me.stolyy.heroes.vfx.glow.TeamGlow;
 import me.stolyy.heroes.vfx.ui.gui.GUIManager;
 import me.stolyy.heroes.vfx.ui.prompt.PromptManager;
 import me.stolyy.heroes.vfx.ui.visual.BoardDisplay;
+import me.stolyy.heroes.vfx.ui.visual.DiscordStatus;
 import me.stolyy.heroes.vfx.ui.visual.EloBoardSource;
 import me.stolyy.heroes.vfx.ui.visual.HeroNpcLevelTags;
 import me.stolyy.heroes.vfx.ui.visual.HeroNpcSkins;
@@ -152,6 +153,7 @@ public final class Heroes extends JavaPlugin {
         HeroNpcLevelTags.initialize();
         HeroNpcSkins.initialize();
         PracticeManager.initialize();
+        DiscordStatus.start();
         AbstractDisplayBuilder.sweepOrphans();
 
         new BoardDisplay<>(new EloBoardSource(), DisplayTags.LEADERBOARD);
@@ -170,6 +172,7 @@ public final class Heroes extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        DiscordStatus.shutdown();
         GUIManager.clear();
         MapSkipPoll.clear();
         GameManager.clear();

@@ -165,6 +165,11 @@ discord:
   error-webhook: ""          # exceptions caught in the game loop, with the game they happened in
   error-dedupe-minutes: 10   # same exception + top frame is posted at most once per this window
   error-max-per-hour: 20
+  status:
+    webhook: ""              # channel for the single live status message
+    update-seconds: 30
+    offline-text: "Server offline"
+  mastery-webhook: ""        # general channel; one post per hero mastered
 
 restart:
   # Seconds of the final countdown before Bukkit.shutdown(); titles at 30/10/5/4/3/2/1.

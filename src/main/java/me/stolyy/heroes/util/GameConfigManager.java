@@ -159,6 +159,24 @@ public class GameConfigManager {
         return chatPingSound;
     }
 
+    // --- Discord webhooks ---
+
+    public static String getDiscordStatusWebhook() {
+        return gameConfig.getString("discord.status.webhook", "");
+    }
+
+    public static int getDiscordStatusUpdateSeconds() {
+        return Configs.requireInt(gameConfig, "discord.status.update-seconds");
+    }
+
+    public static String getDiscordStatusOfflineText() {
+        return Configs.requireString(gameConfig, "discord.status.offline-text");
+    }
+
+    public static String getDiscordMasteryWebhook() {
+        return gameConfig.getString("discord.mastery-webhook", "");
+    }
+
     /** Formats a required message from {@code messages.yml} using legacy {@code &} color codes. */
     public static Component getMessage(String path) {
         return getMessage(path, Map.of());

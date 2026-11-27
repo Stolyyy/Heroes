@@ -276,6 +276,11 @@ public class GameManager {
         return Collections.unmodifiableSet(activeGames);
     }
 
+    /** Every live match whose world has not yet been deleted, including WAITING custom lobbies. */
+    public static Set<Game> getLiveGames() {
+        return Collections.unmodifiableSet(liveGames);
+    }
+
     public static void addToActive(Game game) {
         activeGames.add(game);
         Bukkit.getScheduler().runTask(Heroes.getInstance(), rosterChangeHook);

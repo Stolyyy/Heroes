@@ -8,6 +8,7 @@ import me.stolyy.heroes.progression.PlayerStatsManager;
 import me.stolyy.heroes.progression.ProgressionConfig;
 import me.stolyy.heroes.util.GameConfigManager;
 import me.stolyy.heroes.vfx.ui.visual.Broadcast;
+import me.stolyy.heroes.vfx.ui.visual.DiscordStatus;
 import me.stolyy.heroes.vfx.ui.visual.HeroNpcSkins;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -157,6 +158,9 @@ final class MatchRewards {
                         "player", player.getName(),
                         "hero", heroDisplay,
                         "level", String.valueOf(level))));
+                if (!HeroConfig.isAdminOnly(heroName)) {
+                    DiscordStatus.postMastery(player.getName(), heroDisplay, level);
+                }
             }
         }
     }

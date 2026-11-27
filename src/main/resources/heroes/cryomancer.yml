@@ -22,6 +22,7 @@ abilities:
   primary:
     type: cryomancerfrostbolt
     name: Frostbolt
+    description: Fire an icy bolt that explodes on impact and chills enemies.
     cooldown: 1.4
     damage: 7.0
     knockback: 2.8
@@ -58,6 +59,7 @@ abilities:
   secondary:
     type: cryomancerfrostbreath
     name: Frostbreath
+    description: Unleash a sweeping cone of frost in front of you.
     cooldown: 6.0
     damage: 7.5
     knockback: 2.3
@@ -84,6 +86,7 @@ abilities:
   smash:
     type: cryomancerultimate
     name: Absolute Zero
+    description: Wrap yourself in ice, slashing incoming damage and knockback while accelerating your cooldowns.
     cooldown: 80.0
     active_duration: 12.0
     damage_multiplier: 0.5
@@ -106,7 +109,7 @@ abilities:
   passives:
   - type: cryomancertimewarp
     name: Time Warp
-    description: null
+    description: Sneak to drop an anchor — sneak again before your energy runs dry to warp back to it.
     activation: SNEAK
     cooldown: 10.0
     energy_cost: 50
@@ -132,7 +135,7 @@ abilities:
     aura_interval: 5      # FILL - ticks between aura puffs
   - type: cryomancerfrostaura
     name: Frost Aura
-    description: null
+    description: Frostbolt deals bonus damage to enemies close to you.
     radius: 7.0
     extra_damage: 2.0
 

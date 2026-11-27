@@ -38,6 +38,7 @@ abilities:
   primary:
     type: marauderlightning
     name: Lightning
+    description: Spend energy to blast a short-range arc of dark lightning; landing jabs restores energy.
     energy_cost: 40
     damage: 8.0
     knockback: 2.0
@@ -63,6 +64,7 @@ abilities:
   secondary:
     type: maraudergrip
     name: Grip
+    description: Spend energy to seize enemies in front of you, briefly stunning and yanking them in.
     cooldown: 0.5
     energy_cost: 70
     damage: 6
@@ -90,6 +92,7 @@ abilities:
   smash:
     type: marauderultimate
     name: The Dark Side
+    description: Channel the dark side — accelerating energy regeneration and slashing incoming damage.
     cooldown: 100.0
     active_duration: 12.0
     damage_mitigation: 0.66
@@ -111,7 +114,7 @@ abilities:
   passives:
   - type: maraudersaberthrow
     name: Saber Throw
-    description: null
+    description: Spend energy to hurl your lightsaber forward — recall it early or let it boomerang back through walls.
     activation: DROP
     energy_cost: 75
     damage: 8.0

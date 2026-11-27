@@ -153,6 +153,9 @@ public class Game {
         heroes.initPlayers();
         heroes.initBots();
 
+        for (Player p : onlinePlayers()) {
+            PlayerVisibility.refreshVisibility(p);
+        }
         PlayerVisibility.refreshGlow(this);
         AutoSpectate.onGameStarting(this);
 
@@ -266,6 +269,9 @@ public class Game {
         BoardDisplay.refreshAll();
 
         GameManager.removeFromActive(this);
+        for (Player p : onlinePlayers()) {
+            PlayerVisibility.refreshVisibility(p);
+        }
         if (seriesRound != null) {
             seriesRound.onEnd().accept(winningTeam);
         } else {

@@ -189,7 +189,9 @@ public class GameManager {
     }
 
     public static List<LivingEntity> getEnemies(LivingEntity entity) {
-        return getEntityGame(entity.getUniqueId()).getEnemies(entity.getUniqueId());
+        Game game = getEntityGame(entity.getUniqueId());
+        if (game != null) return game.getEnemies(entity.getUniqueId());
+        return PracticeManager.enemiesFor(entity);
     }
 
     public static boolean canTarget(LivingEntity attacker, LivingEntity victim, Boolean overrideFriendlyFire) {
@@ -272,6 +274,11 @@ public class GameManager {
 
     public static Set<Game> getActiveGames() {
         return Collections.unmodifiableSet(activeGames);
+    }
+
+    /** Every live match whose world has not yet been deleted, including WAITING custom lobbies. */
+    public static Set<Game> getLiveGames() {
+        return Collections.unmodifiableSet(liveGames);
     }
 
     public static void addToActive(Game game) {

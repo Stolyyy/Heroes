@@ -5,19 +5,28 @@ import me.stolyy.heroes.control.strategy.Strategy;
 import me.stolyy.heroes.game.Game;
 import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.hero.Hero;
+import me.stolyy.heroes.hero.mechanics.StatusEffects;
 import me.stolyy.heroes.physics.WallDetection;
 import me.stolyy.heroes.util.BotConfig;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Combat spacing, Citizens pathing reissue guards, backpedal kiting, and kiting rotation focus.
+ * Combat spacing, Citizens pathing reissue guards, backpedal kiting, platform step-out, and kiting rotation focus.
  */
 public class BotNavigation {
     // Vanilla MOVEMENT_SPEED 0.1 maps linearly to 4.317 blocks/s = 0.21585 blocks/tick.
     private static final double WALK_SPEED_PER_ATTR_PER_TICK = (4.317 / 20.0) / 0.1;
+    private static final Vector UP = new Vector(0, 1, 0);
+    private static final double DIAG = Math.sqrt(0.5);
+    private static final double[][] COMPASS_DIRS = {
+            {1, 0}, {DIAG, DIAG}, {0, 1}, {-DIAG, DIAG},
+            {-1, 0}, {-DIAG, -DIAG}, {0, -1}, {DIAG, -DIAG}
+    };
 
     private final Strategy strategy;
     private final MovementActions movementActions;
@@ -27,6 +36,9 @@ public class BotNavigation {
     private Location lastNavDestination;
     private LivingEntity navFacingFocus;
     private int lastNavIssueTick;
+    private LivingEntity stepOutTarget;
+    private Location stepOutTargetAnchor;
+    private Location cachedStepOutPoint;
 
     public BotNavigation(Strategy strategy, MovementActions movementActions, double speedModifier) {
         this.strategy = strategy;
@@ -54,7 +66,12 @@ public class BotNavigation {
         double preferred = strategy.getPreferredDistance();
         double distance = controller.getLocation().distance(target.getLocation());
         if (preferred <= 0 || distance > preferred + BotConfig.ringSlack()) {
-            navigateToEntity(controller, target, tickCount);
+            if (!hasLineOfSight(controller, target)) {
+                navigateBlockedTarget(controller, target, tickCount);
+            } else {
+                clearStepOut();
+                navigateToEntity(controller, target, tickCount);
+            }
 
             double horizontalDistance = Strategy.horizontalDistance(controller.getLocation(), target.getLocation());
             if (horizontalDistance > strategy.getFarDistance()) {
@@ -66,9 +83,10 @@ public class BotNavigation {
 
         if (distance < preferred - BotConfig.backpedalSlack()) {
             if (!hasLineOfSight(controller, target)) {
-                navigateToEntity(controller, target, tickCount);
+                navigateBlockedTarget(controller, target, tickCount);
                 return;
             }
+            clearStepOut();
 
             stopAndClear(controller);
             controller.lookAt(target.getEyeLocation());
@@ -79,7 +97,7 @@ public class BotNavigation {
                     controller.getLocation().clone().add(back.clone().normalize().multiply(2)));
             Vector current = controller.getVelocity();
             boolean slowEnough = current.clone().setY(0).lengthSquared() < BotConfig.velocityQuietSpeedSq();
-            if (safe && slowEnough) {
+            if (safe && slowEnough && !hero.status().blocks(StatusEffects.Restriction.MOVE)) {
                 double effectiveSpeedAttr = hero.getAttributes().getMovementSpeed();
                 Vector vel = back.normalize().multiply(effectiveSpeedAttr * WALK_SPEED_PER_ATTR_PER_TICK);
                 vel.setY(current.getY());
@@ -89,9 +107,10 @@ public class BotNavigation {
         }
 
         if (!hasLineOfSight(controller, target)) {
-            navigateToEntity(controller, target, tickCount);
+            navigateBlockedTarget(controller, target, tickCount);
             return;
         }
+        clearStepOut();
 
         Location targetLoc = target.getLocation();
         Vector toBot = controller.getLocation().toVector().subtract(targetLoc.toVector()).setY(0);
@@ -148,6 +167,81 @@ public class BotNavigation {
     public void clearDestinationState() {
         lastNavTarget = null;
         lastNavDestination = null;
+        clearStepOut();
+    }
+
+    private void clearStepOut() {
+        stepOutTarget = null;
+        stepOutTargetAnchor = null;
+        cachedStepOutPoint = null;
+    }
+
+    /**
+     * When line of sight is blocked and the target sits above the bot, steps out from under the
+     * intervening platform to a clear headroom point instead of camping beneath the target.
+     */
+    private void navigateBlockedTarget(BotController controller, LivingEntity target, int tickCount) {
+        Location botLoc = controller.getLocation();
+        Location targetLoc = target.getLocation();
+        if (targetLoc.getY() - botLoc.getY() > BotConfig.chaseJumpHeightThreshold()) {
+            Location stepOut = resolveStepOutPoint(controller, target);
+            if (stepOut != null) {
+                issueLocationNav(controller, stepOut, tickCount);
+                return;
+            }
+        }
+        clearStepOut();
+        navigateToEntity(controller, target, tickCount);
+    }
+
+    private @Nullable Location resolveStepOutPoint(BotController controller, LivingEntity target) {
+        Location targetLoc = target.getLocation();
+        if (cachedStepOutPoint != null
+                && stepOutTarget == target
+                && stepOutTargetAnchor != null
+                && stepOutTargetAnchor.getWorld().equals(targetLoc.getWorld())
+                && stepOutTargetAnchor.distanceSquared(targetLoc) <= BotConfig.navReissueDistanceSq()) {
+            return cachedStepOutPoint;
+        }
+
+        Location botLoc = controller.getLocation();
+        LivingEntity self = controller.getEntity();
+        World world = botLoc.getWorld();
+        double width = self.getWidth();
+        double height = self.getHeight();
+        double eyeHeight = self.getEyeHeight();
+        double botY = botLoc.getY();
+        double targetY = targetLoc.getY();
+        double minR = BotConfig.stepOutMinRadius();
+        double maxR = BotConfig.stepOutMaxRadius();
+
+        Location best = null;
+        double bestDistSq = Double.MAX_VALUE;
+        for (double[] dir : COMPASS_DIRS) {
+            for (double r = minR; r <= maxR + 1.0E-6; r += 1.0) {
+                Location probe = new Location(world, targetLoc.getX() + dir[0] * r, botY, targetLoc.getZ() + dir[1] * r);
+                if (WallDetection.isAboveVoid(probe)) continue;
+                if (!WallDetection.isStandingClear(world, probe, width, height)) continue;
+                double rayDist = targetY - (botY + eyeHeight);
+                if (rayDist > 0) {
+                    Location head = new Location(world, probe.getX(), botY + eyeHeight, probe.getZ());
+                    if (world.rayTraceBlocks(head, UP, rayDist, FluidCollisionMode.NEVER, true) != null) {
+                        continue;
+                    }
+                }
+                double distSq = probe.distanceSquared(botLoc);
+                if (distSq < bestDistSq) {
+                    bestDistSq = distSq;
+                    best = probe;
+                }
+                break;
+            }
+        }
+
+        stepOutTarget = target;
+        stepOutTargetAnchor = targetLoc.clone();
+        cachedStepOutPoint = best;
+        return best;
     }
 
     public void reset() {

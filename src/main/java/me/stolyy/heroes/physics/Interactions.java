@@ -5,6 +5,7 @@ import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.game.SpawnProtection;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroManager;
+import me.stolyy.heroes.hero.mechanics.StatusEffects;
 import me.stolyy.heroes.hero.minion.MinionHero;
 import me.stolyy.heroes.game.Game;
 import me.stolyy.heroes.game.GameManager;
@@ -211,6 +212,12 @@ public class Interactions {
             // where triggerDamageTaken fires before the post-multiplier <=0 return.
             if (finalKb == 0 && finalYKb == 0) {
                 if (hero != null) hero.triggerKnockbackTaken(attacker, new Vector(0, 0, 0));
+                return false;
+            }
+
+            // End break_on_knockback effects first; if still held (e.g. pin), skip knockback (damage still applies).
+            StatusEffects.onKnockbackTaken(victim);
+            if (StatusEffects.isHeld(victim)) {
                 return false;
             }
 

@@ -150,9 +150,11 @@ abilities:
       gravity: 0.06
       range: 40
       radius: 0.3
-      levitation_amplitude: 1
       effect_radius: 3.5
-      levitation_ms: 1200   # levitation, and no double jumps for the same time
+      launch_knockback: 1.75 # FILL - static upward knockback lifting a default-weight hero ~3 blocks
+      status:
+        preset: root
+        duration: 1.2
       disorient_ms: 500
       disorient_effect: NAUSEA   # NAUSEA or BLINDNESS
       area_ring_spacing: 0.5

@@ -21,8 +21,6 @@ public class DoubleJump {
     protected SoundEffect sound;
     protected VisualEffect effect;
 
-    private long rootedUntil;
-
     public DoubleJump(HeroStats.JumpStats stats) {
         if (stats != null) {
             apply(stats);
@@ -39,32 +37,23 @@ public class DoubleJump {
         this.effect = stats.jumpEffect();
     }
 
-    public boolean performJump(Hero hero) {
-        // Frozen at the respawn point means frozen — same gate as usePrimary/useSecondary.
-        // Variants that override performJump (SkullMobility, Botglide) carry their own copy.
+    public final boolean performJump(Hero hero) {
         if (hero.isRespawning()) return false;
-        if (isRooted()) return false;
+        if (hero.status().blocks(StatusEffects.Restriction.JUMP)) return false;
         if (!canJump(hero)) return false;
+        return executeJump(hero);
+    }
 
+    protected boolean executeJump(Hero hero) {
         applyVelocity(hero);
         playEffects(hero);
         payCost(hero);
         hero.triggerDoubleJump();
-
         return true;
     }
 
     public boolean canJump(Hero hero) {
         return jumpsUsed < maxJumps;
-    }
-
-    /** Root: no double jumps for {@code ms}. Time-based, so it needs no cleanup and death resets nothing extra. */
-    public void root(long ms) {
-        rootedUntil = Math.max(rootedUntil, System.currentTimeMillis() + ms);
-    }
-
-    public boolean isRooted() {
-        return System.currentTimeMillis() < rootedUntil;
     }
 
     protected void applyVelocity(Hero hero) {

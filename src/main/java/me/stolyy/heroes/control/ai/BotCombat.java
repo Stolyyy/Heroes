@@ -10,6 +10,7 @@ import me.stolyy.heroes.game.Game;
 import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.game.GamePlayer;
 import me.stolyy.heroes.hero.Hero;
+import me.stolyy.heroes.hero.mechanics.StatusEffects;
 import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -86,20 +87,23 @@ public class BotCombat {
         // Aim at feet because Citizens faceLocation rotates from entity feet while abilities fire from eyes.
         Location targetLoc = target.getLocation().clone();
 
-        if (!(reserveMovementTools && movementActions.reserves("smash"))
-                && shouldAttemptUlt(controller, target)
-                && tryUseAbility(hero, controller, hero.getSmashAbility(), AbilityType.SMASH, target, distance, targetLoc)) {
-            return;
-        }
-        if (!(reserveMovementTools && movementActions.reserves("primary"))
-                && tryUseAbility(hero, controller, hero.getPrimaryAbility(), AbilityType.PRIMARY, target, distance, targetLoc)) {
-            return;
-        }
-        if (!(reserveMovementTools && movementActions.reserves("secondary"))
-                && tryUseAbility(hero, controller, hero.getSecondaryAbility(), AbilityType.SECONDARY, target, distance, targetLoc)) {
-            return;
+        if (!hero.status().blocks(StatusEffects.Restriction.ABILITIES)) {
+            if (!(reserveMovementTools && movementActions.reserves("smash"))
+                    && shouldAttemptUlt(controller, target)
+                    && tryUseAbility(hero, controller, hero.getSmashAbility(), AbilityType.SMASH, target, distance, targetLoc)) {
+                return;
+            }
+            if (!(reserveMovementTools && movementActions.reserves("primary"))
+                    && tryUseAbility(hero, controller, hero.getPrimaryAbility(), AbilityType.PRIMARY, target, distance, targetLoc)) {
+                return;
+            }
+            if (!(reserveMovementTools && movementActions.reserves("secondary"))
+                    && tryUseAbility(hero, controller, hero.getSecondaryAbility(), AbilityType.SECONDARY, target, distance, targetLoc)) {
+                return;
+            }
         }
 
+        if (hero.status().blocks(StatusEffects.Restriction.JAB)) return;
         double jabRange = hero.getCombat().getRange();
         if (jabRange <= 0) return;
         LivingEntity jabTarget = findClosestEnemyInRange(controller, nearbyEnemies.get(), jabRange);
@@ -108,6 +112,7 @@ public class BotCombat {
         Location jabAim = jabTarget.getLocation().clone();
         queueAction(controller, jabAim, () -> {
             if (controller.getEntity() == null) return;
+            if (hero.status().blocks(StatusEffects.Restriction.JAB)) return;
             if (controller.getLocation().distanceSquared(jabTarget.getLocation()) > jabRange * jabRange) return;
             if (!BotNavigation.hasLineOfSight(controller, jabTarget)) return;
             controller.swingMainHand();

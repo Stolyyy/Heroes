@@ -2,6 +2,7 @@ package me.stolyy.heroes.ability.kit.greenhood;
 
 import me.stolyy.heroes.ability.template.BaseAbility;
 import me.stolyy.heroes.ability.template.Planted;
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.physics.Hitbox;
 import me.stolyy.heroes.util.Configs;
@@ -82,6 +83,7 @@ public class TripmineArrow extends BaseAbility implements ArmedShot {
             public void onEntityHit(Hero h, LivingEntity victim, AbstractArrow a) {
                 Location contact = a.getLocation();
                 a.remove();
+                if (!PracticeManager.isWithinPracticeBounds(h, contact)) return;
                 mines.add(new Mine(h, contact, victim));
             }
 
@@ -89,6 +91,7 @@ public class TripmineArrow extends BaseAbility implements ArmedShot {
             public void onGroundHit(Hero h, AbstractArrow a) {
                 Location contact = a.getLocation();
                 a.remove();
+                if (!PracticeManager.isWithinPracticeBounds(h, contact)) return;
                 mines.add(new Mine(h, contact, null));
             }
         });
@@ -138,6 +141,10 @@ public class TripmineArrow extends BaseAbility implements ArmedShot {
             if (self == null) return true;
 
             planted.sync();
+            if (!planted.isWithin(owner)) {
+                planted.cleanup();
+                return true;
+            }
             Location loc = planted.location();
 
             if (fuseTicksLeft >= 0) {

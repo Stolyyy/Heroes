@@ -51,8 +51,17 @@ public class SoundEffect {
         this.subs = SpecList.parse(config, "sounds", SubSound::parse);
     }
 
+    public boolean isEmpty() {
+        return subs.isEmpty();
+    }
+
     public void play(Player player) {
         for (SubSound s : subs) s.play(player.getLocation(), player);
+    }
+
+    /** Plays directly to {@code player} at their own position regardless of configured scope (non-positional). */
+    public void playPersonal(Player player) {
+        for (SubSound s : subs) s.playPersonal(player);
     }
 
     public void play(Controller controller) {
@@ -138,6 +147,14 @@ public class SoundEffect {
             } else {
                 builder.playEverywhere(location);
             }
+        }
+
+        void playPersonal(Player player) {
+            SoundBuilder.of(soundKey)
+                    .volume(volume)
+                    .pitch(pitch)
+                    .variation(pitchVariation)
+                    .play(player, player.getLocation());
         }
 
         void playForController(Location location, Controller controller) {

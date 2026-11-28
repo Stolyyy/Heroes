@@ -8,6 +8,7 @@ import me.stolyy.heroes.ability.kit.mrmonster.MonsterGrab;
 import me.stolyy.heroes.control.Controller;
 import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.hero.mechanics.JabListener;
+import me.stolyy.heroes.hero.mechanics.LobbyMobility;
 import me.stolyy.heroes.hero.mechanics.MovementListener;
 import me.stolyy.heroes.progression.PlayerStatsManager;
 import org.bukkit.Bukkit;
@@ -22,6 +23,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -157,6 +159,7 @@ public class HeroManager {
         AbilityListener.clear();
         GreenHoodListener.clear();
         MonsterGrab.clear();
+        LobbyMobility.clear();
     }
 
     /** Unlock check: default-unlocked in the YML or purchased/granted on the player's stats. */
@@ -187,7 +190,21 @@ public class HeroManager {
             return;
         }
 
-        PlayerStatsManager.getStats(player).setSelectedHero(heroName.toLowerCase());
+        applySelection(player, heroName);
+    }
+
+    /**
+     * Forcibly selects a hero for the player, bypassing admin-only and unlock gates.
+     */
+    public static void forceSelectHero(Player player, String heroName) {
+        if (!HeroConfig.exists(heroName) || heroName.equalsIgnoreCase("default")) {
+            throw new IllegalArgumentException("Unknown hero: " + heroName);
+        }
+        applySelection(player, heroName);
+    }
+
+    private static void applySelection(Player player, String heroName) {
+        PlayerStatsManager.getStats(player).setSelectedHero(heroName.toLowerCase(Locale.ROOT));
 
         // Selection is pure preference — the live hero is built once in Game.start() from
         // resolveHeroName — so a selection made while attached to a game only takes effect next

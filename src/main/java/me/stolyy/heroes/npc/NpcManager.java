@@ -5,6 +5,7 @@ import me.stolyy.heroes.npc.types.AnnouncerNpc;
 import me.stolyy.heroes.npc.types.HeroDisplayNpc;
 import me.stolyy.heroes.npc.types.QueueNpc;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
@@ -83,6 +84,19 @@ public class NpcManager {
             if (entity != null) entities.put(heroNpc.getHeroName(), entity);
         }
         return entities;
+    }
+
+    /** Returns the lowercase hero config ID if {@code entity} belongs to a lobby hero display NPC, else null. */
+    public static String heroNameForEntity(Entity entity) {
+        if (entity == null || !NpcServiceProvider.isAvailable()) return null;
+        for (Npc npc : npcs.values()) {
+            if (!(npc instanceof HeroDisplayNpc heroNpc) || heroNpc.getHandle() == null) continue;
+            LivingEntity npcEntity = NpcServiceProvider.get().getBukkitEntity(heroNpc.getHandle());
+            if (npcEntity != null && npcEntity.getUniqueId().equals(entity.getUniqueId())) {
+                return heroNpc.getHeroName();
+            }
+        }
+        return null;
     }
 
     private static void spawnAnnouncerNpc() {

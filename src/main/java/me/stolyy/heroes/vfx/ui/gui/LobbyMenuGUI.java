@@ -4,10 +4,9 @@ import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.game.GameMode;
 import me.stolyy.heroes.game.queue.QueueManager;
 import me.stolyy.heroes.vfx.effect.ItemBuilder;
-import me.stolyy.heroes.vfx.effect.SoundBuilder;
 import me.stolyy.heroes.vfx.ui.GuiText;
+import me.stolyy.heroes.vfx.ui.gui.settings.PreferencesGUI;
 import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 
@@ -18,6 +17,7 @@ public class LobbyMenuGUI extends GUI {
     private static final int SLOT_CUSTOM_GAME = 12;
     private static final int SLOT_HERO_SELECT = 13;
     private static final int SLOT_SETTINGS = 14;
+    private static final int SLOT_SHARDS = 15;
 
     public LobbyMenuGUI(Player player) {
         super(player, 27, GuiText.raw("gui.lobby-menu.title"));
@@ -39,10 +39,8 @@ public class LobbyMenuGUI extends GUI {
                 GameManager.joinGame(player, GameMode.CUSTOM);
             }
             case SLOT_HERO_SELECT -> GUIManager.open(player, HeroSelectGUI.lobby(player));
-            case SLOT_SETTINGS -> {
-                player.sendMessage(GuiText.component("gui.lobby-menu.coming-soon"));
-                SoundBuilder.of(Sound.BLOCK_NOTE_BLOCK_BASS).pitch(0.5f).play(player);
-            }
+            case SLOT_SETTINGS -> GUIManager.open(player, new PreferencesGUI(player, this));
+            case SLOT_SHARDS -> GUIManager.open(player, new ShardsGUI(player, this));
         }
     }
 
@@ -85,6 +83,12 @@ public class LobbyMenuGUI extends GUI {
                 .name(GuiText.component("gui.lobby-menu.settings-name"))
                 .lore(GuiText.lore("gui.lobby-menu.settings-lore"))
                 .modelData("gui", "lobby", "settings")
+                .build());
+
+        inventoryItems.put(SLOT_SHARDS, ItemBuilder.from(Material.AMETHYST_SHARD)
+                .name(GuiText.component("gui.lobby-menu.shards-name"))
+                .lore(GuiText.lore("gui.lobby-menu.shards-lore"))
+                .modelData("gui", "lobby", "shards")
                 .build());
     }
 }

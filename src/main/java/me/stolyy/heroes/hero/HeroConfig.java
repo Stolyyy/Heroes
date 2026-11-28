@@ -2,6 +2,7 @@ package me.stolyy.heroes.hero;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.util.Configs;
+import me.stolyy.heroes.util.PatchNotesLog;
 import me.stolyy.heroes.util.YmlSurgeon;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -16,12 +17,11 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -31,8 +31,10 @@ import java.util.stream.Collectors;
  */
 public class HeroConfig {
 
-    private static final Map<String, YamlConfiguration> heroConfigs = new HashMap<>();
-    private static final Set<String> adminOnlyHeroes = new HashSet<>();
+    // Concurrent: read off-thread by Discord bot autocomplete and /games formatting during reloads.
+    private static final Map<String, YamlConfiguration> heroConfigs = new ConcurrentHashMap<>();
+    // Concurrent: read off-thread via PlayerStats.smashLevel() during async board seeding, autosave, and chat formatting.
+    private static final Set<String> adminOnlyHeroes = ConcurrentHashMap.newKeySet();
     private static final Map<String, String> HERO_ALIASES = Map.ofEntries(
             Map.entry("void", "voidcrawler"),
             Map.entry("skull", "skullfire"),
@@ -275,9 +277,13 @@ public class HeroConfig {
         // The path must already resolve to a scalar leaf — the surgeon walks the document by
         // first match, and a strict pre-check keeps an invalid path (typo'd level) from ever
         // landing on some deeper line that happens to share the key name.
-        if (getValue(heroName, path) == null) {
+        String oldValue = getValue(heroName, path);
+        if (oldValue == null) {
             throw new IllegalStateException("'" + path + "' is not an existing value in "
                     + heroName + " — /balance can edit existing keys only");
+        }
+        if (oldValue.equalsIgnoreCase(value)) {
+            return true;
         }
 
         String original;
@@ -303,6 +309,7 @@ public class HeroConfig {
             throw new IllegalStateException("Edit verification failed ('" + path + "' reads back as "
                     + now + ") — " + file.getName() + " was restored unchanged");
         }
+        PatchNotesLog.record(heroName.toLowerCase(Locale.ROOT), path, oldValue, now);
         return true;
     }
 

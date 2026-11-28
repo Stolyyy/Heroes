@@ -1,16 +1,21 @@
 package me.stolyy.heroes.ability;
 
 import me.stolyy.heroes.hero.Hero;
+import me.stolyy.heroes.hero.mechanics.StatusEffects;
 import me.stolyy.heroes.ability.template.BaseAbility;
 import me.stolyy.heroes.control.Controller;
+import me.stolyy.heroes.util.GameConfigManager;
 import me.stolyy.heroes.vfx.cosmetic.CosmeticManager;
 import me.stolyy.heroes.vfx.effect.ItemBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -78,12 +83,12 @@ public class CooldownManager {
                         // Active window on a primary means the weapon isn't usable yet (Punishgers'
                         // draw after a swap). The ammo count is already full at this point, so
                         // without this branch the bar would read "30/30" next to a dead trigger.
-                        sendActivePrimaryActionBar(controller, ability, ammo);
+                        sendActivePrimaryActionBar(hero, controller, ability, ammo);
                     } else if (ammo != null && ammo.isReloading()) {
-                        sendReloadActionBar(controller, ammo);
+                        sendReloadActionBar(hero, controller, ammo);
                     } else {
                         long timeRemainingMs = display.getTimeRemaining();
-                        sendPrimaryActionBar(controller, progress, timeRemainingMs, ammo);
+                        sendPrimaryActionBar(hero, controller, progress, timeRemainingMs, ammo);
                     }
                 }
 
@@ -128,6 +133,11 @@ public class CooldownManager {
                         ultActiveTotalMs.remove(uuid);
                     }
                 }
+            } else if (slot == 0) {
+                // Non-STICK primaries (e.g. Green Hood's BOW) skip the cooldown bar above; still show
+                // active opponent-applied status labels so those heroes receive the same indicator.
+                Component label = statusIndicator(hero);
+                if (label != null) controller.sendActionBar(label);
             }
         }
 
@@ -182,7 +192,7 @@ public class CooldownManager {
         return damage;
     }
 
-    private void sendPrimaryActionBar(Controller controller, float progress, long timeRemainingMs, Ammo ammo) {
+    private void sendPrimaryActionBar(Hero hero, Controller controller, float progress, long timeRemainingMs, Ammo ammo) {
         int greenCount = (int) ((1.0f - progress) * 10);
         int redCount = 10 - greenCount;
 
@@ -200,13 +210,13 @@ public class CooldownManager {
                     ammoColor(ammo.getCurrent(), ammo.getMax())));
         }
 
-        controller.sendActionBar(bar);
+        controller.sendActionBar(withStatusPrefix(hero, bar));
     }
 
     // Primary mid-active-phase: the trigger is dead, so the bar stays fully red and carries the
     // ability's own status text (Ability#getActiveStatusText(), e.g. "Swapping") rather than a
     // cooldown countdown that would read as ready-ish.
-    private void sendActivePrimaryActionBar(Controller controller, Ability ability, Ammo ammo) {
+    private void sendActivePrimaryActionBar(Hero hero, Controller controller, Ability ability, Ammo ammo) {
         String status = ability.getActiveStatusText();
         if (status == null) status = "Ready in";
         double seconds = ability.getCooldownObject().getActiveTimeRemaining() / 1000.0;
@@ -220,11 +230,11 @@ public class CooldownManager {
                     ammoColor(ammo.getCurrent(), ammo.getMax())));
         }
 
-        controller.sendActionBar(bar);
+        controller.sendActionBar(withStatusPrefix(hero, bar));
     }
 
     // CLIP reload: the bar fills red→green with reload progress instead of showing cooldown.
-    private void sendReloadActionBar(Controller controller, Ammo ammo) {
+    private void sendReloadActionBar(Hero hero, Controller controller, Ammo ammo) {
         int doneCount = (int) (ammo.getReloadProgress() * 10);
         double seconds = ammo.getReloadRemainingMs() / 1000.0;
 
@@ -234,7 +244,43 @@ public class CooldownManager {
                 .append(Component.text(String.format(" Reloading (%.1fs)", seconds), NamedTextColor.YELLOW))
                 .append(Component.text(" 0/" + ammo.getMax(), NamedTextColor.RED));
 
-        controller.sendActionBar(bar);
+        controller.sendActionBar(withStatusPrefix(hero, bar));
+    }
+
+    private static Component withStatusPrefix(Hero hero, Component bar) {
+        Component label = statusIndicator(hero);
+        if (label == null) return bar;
+        return label.append(Component.text(" | ", NamedTextColor.DARK_GRAY)).append(bar);
+    }
+
+    private static @Nullable Component statusIndicator(Hero hero) {
+        StatusEffects.ActiveEffect chosen = null;
+        int chosenRank = Integer.MAX_VALUE;
+        for (StatusEffects.ActiveEffect effect : hero.status().active()) {
+            if (effect.applier() == hero) continue;
+            int rank = statusDisplayPriority(effect.spec());
+            if (rank < chosenRank) {
+                chosen = effect;
+                chosenRank = rank;
+            }
+        }
+        if (chosen == null) return null;
+
+        String raw = GameConfigManager.getMessageString("status.indicator." + chosen.id());
+        if (chosen.hasDuration()) {
+            raw = raw.replace("{seconds}", String.format(Locale.ROOT, "%.1f", chosen.remainingMs() / 1000.0));
+        } else {
+            raw = raw.replaceAll("\\s*(?:&[0-9a-fk-orA-FK-OR])*\\{seconds}s?", "").trim();
+        }
+        return LegacyComponentSerializer.legacyAmpersand().deserialize(raw);
+    }
+
+    private static int statusDisplayPriority(StatusEffects.Spec spec) {
+        if (spec.hold()) return 0;
+        if (spec.blockMove()) return 1;
+        if (spec.blockAbilities()) return 2;
+        if (spec.blockJab() || spec.blockJump()) return 3;
+        return 4;
     }
 
     private static NamedTextColor ammoColor(int current, int max) {

@@ -19,6 +19,7 @@ public final class DisplayTags {
     public static final NamespacedKey MEMORIAL = new NamespacedKey("heroes", "memorial");
     public static final NamespacedKey HERO_LEVEL_TAG = new NamespacedKey("heroes", "hero_level_tag");
     public static final NamespacedKey QUEUE_NPC_TEXT = new NamespacedKey("heroes", "queue_npc_text");
+    public static final NamespacedKey SKIN_MUSEUM = new NamespacedKey("heroes", "skin_museum");
 
     private DisplayTags() {}
 

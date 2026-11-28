@@ -1,9 +1,12 @@
 package me.stolyy.heroes.ability.template;
 
+import me.stolyy.heroes.game.PracticeArena;
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.minion.MinionHero;
 import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
+import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 
 /**
@@ -34,10 +37,17 @@ public class Tether extends BaseAbility {
         // instead of teleporting to (and giving away) the owner's respawn point.
         if (owner.isRespawning() || owner.isEliminated()) return;
 
-        double dist = hero.getController().getLocation()
-                .distance(owner.getController().getLocation());
+        Location minionLoc = hero.getController().getLocation();
+        Location ownerLoc = owner.getController().getLocation();
+        PracticeArena arena = PracticeManager.practiceArenaOf(owner);
+        if (arena != null && !arena.contains(minionLoc)) {
+            hero.getController().teleport(ownerLoc);
+            return;
+        }
+
+        double dist = minionLoc.distance(ownerLoc);
         if (dist > tetherDistance) {
-            hero.getController().teleport(owner.getController().getLocation());
+            hero.getController().teleport(ownerLoc);
         }
     }
 }

@@ -32,9 +32,6 @@ public class BotEvade {
     public boolean tick(Hero hero, BotController controller, LivingEntity threat) {
         LivingEntity self = controller.getEntity();
         if (self != null && self.isInsideVehicle()) {
-            if (WallDetection.isAboveVoid(controller.getLocation())) {
-                hero.onSneak();
-            }
             return true;
         }
 

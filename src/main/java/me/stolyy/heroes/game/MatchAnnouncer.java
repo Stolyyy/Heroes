@@ -1,32 +1,158 @@
 package me.stolyy.heroes.game;
 
+import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroManager;
+import me.stolyy.heroes.physics.Interactions;
 import me.stolyy.heroes.util.GameConfigManager;
+import me.stolyy.heroes.util.GameConfigManager.AnnouncerCue;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-/** Kill feed broadcasts, win-sound representative selection, and post-game summary messages. */
+/**
+ * Kill feed broadcasts, announcer voice lines, win-sound representative selection, and post-game
+ * summary messages.
+ */
 final class MatchAnnouncer {
     private static final int TOP_KILLER_COUNT = 3;
 
+    enum Event {
+        COUNTDOWN("countdown", false),
+        MATCH_START("match-start", false),
+        FIRST_BLOOD("first-blood", false),
+        LAST_LIFE("last-life", false),
+        VICTORY("victory", true),
+        DEFEAT("defeat", true);
+
+        private final String configKey;
+        private final boolean postMatch;
+
+        Event(String configKey, boolean postMatch) {
+            this.configKey = configKey;
+            this.postMatch = postMatch;
+        }
+
+        String configKey() { return configKey; }
+        boolean postMatch() { return postMatch; }
+    }
+
     private final Game game;
+    private final List<BukkitTask> pendingTasks = new ArrayList<>();
+    private boolean firstBloodAnnounced;
+    private boolean cleaned;
 
     MatchAnnouncer(Game game) {
         this.game = game;
     }
+
+    // --- Announcer voice lines ---
+
+    void onCountdownStart() {
+        announce(Event.COUNTDOWN, game::onlinePlayers);
+    }
+
+    void onMatchStart() {
+        announce(Event.MATCH_START, game::onlinePlayers);
+    }
+
+    void onCreditedKill() {
+        if (firstBloodAnnounced) return;
+        firstBloodAnnounced = true;
+        announce(Event.FIRST_BLOOD, game::onlinePlayers);
+    }
+
+    void onLastLife(Player participant) {
+        if (!Interactions.isRealPlayer(participant)) return;
+        UUID targetId = participant.getUniqueId();
+        announce(Event.LAST_LIFE, () -> {
+            Player p = Bukkit.getPlayer(targetId);
+            return p != null ? List.of(p) : List.of();
+        });
+    }
+
+    void onMatchEnd(Team winningTeam) {
+        Set<UUID> victoryAudience = new HashSet<>();
+        Set<UUID> defeatAudience = new HashSet<>();
+        for (Player p : game.onlinePlayers()) {
+            if (!Interactions.isRealPlayer(p)) continue;
+            TeamColor original = game.originalColor(p.getUniqueId());
+            if (original == null || original == TeamColor.SPECTATOR || original == winningTeam.color()) {
+                victoryAudience.add(p.getUniqueId());
+            } else {
+                defeatAudience.add(p.getUniqueId());
+            }
+        }
+        announce(Event.VICTORY, () -> resolvePlayers(victoryAudience));
+        announce(Event.DEFEAT, () -> resolvePlayers(defeatAudience));
+    }
+
+    void cancelTasks() {
+        pendingTasks.forEach(BukkitTask::cancel);
+        pendingTasks.clear();
+    }
+
+    void markCleaned() {
+        cleaned = true;
+        cancelTasks();
+    }
+
+    private void announce(Event event, Supplier<Collection<Player>> audienceSupplier) {
+        AnnouncerCue cue = GameConfigManager.getAnnouncerCue(event.configKey());
+        if (cue.sound().isEmpty()) return;
+
+        long delayTicks = Math.round(cue.delayMs() / 50.0);
+        if (delayTicks <= 0) {
+            playToAudience(cue, audienceSupplier.get());
+            return;
+        }
+
+        BukkitTask[] holder = new BukkitTask[1];
+        BukkitTask task = Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
+            pendingTasks.remove(holder[0]);
+            if (cleaned) return;
+            if (!event.postMatch() && game.gameState() == GameState.ENDED) return;
+            playToAudience(cue, audienceSupplier.get());
+        }, delayTicks);
+        holder[0] = task;
+        pendingTasks.add(task);
+    }
+
+    private void playToAudience(AnnouncerCue cue, Collection<Player> audience) {
+        for (Player p : audience) {
+            if (!p.isOnline() || !Interactions.isRealPlayer(p)) continue;
+            if (GameManager.getEntityGame(p.getUniqueId()) != game) continue;
+            cue.sound().playPersonal(p);
+        }
+    }
+
+    private static List<Player> resolvePlayers(Set<UUID> uuids) {
+        List<Player> out = new ArrayList<>(uuids.size());
+        for (UUID id : uuids) {
+            Player p = Bukkit.getPlayer(id);
+            if (p != null) out.add(p);
+        }
+        return out;
+    }
+
+    // --- Kill feed & end-of-game summaries ---
 
     void broadcastKill(UUID creditId, @Nullable GamePlayer killerGp, String fallbackKillerName, Player victim) {
         String killerName = killerGp != null ? participantName(killerGp) : fallbackKillerName;

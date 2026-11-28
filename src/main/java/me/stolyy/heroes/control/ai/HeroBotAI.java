@@ -2,6 +2,7 @@ package me.stolyy.heroes.control.ai;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.control.BotController;
+import me.stolyy.heroes.control.strategy.DashSafety;
 import me.stolyy.heroes.control.strategy.Strategy;
 import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.hero.Hero;
@@ -78,6 +79,10 @@ public class HeroBotAI implements BotAI {
 
         LivingEntity self = controller.getEntity();
         if (self == null) return;
+
+        if (DashSafety.shouldDismountRide(hero, controller)) {
+            hero.onSneak();
+        }
 
         if (target != null && (!target.isValid() || target.isDead() || !GameManager.canTarget(self, target))) {
             target = null;

@@ -5,6 +5,7 @@ import me.stolyy.heroes.ability.kit.bug.CharmConfig;
 import me.stolyy.heroes.command.HeroesCommand;
 import me.stolyy.heroes.command.admin.BalanceCommand;
 import me.stolyy.heroes.command.admin.ForceEndCommand;
+import me.stolyy.heroes.command.admin.ForceHeroCommand;
 import me.stolyy.heroes.command.admin.ForceReadyCommand;
 import me.stolyy.heroes.command.admin.MapAdminCommand;
 import me.stolyy.heroes.command.admin.MapPoolCommand;
@@ -21,14 +22,20 @@ import me.stolyy.heroes.command.general.PartyChatCommand;
 import me.stolyy.heroes.command.general.PartyCommand;
 import me.stolyy.heroes.command.general.PracticeCommand;
 import me.stolyy.heroes.command.general.SetHeroCommand;
+import me.stolyy.heroes.command.general.SettingsCommand;
+import me.stolyy.heroes.command.general.ShardsCommand;
+import me.stolyy.heroes.command.general.SkinCommand;
 import me.stolyy.heroes.command.general.SkipMapCommand;
 import me.stolyy.heroes.command.general.SpectateCommand;
 import me.stolyy.heroes.command.general.StatsCommand;
 import me.stolyy.heroes.command.general.StuckCommand;
 import me.stolyy.heroes.command.general.VersionCommand;
+import me.stolyy.heroes.discord.DiscordBot;
 import me.stolyy.heroes.game.AutoSpectate;
 import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.game.MapSkipPoll;
+import me.stolyy.heroes.game.MatchLog;
+import me.stolyy.heroes.game.PlayerVisibility;
 import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.game.SpawnProtection;
 import me.stolyy.heroes.game.map.GameMapManager;
@@ -37,6 +44,7 @@ import me.stolyy.heroes.game.queue.QueueManager;
 import me.stolyy.heroes.hero.HeroBuilder;
 import me.stolyy.heroes.hero.HeroConfig;
 import me.stolyy.heroes.hero.HeroManager;
+import me.stolyy.heroes.hero.mechanics.LobbyMobility;
 import me.stolyy.heroes.hero.minion.MinionManager;
 import me.stolyy.heroes.listener.ChatFormatListener;
 import me.stolyy.heroes.listener.HungerListener;
@@ -52,6 +60,7 @@ import me.stolyy.heroes.util.BotConfig;
 import me.stolyy.heroes.util.BotNameManager;
 import me.stolyy.heroes.util.GameConfigManager;
 import me.stolyy.heroes.util.GameModeConfigManager;
+import me.stolyy.heroes.vfx.cosmetic.CosmeticManager;
 import me.stolyy.heroes.vfx.effect.AbstractDisplayBuilder;
 import me.stolyy.heroes.vfx.effect.BloodTrail;
 import me.stolyy.heroes.vfx.effect.DisplayTags;
@@ -59,11 +68,14 @@ import me.stolyy.heroes.vfx.glow.TeamGlow;
 import me.stolyy.heroes.vfx.ui.gui.GUIManager;
 import me.stolyy.heroes.vfx.ui.prompt.PromptManager;
 import me.stolyy.heroes.vfx.ui.visual.BoardDisplay;
+import me.stolyy.heroes.vfx.ui.visual.DiscordStatus;
 import me.stolyy.heroes.vfx.ui.visual.EloBoardSource;
 import me.stolyy.heroes.vfx.ui.visual.HeroNpcLevelTags;
+import me.stolyy.heroes.vfx.ui.visual.HeroNpcSkins;
 import me.stolyy.heroes.vfx.ui.visual.LevelBoardSource;
 import me.stolyy.heroes.vfx.ui.visual.LobbyScoreboard;
 import me.stolyy.heroes.vfx.ui.visual.MemorialDisplays;
+import me.stolyy.heroes.vfx.ui.visual.SkinMuseum;
 import me.stolyy.heroes.vfx.ui.visual.TabList;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -89,6 +101,7 @@ public final class Heroes extends JavaPlugin {
     private static Heroes instance;
     private static Location lobbyLocation;
     private static MemorialDisplays memorialDisplays;
+    private static SkinMuseum skinMuseum;
 
     public static Heroes getInstance() {
         return instance;
@@ -113,10 +126,11 @@ public final class Heroes extends JavaPlugin {
         GameModeConfigManager.reload();
         ProgressionConfig.load();
         GameMapManager.initialize();
-        PlayerStatsManager.initialize();
         extractHeroResources();
         AbilityRegistry.registerAll();
         HeroConfig.load();
+        // After HeroConfig.load(): async board seeding computes smashLevel(), which filters admin-only heroes.
+        PlayerStatsManager.initialize();
         CharmConfig.load();
         HeroBuilder.validateAll();
         BotNameManager.load();
@@ -124,6 +138,7 @@ public final class Heroes extends JavaPlugin {
         Interactions.initialize();
         HeroManager.initialize();
         GameManager.initialize();
+        MatchLog.initialize();
         GameManager.onRosterChange(TabList::refreshAll);
         QueueManager.initialize();
         PartyManager.initialize();
@@ -142,16 +157,23 @@ public final class Heroes extends JavaPlugin {
 
         NpcManager.initialize();
         HeroNpcLevelTags.initialize();
+        HeroNpcSkins.initialize();
+        SkinMuseum.initialize();
         PracticeManager.initialize();
+        DiscordStatus.start();
+        DiscordBot.start();
         AbstractDisplayBuilder.sweepOrphans();
 
         new BoardDisplay<>(new EloBoardSource(), DisplayTags.LEADERBOARD);
         new BoardDisplay<>(new LevelBoardSource(), DisplayTags.LEVEL_LEADERBOARD);
         memorialDisplays = new MemorialDisplays();
+        skinMuseum = new SkinMuseum();
         Bukkit.getScheduler().runTaskLater(this, () -> {
             NpcManager.spawnLobbyNpcs();
+            HeroNpcSkins.refreshAll();
             BoardDisplay.spawnAll();
             memorialDisplays.spawn();
+            skinMuseum.spawn();
             PracticeManager.spawnDummies();
         }, 20L);
 
@@ -160,9 +182,12 @@ public final class Heroes extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        DiscordBot.shutdown();
+        DiscordStatus.shutdown();
         GUIManager.clear();
         MapSkipPoll.clear();
         GameManager.clear();
+        MatchLog.clear();
         HeroManager.clear();
         MinionManager.clear();
         PracticeManager.clear();
@@ -172,11 +197,13 @@ public final class Heroes extends JavaPlugin {
         SpawnProtection.clear();
         BoardDisplay.despawnAll();
         if (memorialDisplays != null) memorialDisplays.despawn();
+        if (skinMuseum != null) skinMuseum.despawn();
         HeroNpcLevelTags.clearAll();
         NpcManager.clear();
         TeamGlow.shutdown();
         PlayerStatsManager.shutdown();
         HeroConfig.clear();
+        CosmeticManager.clearPreviews();
         BloodTrail.clear();
         AbstractDisplayBuilder.sweepOrphans();
         Bukkit.getScheduler().cancelTasks(this);
@@ -207,9 +234,13 @@ public final class Heroes extends JavaPlugin {
         registerCommand(new BalanceCommand());
         registerCommand(new ForceReadyCommand());
         registerCommand(new ForceEndCommand());
+        registerCommand(new ForceHeroCommand());
         registerCommand(new UnlockCommand());
         registerCommand(new TokenCommand());
         registerCommand(new PracticeCommand());
+        registerCommand(new SettingsCommand());
+        registerCommand(new ShardsCommand());
+        registerCommand(new SkinCommand());
         registerCommand(new VersionCommand());
         registerCommand(new RestartCommand());
         registerCommand(new SkipMapCommand());
@@ -248,10 +279,10 @@ public final class Heroes extends JavaPlugin {
         }
         PracticeManager.exitPractice(player, false);
         player.teleport(lobbyLocation);
+        PlayerVisibility.refreshVisibility(player);
         player.getInventory().clear();
 
-        player.setFlying(false);
-        player.setAllowFlight(false);
+        LobbyMobility.apply(player);
         player.setFoodLevel(20);
         player.setExp(0);
         player.setLevel(0);
@@ -261,8 +292,10 @@ public final class Heroes extends JavaPlugin {
         }
 
         Bukkit.getScheduler().runTaskLater(getInstance(), () -> {
-            if (GameManager.isPlayerInGame(player)) return;
+            if (!player.isOnline() || GameManager.isPlayerInGame(player) || PracticeManager.isPracticing(player)) return;
             player.setGameMode(GameMode.ADVENTURE);
+            // setGameMode(ADVENTURE) clears allowFlight in Bukkit, so re-arm lobby mobility after applying it.
+            LobbyMobility.apply(player);
         }, 1L);
         LobbyScoreboard.apply(player);
         LobbyScoreboard.refreshAll();

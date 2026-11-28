@@ -23,6 +23,7 @@ abilities:
   primary:
     type: shoopprimary
     name: LAZOR
+    description: Fire rapid piercing bolts that charge up your secondary laser.
     cooldown: 0.34
     damage: 2.0
     knockback: 1.0
@@ -45,7 +46,7 @@ abilities:
   secondary:
     type: shoopsecondary
     name: other laser
-    description:
+    description: Discharge all stored charges into a piercing laser that hits harder at higher charge.
     charges: 1
     range: 100
     radius: 1.0
@@ -124,6 +125,7 @@ abilities:
   smash:
     type: shoopsmash
     name: IMA FARMER IN MALAYSIA
+    description: Unleash a colossal continuous laser beam that sweeps enemies off the stage.
     cooldown: 110
     windup: 1.0
     active_duration: 3.0
@@ -165,8 +167,8 @@ abilities:
   
   passives:
   - type: shooprtl
-    name: null
-    description: null
+    name: Ride The Lightning
+    description: Spend energy to ride a bolt of lightning where you aim — sneak again to hop off early.
     activation: SNEAK
     cooldown_starts: RESOLVE
     energy_cost: 60
@@ -223,6 +225,7 @@ movement:
   - action: sneak # Return To Ludus — mounts the rideable rocket toward the aim
     priority: 1
     delay_after_ticks: 20 # FILL — the ride needs time to carry before the next decision
+    evade_only: true
   - action: jump
     priority: 2
     delay_after_ticks: 8 # FILL

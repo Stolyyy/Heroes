@@ -54,7 +54,7 @@ public final class ErrorReporter {
 
         String json = "{\"embeds\":[{\"title\":\"" + DiscordWebhook.escape(title)
                 + "\",\"description\":\"" + DiscordWebhook.escape(description.toString()) + "\",\"color\":15158332,\"footer\":{\"text\":\"Heroes "
-                + DiscordWebhook.escape(Heroes.version()) + "\"}}]}";
+                + DiscordWebhook.escape(Heroes.version()) + "\"}}],\"allowed_mentions\":{\"parse\":[]}}";
         DiscordWebhook.post(url, json);
     }
 

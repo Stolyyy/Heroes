@@ -1,5 +1,6 @@
 package me.stolyy.heroes.ability.kit.pochita;
 
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.Ability;
 import me.stolyy.heroes.ability.template.BaseAbility;
@@ -80,6 +81,7 @@ public class ChainRev extends BaseAbility {
         hitbox = Hitbox.sphere(hero.getController().getCenter(), radius)
                 .exclude(self)
                 .excludeTeammates(self)
+                .filter(victim -> PracticeManager.isWithinPracticeBounds(hero, victim.getLocation()))
                 .trackHits(hitIntervalMs)
                 .onHit(victim -> {
                     hitSound.play(victim.getEyeLocation(), hero.getController());

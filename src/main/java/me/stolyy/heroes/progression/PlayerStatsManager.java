@@ -3,6 +3,7 @@ package me.stolyy.heroes.progression;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.GameMode;
 import me.stolyy.heroes.physics.Interactions;
+import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.vfx.ui.visual.BoardDisplay;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
@@ -147,7 +148,12 @@ public class PlayerStatsManager {
     public static void saveStats(UUID playerId) {
         PlayerStats stats = cache.get(playerId);
         if (stats == null) return;
+        saveStats(stats);
+    }
 
+    /** Persists a stats instance (cached or offline-loaded) to disk and refreshes the board snapshot. */
+    public static void saveStats(PlayerStats stats) {
+        UUID playerId = stats.playerId();
         File file = new File(statsFolder, playerId + ".yml");
         YamlConfiguration config = new YamlConfiguration();
         serializeStats(stats, config);
@@ -156,7 +162,9 @@ public class PlayerStatsManager {
         // keeps the index current for a player about to be evicted from the cache on quit.
         // On the async autosave thread this reads the same live fields serializeStats just read;
         // no new exposure beyond the pre-existing autosave pattern.
-        boardIndex.put(playerId, BoardEntry.of(stats));
+        if (stats.lastKnownName() != null) {
+            boardIndex.put(playerId, BoardEntry.of(stats));
+        }
 
         try {
             config.save(file);
@@ -192,10 +200,26 @@ public class PlayerStatsManager {
         config.set("equipped-charms", stats.equippedCharms().stream().toList());
         config.set("token-balance", stats.getTokenBalance());
         config.set("season-champion", stats.isSeasonChampion());
+        config.set("chat-pings", stats.isChatPingsEnabled());
         config.set("unlocked-heroes", new ArrayList<>(stats.getUnlockedHeroes()));
         for (Map.Entry<String, String> skinEntry : stats.selectedSkins().entrySet()) {
             config.set("selected-skins." + skinEntry.getKey(), skinEntry.getValue());
         }
+        for (Map.Entry<String, Set<String>> ownedEntry : stats.ownedSkins().entrySet()) {
+            if (!ownedEntry.getValue().isEmpty()) {
+                config.set("owned-skins." + ownedEntry.getKey(), new ArrayList<>(ownedEntry.getValue()));
+            }
+        }
+        for (Map.Entry<ShardKind, Map<HeroSkin.Rarity, Integer>> kindEntry : stats.shards().entrySet()) {
+            String kindKey = kindEntry.getKey().storageKey();
+            for (Map.Entry<HeroSkin.Rarity, Integer> rarityEntry : kindEntry.getValue().entrySet()) {
+                if (rarityEntry.getValue() > 0) {
+                    config.set("shards." + kindKey + "." + rarityEntry.getKey().name().toLowerCase(Locale.ROOT),
+                            rarityEntry.getValue());
+                }
+            }
+        }
+        config.set("shard-pity", stats.getShardPity());
 
         for (Map.Entry<GameMode, Integer> entry : stats.elo().entrySet()) {
             config.set("elo." + entry.getKey().name(), entry.getValue());
@@ -244,6 +268,7 @@ public class PlayerStatsManager {
         // seed — that IS the migration path for existing players.
         stats.setTokenBalance(config.getInt("token-balance", ProgressionConfig.getStartingTokens()));
         stats.setSeasonChampion(config.getBoolean("season-champion", false));
+        stats.setChatPingsEnabled(config.getBoolean("chat-pings", true));
         List<String> unlocked = config.getStringList("unlocked-heroes");
         if (unlocked.isEmpty()) {
             stats.setUnlockedHeroes(new HashSet<>(ProgressionConfig.getStartingHeroes()));
@@ -254,6 +279,40 @@ public class PlayerStatsManager {
         if (skinsSection != null) {
             for (String heroName : skinsSection.getKeys(false)) {
                 stats.setSkinForHero(heroName, skinsSection.getString(heroName));
+            }
+        }
+        ConfigurationSection ownedSkinsSection = config.getConfigurationSection("owned-skins");
+        if (ownedSkinsSection != null) {
+            for (String heroName : ownedSkinsSection.getKeys(false)) {
+                for (String skinId : ownedSkinsSection.getStringList(heroName)) {
+                    stats.grantSkin(heroName, skinId);
+                }
+            }
+        }
+        stats.setShardPity(config.getInt("shard-pity", 0));
+        ConfigurationSection shardsSection = config.getConfigurationSection("shards");
+        if (shardsSection != null) {
+            for (String kindKey : shardsSection.getKeys(false)) {
+                ShardKind kind;
+                try {
+                    kind = ShardKind.valueOf(kindKey.toUpperCase(Locale.ROOT));
+                } catch (IllegalArgumentException e) {
+                    Heroes.getInstance().getLogger().warning(
+                            "Ignoring unknown shard kind '" + kindKey + "' in stats for " + playerId);
+                    continue;
+                }
+                ConfigurationSection raritySection = shardsSection.getConfigurationSection(kindKey);
+                if (raritySection == null) continue;
+                for (String rarityKey : raritySection.getKeys(false)) {
+                    try {
+                        HeroSkin.Rarity rarity = HeroSkin.Rarity.valueOf(rarityKey.toUpperCase(Locale.ROOT));
+                        int count = raritySection.getInt(rarityKey, 0);
+                        if (count > 0) stats.setShardCount(kind, rarity, count);
+                    } catch (IllegalArgumentException e) {
+                        Heroes.getInstance().getLogger().warning(
+                                "Ignoring unknown shard rarity '" + rarityKey + "' in stats for " + playerId);
+                    }
+                }
             }
         }
 
@@ -322,6 +381,14 @@ public class PlayerStatsManager {
                     Heroes.getInstance().getLogger().warning(
                             "Ignoring unknown GameMode '" + modeName + "' in mode stats for " + playerId);
                 }
+            }
+        }
+
+        // Migration for older player files: any hero already at or above the master level owns masterskin.
+        int masterLevel = ProgressionConfig.getMasterSkinLevel();
+        for (Map.Entry<String, HeroLevel> entry : stats.heroLevels().entrySet()) {
+            if (entry.getValue().level() >= masterLevel) {
+                stats.grantSkin(entry.getKey(), "masterskin");
             }
         }
 

@@ -3,9 +3,11 @@ package me.stolyy.heroes.util;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.GameMode;
 import me.stolyy.heroes.game.PracticeArena;
+import me.stolyy.heroes.vfx.effect.SoundEffect;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Location;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -13,16 +15,24 @@ import org.bukkit.util.Vector;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
  * Central loader and typed accessor for {@code game-config.yml} and {@code messages.yml}.
  */
 public class GameConfigManager {
-    private static FileConfiguration gameConfig;
-    private static FileConfiguration messagesConfig;
+    public record AnnouncerCue(int delayMs, SoundEffect sound) {
+        public static final AnnouncerCue SILENT = new AnnouncerCue(0, SoundEffect.NONE);
+    }
+
+    private static volatile FileConfiguration gameConfig;
+    private static volatile FileConfiguration messagesConfig;
     private static List<PracticeArena> practiceArenas;
+    private static SoundEffect chatPingSound;
+    private static Map<String, AnnouncerCue> announcerCues = Map.of();
 
     /** Loads (or extracts defaults for) {@code game-config.yml}, {@code messages.yml}, and {@code templates.yml}. */
     public static void reload() {
@@ -30,7 +40,30 @@ public class GameConfigManager {
         gameConfig = loadOrCreateConfig(plugin, "game-config.yml");
         messagesConfig = loadOrCreateConfig(plugin, "messages.yml");
         practiceArenas = null;
+        chatPingSound = null;
         TemplateConfig.reload();
+        announcerCues = loadAnnouncerCues(gameConfig);
+    }
+
+    private static Map<String, AnnouncerCue> loadAnnouncerCues(FileConfiguration cfg) {
+        ConfigurationSection root = cfg.getConfigurationSection("announcer");
+        if (root == null) return Map.of();
+        Map<String, AnnouncerCue> parsed = new HashMap<>();
+        for (String eventKey : root.getKeys(false)) {
+            ConfigurationSection eventSec = Configs.requireSection(root, eventKey);
+            int delayMs = Configs.requireInt(eventSec, "delay-ms");
+            if (delayMs < 0) {
+                throw new IllegalStateException("announcer." + eventKey + ".delay-ms must be >= 0, got " + delayMs);
+            }
+            SoundEffect sound = SoundEffect.optional(eventSec, "sound");
+            parsed.put(eventKey.toLowerCase(Locale.ROOT), new AnnouncerCue(delayMs, sound));
+        }
+        return parsed;
+    }
+
+    /** Returns the parsed announcer cue for {@code eventKey}, or {@link AnnouncerCue#SILENT} when unconfigured. */
+    public static AnnouncerCue getAnnouncerCue(String eventKey) {
+        return announcerCues.getOrDefault(eventKey.toLowerCase(Locale.ROOT), AnnouncerCue.SILENT);
     }
 
     private static FileConfiguration loadOrCreateConfig(Heroes plugin, String fileName) {
@@ -114,6 +147,13 @@ public class GameConfigManager {
     /** Cap on bots addable via the custom game GUI's Add Bot button (map-change carryover ignores this). */
     public static int getMaxBotsPerGame() { return Configs.requireInt(gameConfig, "bots.max-per-game"); }
 
+    // --- Team Balance ---
+
+    /** Rolling window (in hours) of recent Custom matches used for auto-balance session scores. */
+    public static double getTeamBalanceSessionWindowHours() {
+        return Configs.requireDouble(gameConfig, "team-balance.session-window-hours");
+    }
+
     // --- Rating (see EloCalculator) ---
 
     public static int getStartingElo() { return Configs.requireInt(gameConfig, "elo.starting-elo"); }
@@ -134,6 +174,59 @@ public class GameConfigManager {
     /** Fraction of K removed at (or beyond) the gap cap. */
     public static double getEloMaxGapReduction() {
         return Configs.requireDouble(gameConfig, "elo.team-gap-damping.max-reduction");
+    }
+
+    // --- Chat pings ---
+
+    public static String getChatPingHighlightColor() {
+        return Configs.requireString(gameConfig, "chat.pings.highlight-color");
+    }
+
+    public static SoundEffect getChatPingSound() {
+        if (chatPingSound == null) {
+            chatPingSound = new SoundEffect(Configs.requireSection(gameConfig, "chat.pings.sound"));
+        }
+        return chatPingSound;
+    }
+
+    // --- Discord webhooks ---
+
+    public static String getDiscordStatusWebhook() {
+        return gameConfig.getString("discord.status.webhook", "");
+    }
+
+    public static int getDiscordStatusUpdateSeconds() {
+        return Configs.requireInt(gameConfig, "discord.status.update-seconds");
+    }
+
+    public static String getDiscordStatusOfflineText() {
+        return Configs.requireString(gameConfig, "discord.status.offline-text");
+    }
+
+    public static String getDiscordMasteryWebhook() {
+        return gameConfig.getString("discord.mastery-webhook", "");
+    }
+
+    // --- Discord bot ---
+
+    public static String getDiscordBotToken() {
+        return gameConfig.getString("discord.bot.token", "");
+    }
+
+    public static String getDiscordBotGuildId() {
+        return gameConfig.getString("discord.bot.guild-id", "");
+    }
+
+    public static String getDiscordBotChannelId() {
+        return gameConfig.getString("discord.bot.channel-id", "");
+    }
+
+    public static int getDiscordBotCommandCooldownSeconds() {
+        return Configs.requireInt(gameConfig, "discord.bot.command-cooldown-seconds");
+    }
+
+    public static int getDiscordBotGamesLookbackMonths() {
+        return Configs.requireInt(gameConfig, "discord.bot.games-lookback-months");
     }
 
     /** Formats a required message from {@code messages.yml} using legacy {@code &} color codes. */

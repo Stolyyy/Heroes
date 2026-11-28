@@ -1,22 +1,20 @@
 package me.stolyy.heroes.ability.kit.marauder;
 
 import me.stolyy.heroes.hero.Hero;
+import me.stolyy.heroes.hero.mechanics.StatusEffects;
 import me.stolyy.heroes.ability.template.Hitscan;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.physics.Interactions;
-import me.stolyy.heroes.physics.Stun;
-import me.stolyy.heroes.util.Configs;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.LivingEntity;
 
 public class MarauderGrip extends Hitscan {
-    private final Stun stun;
+    private final StatusEffects.Spec status;
 
     public MarauderGrip(ConfigurationSection config, HeroSkin skin) {
         super(config, skin);
-        long stunDuration = (long) (Configs.requireDouble(this.config, "stun_duration") * 1000);
-        this.stun = new Stun(stunDuration, this::pull);
+        this.status = StatusEffects.Spec.fromConfig(this.config);
     }
 
     @Override
@@ -30,27 +28,22 @@ public class MarauderGrip extends Hitscan {
         hit(attacker, victim)
                 .damage(calcDamage(attacker, victim))
                 .execute();
-        stun.apply(victim);
+        StatusEffects.applyTo(victim, status, this, attacker, () -> pull(attacker, victim));
     }
 
     @Override
     protected void afterHit(Hero attacker, LivingEntity victim, Location hitLoc) {}
 
     @Override
-    protected void onRangedTick(Hero hero) {
-        stun.tick(hero);
-    }
-
-    @Override
     public void onDeath(Hero hero) {
         super.onDeath(hero);
-        stun.releaseAll();
+        StatusEffects.removeAllFrom(this);
     }
 
     @Override
     public void onOwnerLost(Hero hero) {
         super.onOwnerLost(hero);
-        stun.releaseAll();
+        StatusEffects.removeAllFrom(this);
     }
 
     private void pull(Hero attacker, LivingEntity victim) {

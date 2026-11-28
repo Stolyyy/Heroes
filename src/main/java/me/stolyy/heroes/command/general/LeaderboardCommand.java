@@ -6,6 +6,7 @@ import me.stolyy.heroes.game.GameMode;
 import me.stolyy.heroes.hero.HeroConfig;
 import me.stolyy.heroes.progression.PlayerStatsManager;
 import me.stolyy.heroes.progression.PlayerStatsManager.Stat;
+import me.stolyy.heroes.progression.StatsFormat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
@@ -67,11 +68,8 @@ public class LeaderboardCommand extends HeroesCommand {
         boolean statBoard = !levelBoard && stat != null;
         if (!levelBoard && !statBoard && mode == null) mode = GameMode.ONE_V_ONE;
 
-        List<PlayerStatsManager.LeaderboardEntry> entries = levelBoard
-                ? PlayerStatsManager.getTopByLevel(hero, page * ENTRIES_PER_PAGE)
-                : statBoard
-                    ? PlayerStatsManager.getTopByStat(stat, mode, page * ENTRIES_PER_PAGE)
-                    : PlayerStatsManager.getTopPlayers(mode, page * ENTRIES_PER_PAGE);
+        List<PlayerStatsManager.LeaderboardEntry> entries = StatsFormat.queryLeaderboard(
+                levelBoard, hero, statBoard ? stat : null, mode, page * ENTRIES_PER_PAGE);
         int totalEntries = entries.size();
         int totalPages = Math.max(1, (int) Math.ceil((double) totalEntries / ENTRIES_PER_PAGE));
         if (page > totalPages) page = totalPages;
@@ -79,11 +77,12 @@ public class LeaderboardCommand extends HeroesCommand {
         int startIndex = (page - 1) * ENTRIES_PER_PAGE;
         int endIndex = Math.min(startIndex + ENTRIES_PER_PAGE, totalEntries);
 
-        player.sendMessage(Component.text("=== " + title(levelBoard, hero, stat, mode) + " - Page " + page + " ===", NamedTextColor.GOLD));
+        player.sendMessage(Component.text("=== " + StatsFormat.leaderboardTitle(levelBoard, hero, statBoard ? stat : null, mode)
+                + " - Page " + page + " ===", NamedTextColor.GOLD));
 
         for (int i = startIndex; i < endIndex; i++) {
             PlayerStatsManager.LeaderboardEntry entry = entries.get(i);
-            String value = levelBoard ? "Lv. " + entry.value() : String.valueOf(entry.value());
+            String value = StatsFormat.leaderboardValue(levelBoard, entry.value());
             player.sendMessage(
                 Component.text("#" + (i + 1) + " ", NamedTextColor.YELLOW)
                     .append(Component.text(entry.name(), NamedTextColor.WHITE))
@@ -93,12 +92,6 @@ public class LeaderboardCommand extends HeroesCommand {
         }
 
         player.sendMessage(Component.text("Page " + page + "/" + totalPages + " - " + getUsage(), NamedTextColor.GRAY));
-    }
-
-    private static String title(boolean levelBoard, String hero, Stat stat, GameMode mode) {
-        if (levelBoard) return "Level Leaderboard (" + (hero == null ? "Overall" : HeroConfig.formatName(hero)) + ")";
-        if (stat != null) return stat.displayName() + " Leaderboard (" + (mode == null ? "All Modes" : mode.displayName()) + ")";
-        return "ELO Leaderboard (" + mode.displayName() + ")";
     }
 
     @Override

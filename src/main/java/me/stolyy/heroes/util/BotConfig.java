@@ -23,6 +23,7 @@ public final class BotConfig {
     private static int movementActionRecheckTicks;
     private static boolean jumpVeto;
     private static double reachMargin;
+    private static double headroomMaxCheck;
 
     private static double navReissueDistanceSq;
     private static double ringSlack;
@@ -32,6 +33,8 @@ public final class BotConfig {
     private static double velocityQuietSpeedSq;
     private static int jumpCooldownTicks;
     private static double chaseJumpHeightThreshold;
+    private static double stepOutMinRadius;
+    private static double stepOutMaxRadius;
 
     private static double evadeExitMultiplier;
     private static double evadeFleeMinBlocks;
@@ -60,6 +63,7 @@ public final class BotConfig {
         movementActionRecheckTicks = Configs.requireInt(config, "movement.action_recheck_ticks");
         jumpVeto = Configs.requireBoolean(config, "prevention.jump_veto");
         reachMargin = Configs.requireDouble(config, "prevention.reach_margin");
+        headroomMaxCheck = Configs.requireDouble(config, "prevention.headroom_max_check");
 
         double reissueDist = Configs.requireDouble(config, "navigation.reissue_distance");
         navReissueDistanceSq = reissueDist * reissueDist;
@@ -72,6 +76,8 @@ public final class BotConfig {
         velocityQuietSpeedSq = quietSpeed * quietSpeed;
         jumpCooldownTicks = Configs.requireInt(config, "navigation.jump_cooldown_ticks");
         chaseJumpHeightThreshold = Configs.requireDouble(config, "navigation.chase_jump_height_threshold");
+        stepOutMinRadius = Configs.requireDouble(config, "navigation.stepout_min_radius");
+        stepOutMaxRadius = Configs.requireDouble(config, "navigation.stepout_max_radius");
 
         evadeExitMultiplier = Configs.requireDouble(config, "evade.exit_multiplier");
         evadeFleeMinBlocks = Configs.requireDouble(config, "evade.flee_min_blocks");
@@ -99,6 +105,7 @@ public final class BotConfig {
 
     public static List<String> eligibleHeroes() {
         List<String> eligible = HeroConfig.getAvailableNames().stream()
+                .filter(name -> !HeroConfig.isAdminOnly(name))
                 .filter(BotConfig::isEligibleForBots)
                 .toList();
         if (eligible.isEmpty()) {
@@ -111,6 +118,7 @@ public final class BotConfig {
     public static int movementActionRecheckTicks() { return movementActionRecheckTicks; }
     public static boolean isJumpVetoEnabled() { return jumpVeto; }
     public static double preventionReachMargin() { return reachMargin; }
+    public static double preventionHeadroomMaxCheck() { return headroomMaxCheck; }
 
     public static double navReissueDistanceSq() { return navReissueDistanceSq; }
     public static double ringSlack() { return ringSlack; }
@@ -120,6 +128,8 @@ public final class BotConfig {
     public static double velocityQuietSpeedSq() { return velocityQuietSpeedSq; }
     public static int jumpCooldownTicks() { return jumpCooldownTicks; }
     public static double chaseJumpHeightThreshold() { return chaseJumpHeightThreshold; }
+    public static double stepOutMinRadius() { return stepOutMinRadius; }
+    public static double stepOutMaxRadius() { return stepOutMaxRadius; }
 
     public static double evadeExitMultiplier() { return evadeExitMultiplier; }
     public static double evadeFleeMinBlocks() { return evadeFleeMinBlocks; }

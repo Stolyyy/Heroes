@@ -3,6 +3,7 @@ package me.stolyy.heroes.hero;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.Game;
 import me.stolyy.heroes.game.GameManager;
+import me.stolyy.heroes.game.PracticeManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -169,7 +170,8 @@ public class AbilityListener implements Listener {
                     hero.useSecondary();
                 } else {
                     Game game = GameManager.getPlayerGame(p);
-                    if (game != null && game.ultimateEnabled(p.getUniqueId())) {
+                    if ((game != null && game.ultimateEnabled(p.getUniqueId()))
+                            || (game == null && PracticeManager.isPracticing(p))) {
                         hero.useSmash();
                     } else {
                         p.sendMessage(Component.text("Your team has ultimate abilities disabled!", NamedTextColor.RED));

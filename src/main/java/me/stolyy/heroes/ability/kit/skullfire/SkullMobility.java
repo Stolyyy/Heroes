@@ -38,10 +38,8 @@ public class SkullMobility extends DoubleJump {
     }
 
     @Override
-    public boolean performJump(Hero hero) {
-        if (isRooted()) return false;
-        if (hero.isRespawning()) return false;
-        if (jumpsUsed < maxJumps) return super.performJump(hero);
+    protected boolean executeJump(Hero hero) {
+        if (jumpsUsed < maxJumps) return super.executeJump(hero);
         else return performSkullJump(hero);
     }
 

@@ -23,6 +23,7 @@ abilities:
   primary:
     type: railgun
     name: Railgun
+    description: Fire a fast piercing shot that deals bonus damage on headshots.
     cooldown: 1.5
     damage: 8
     knockback: 2.5
@@ -56,6 +57,7 @@ abilities:
   secondary:
     type: satchel
     name: Satchel
+    description: Toss a sticky explosive charge — reactivate to detonate (or sneak-throw for an instant pop), blasting enemies or launching yourself.
     cooldown: 0.0 # throws are gated by STOCK charges only
     sneak_pop_delay_ticks: 2 # FILL — sneak-thrown satchels auto-detonate after this many ticks
     ammo:

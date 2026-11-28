@@ -1,6 +1,7 @@
 package me.stolyy.heroes.ability.template;
 
 import me.stolyy.heroes.ability.AbilityType;
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.physics.Interactions;
@@ -131,6 +132,7 @@ public abstract class Dash extends BaseAbility {
             this.hitbox = Hitbox.box(previousCenter, direction, radius * 2, radius * 2, radius)
                     .exclude(hero.getController().getEntity())
                     .excludeTeammates(hero.getController().getEntity())
+                    .filter(victim -> PracticeManager.isWithinPracticeBounds(hero, victim.getLocation()))
                     .onHit((victim, loc) -> onHit(hero, victim, lastSweepDirection));
 
             Map<UUID, Long> shared = sharedHitHistory();

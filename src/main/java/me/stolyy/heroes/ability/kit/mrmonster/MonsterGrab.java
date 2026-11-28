@@ -2,7 +2,7 @@ package me.stolyy.heroes.ability.kit.mrmonster;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.hero.Hero;
-import me.stolyy.heroes.hero.HeroManager;
+import me.stolyy.heroes.hero.mechanics.StatusEffects;
 import me.stolyy.heroes.ability.template.BaseAbility;
 import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
@@ -34,6 +34,8 @@ public class MonsterGrab extends BaseAbility {
     private final SoundEffect activationSound;
     private final SoundEffect grabSound;
     private final SoundEffect throwSound;
+    private final StatusEffects.Spec victimStatus;
+    private final StatusEffects.Spec selfStatus;
 
     private int armTicksLeft = -1;
     private boolean grabbing;
@@ -73,6 +75,8 @@ public class MonsterGrab extends BaseAbility {
         this.activationSound = new SoundEffect(Configs.requireSection(this.config, "visuals.activation_sound"));
         this.grabSound = new SoundEffect(Configs.requireSection(this.config, "visuals.grab_sound"));
         this.throwSound = new SoundEffect(Configs.requireSection(this.config, "visuals.throw_sound"));
+        this.victimStatus = StatusEffects.Spec.fromConfigIndefinite(this.config, "victim_status");
+        this.selfStatus = StatusEffects.Spec.fromConfigIndefinite(this.config, "self_status");
     }
 
     @Override
@@ -103,9 +107,8 @@ public class MonsterGrab extends BaseAbility {
         GRABBED.add(grabbed.getUniqueId());
         hero.getController().addPassenger(grabbed);
 
-        hero.setActionsLocked(true);
-        Hero victimHero = HeroManager.getHero(grabbed.getUniqueId());
-        if (victimHero != null) victimHero.setActionsLocked(true);
+        StatusEffects.applyTo(hero.getController().getEntity(), selfStatus, this, hero, null);
+        StatusEffects.applyTo(grabbed, victimStatus, this, hero, null);
 
         hero.setPrimaryOverride(() -> executeThrow(hero));
         grabSound.play(hero.getController().getLocation(), hero.getController());
@@ -160,10 +163,8 @@ public class MonsterGrab extends BaseAbility {
         if (held != null) {
             GRABBED.remove(held.getUniqueId());
             if (hero.getController() != null) hero.getController().removePassenger(held);
-            Hero victimHero = HeroManager.getHero(held.getUniqueId());
-            if (victimHero != null) victimHero.setActionsLocked(false);
         }
-        hero.setActionsLocked(false);
+        StatusEffects.removeAllFrom(this);
         hero.clearPrimaryOverride();
     }
 

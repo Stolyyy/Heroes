@@ -13,6 +13,7 @@ import me.stolyy.heroes.game.settings.GameSettings;
 import me.stolyy.heroes.game.settings.PlayerSettings;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroManager;
+import me.stolyy.heroes.hero.mechanics.LobbyMobility;
 import me.stolyy.heroes.hero.minion.MinionHero;
 import me.stolyy.heroes.hero.minion.MinionManager;
 import me.stolyy.heroes.npc.NpcServiceProvider;
@@ -153,8 +154,12 @@ public class Game {
         heroes.initPlayers();
         heroes.initBots();
 
+        for (Player p : onlinePlayers()) {
+            PlayerVisibility.refreshVisibility(p);
+        }
         PlayerVisibility.refreshGlow(this);
         AutoSpectate.onGameStarting(this);
+        announcer.onCountdownStart();
 
         BukkitTask startTask = Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
             if (gameState != GameState.STARTING) return;
@@ -162,6 +167,7 @@ public class Game {
             startedAt = System.currentTimeMillis();
             secondsLeft = settings.timer();
             visuals.update();
+            announcer.onMatchStart();
 
             activeTasks.add(Bukkit.getScheduler().runTaskTimer(Heroes.getInstance(), () -> {
                 if (gameState != GameState.IN_PROGRESS) return;
@@ -252,6 +258,7 @@ public class Game {
 
                 if (winningTeam != null) {
                     announcer.playWinSound(winningTeam);
+                    announcer.onMatchEnd(winningTeam);
                     Map<String, String> endPlaceholders = announcer.buildEndPlaceholders(winningTeam);
                     visuals.win(winningTeam, endPlaceholders);
                     announcer.sendSummaryToLosers(winningTeam, endPlaceholders);
@@ -266,6 +273,9 @@ public class Game {
         BoardDisplay.refreshAll();
 
         GameManager.removeFromActive(this);
+        for (Player p : onlinePlayers()) {
+            PlayerVisibility.refreshVisibility(p);
+        }
         if (seriesRound != null) {
             seriesRound.onEnd().accept(winningTeam);
         } else {
@@ -277,6 +287,7 @@ public class Game {
         activeTasks.forEach(BukkitTask::cancel);
         activeTasks.clear();
         visuals.cancelTasks();
+        announcer.cancelTasks();
         crystals.clear();
     }
 
@@ -406,6 +417,7 @@ public class Game {
     }
 
     public void cleanupWorld() {
+        announcer.markCleaned();
         stopMatchTasks();
         WorldInstances.deleteWorld(settings.map());
         GameManager.unregisterLive(this);
@@ -415,6 +427,7 @@ public class Game {
 
     public void addPlayer(Player player, TeamColor teamColor) {
         PracticeManager.exitPractice(player, false);
+        LobbyMobility.reset(player);
 
         if (gameState != GameState.WAITING) teamColor = TeamColor.SPECTATOR;
 
@@ -571,6 +584,17 @@ public class Game {
     }
 
     public void removeBot(UUID botUUID) {
+        detachBot(botUUID);
+        if (gameState == GameState.IN_PROGRESS || gameState == GameState.STARTING) checkEnd();
+    }
+
+    /**
+     * Removes a bot's roster and hero state without the end-of-match check. For
+     * {@link MatchHeroes#initBots()}, which runs one check after every bot has had its turn:
+     * mid-loop the bots still waiting are not in {@code aliveIds} yet, so a check there sees
+     * only the real players and ends the match on the spot.
+     */
+    void detachBot(UUID botUUID) {
         for (Team team : teams.values()) team.remove(botUUID);
         GamePlayer gamePlayer = gamePlayers.get(botUUID);
         if (gamePlayer != null) gamePlayer.markLeft();
@@ -579,7 +603,6 @@ public class Game {
         HeroManager.removeHero(botUUID);
         aliveIds.remove(botUUID);
         tickedHeroIds.remove(botUUID);
-        if (gameState == GameState.IN_PROGRESS || gameState == GameState.STARTING) checkEnd();
     }
 
     public void changeBotTeam(UUID botUUID, TeamColor teamColor) {
@@ -711,6 +734,7 @@ public class Game {
 
         if (killer != null) {
             GamePlayer killerGp = credit.recordKill(killer.getUniqueId(), player, killer.getName(), false);
+            announcer.onCreditedKill();
             if (killerGp != null) {
                 modeConfig.onKill().apply(killerGp, this);
                 if (checkEnd()) {
@@ -726,6 +750,9 @@ public class Game {
             eliminateParticipant(player, hero, deathLocation);
         } else {
             beginRespawn(player, gamePlayer, hero, killer, deathLocation);
+            if (modeConfig.deathOutcome().consumesLife() && gamePlayer.currentLives() == 1) {
+                announcer.onLastLife(player);
+            }
         }
         visuals.update();
         checkEnd();

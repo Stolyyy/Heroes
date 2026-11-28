@@ -4,21 +4,18 @@ import me.stolyy.heroes.command.HeroesCommand;
 import me.stolyy.heroes.command.TabComplete;
 import me.stolyy.heroes.game.GameMode;
 import me.stolyy.heroes.hero.HeroConfig;
-import me.stolyy.heroes.progression.AbilityStats;
 import me.stolyy.heroes.progression.HeroLevel;
-import me.stolyy.heroes.progression.HeroProgress;
 import me.stolyy.heroes.progression.ModeStats;
 import me.stolyy.heroes.progression.PlayerStats;
 import me.stolyy.heroes.progression.PlayerStatsManager;
+import me.stolyy.heroes.progression.StatsFormat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -50,7 +47,7 @@ public class StatsCommand extends HeroesCommand {
             sender.sendMessage(Component.text("No stats found for " + args[0] + ".", NamedTextColor.RED));
             return;
         }
-        String displayName = stats.lastKnownName() != null ? stats.lastKnownName() : args[0];
+        String displayName = StatsFormat.displayName(stats, args[0]);
 
         Filters filters = parseFilters(args, args.length);
         if (filters.unrecognized() != null) {
@@ -103,12 +100,7 @@ public class StatsCommand extends HeroesCommand {
                 stats.totalKills(), stats.totalDeaths()));
         sender.sendMessage(damageLine(stats.totalDamage(), stats.totalVoidDamage()));
 
-        String mostPlayed = stats.gamesPerHero().entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                .limit(3)
-                .map(e -> HeroConfig.formatName(e.getKey()) + " (" + e.getValue() + ")")
-                .reduce((a, b) -> a + ", " + b).orElse("none yet");
-        sender.sendMessage(line("Most played", mostPlayed));
+        sender.sendMessage(line("Most played", StatsFormat.mostPlayed(stats, 3)));
         sender.sendMessage(Component.text("More: /stats " + name + " <hero|1v1|2v2|custom>", NamedTextColor.DARK_GRAY));
     }
 
@@ -119,14 +111,7 @@ public class StatsCommand extends HeroesCommand {
         sender.sendMessage(recordLine(modeStats.totalWins(), modeStats.totalLosses(),
                 modeStats.totalKills(), modeStats.totalDeaths()));
         sender.sendMessage(damageLine(modeStats.totalDamage(), modeStats.totalVoidDamage()));
-
-        String perHero = modeStats.heroStats().entrySet().stream()
-                .sorted(Comparator.comparingInt((Map.Entry<String, HeroProgress> e)
-                        -> e.getValue().wins() + e.getValue().losses()).reversed())
-                .map(e -> HeroConfig.formatName(e.getKey()) + " "
-                        + e.getValue().wins() + "W-" + e.getValue().losses() + "L")
-                .reduce((a, b) -> a + " | " + b).orElse("none yet");
-        sender.sendMessage(line("Heroes", perHero));
+        sender.sendMessage(line("Heroes", StatsFormat.modeHeroes(modeStats)));
     }
 
     private void sendHeroView(CommandSender sender, PlayerStats stats, String name, String hero, GameMode mode) {
@@ -134,30 +119,17 @@ public class StatsCommand extends HeroesCommand {
         header(sender, name + " — " + heroDisplay + (mode != null ? " (" + mode.displayName() + ")" : ""));
 
         HeroLevel level = stats.getHeroLevel(hero);
-        sender.sendMessage(line("Level", level.level() + " (" + level.xp() + " xp into level)"));
+        sender.sendMessage(line("Level", StatsFormat.heroLevel(level)));
 
         PlayerStats.HeroSummary summary = stats.summarizeHero(hero, mode);
         sender.sendMessage(recordLine(summary.wins(), summary.losses(), summary.kills(), summary.deaths()));
         sender.sendMessage(damageLine(summary.damage(), summary.voidDamage()));
 
         if (mode == null) {
-            List<String> perMode = new ArrayList<>();
-            for (GameMode m : GameMode.values()) {
-                HeroProgress progress = stats.findHeroStats(m, hero);
-                if (progress == null || progress.wins() + progress.losses() == 0) continue;
-                perMode.add(m.displayName() + " " + progress.wins() + "W-" + progress.losses() + "L");
-            }
-            sender.sendMessage(line("Per mode", perMode.isEmpty() ? "none yet" : String.join(" | ", perMode)));
+            sender.sendMessage(line("Per mode", StatsFormat.heroPerMode(stats, hero)));
         }
 
-        String topAbilities = summary.abilities().entrySet().stream()
-                .sorted(Comparator.comparingDouble((Map.Entry<String, AbilityStats> e)
-                        -> e.getValue().damage()).reversed())
-                .limit(4)
-                .map(e -> e.getKey() + " " + fmt(e.getValue().damage()) + " dmg ("
-                        + e.getValue().kills() + " kills)")
-                .reduce((a, b) -> a + ", " + b).orElse("none yet");
-        sender.sendMessage(line("Top abilities", topAbilities));
+        sender.sendMessage(line("Top abilities", StatsFormat.topAbilities(summary, 4)));
     }
 
     private void sendAbilityView(CommandSender sender, PlayerStats stats, String name,
@@ -190,16 +162,11 @@ public class StatsCommand extends HeroesCommand {
     }
 
     private Component recordLine(int wins, int losses, int kills, int deaths) {
-        String kd = deaths > 0 ? String.format("%.2f", kills / (double) deaths) : "∞";
-        return line("Record", wins + "W-" + losses + "L   K/D: " + kills + "/" + deaths + " (" + kd + ")");
+        return line("Record", StatsFormat.record(wins, losses, kills, deaths));
     }
 
     private Component damageLine(double damage, double voidDamage) {
-        return line("Damage", fmt(damage) + " (void " + fmt(voidDamage) + ")");
-    }
-
-    private String fmt(double d) {
-        return String.valueOf(Math.round(d));
+        return line("Damage", StatsFormat.damage(damage, voidDamage));
     }
 
     // -----------------------------------------------------------------------

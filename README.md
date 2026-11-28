@@ -16,6 +16,7 @@ A fast-paced arena PvP minigame plugin for **PaperMC**, inspired by Hypixel's *S
   - **`/practice`** arena with knockback target dummies for testing kits and balance changes.
 - **Bot AI** — Citizens-backed bots with recovery, evasion, spacing strategies, configurable movement toolkits, and 5 difficulty tiers.
 - **Progression & cosmetics** — global per-hero XP/levels, Smash Level, unlock tokens, master skins, and custom model data support.
+- **Discord integration**: optional webhooks (live status message, error reports, mastery posts) and an embedded bot with `/stats`, `/leaderboard`, `/games`, and `/online` slash commands (`discord:` in `game-config.yml`).
 - **Live balance tuning** — `/balance <hero> <path> <value>` edits hero YMLs with comments preserved and hot-reloads archetypes.
 
 ---
@@ -24,6 +25,7 @@ A fast-paced arena PvP minigame plugin for **PaperMC**, inspired by Hypixel's *S
 
 - **Server:** PaperMC **1.21.11** (API 1.21.10+)
 - **Java:** **Java 21** (toolchain enforced by Gradle)
+- **Network:** JDA (the Discord bot library) is not shaded into the jar; `HeroesPluginLoader` has Paper's library loader download it from Maven Central at server start, so the server needs outbound access to Maven Central.
 - **Optional plugins:**
   - **Citizens** — required for lobby NPCs, game bots, minions, and `/practice` target dummies. Without it, the plugin runs cleanly with NPC features disabled (`NoOpNpcService`).
   - **LuckPerms** — registers the `heroes:template-world=true` context calculator so map-builder permissions can be scoped to template worlds.
@@ -50,6 +52,8 @@ A fast-paced arena PvP minigame plugin for **PaperMC**, inspired by Hypixel's *S
 | Command | Aliases | Description |
 |---|---|---|
 | `/setcharacter [hero]` | `/hero`, `/sethero` | Open hero select GUI or pick a hero by name |
+| `/skin [hero] [skin]` | `/cosmetic` | Open a hero's skin menu or equip an owned skin |
+| `/shards` | `/shard` | Open the Skin Shards menu to view and redeem shards |
 | `/join <mode> [map]` | `/queue`, `/q`, `/play` | Join `1v1`, `2v2`, `custom`, or a preset lobby |
 | `/autoqueue <1v1\|2v2\|stop>` | `/aq` | Automatically requeue after ranked games |
 | `/party <subcommand>` | `/p` | Create/manage parties and ready checks |
@@ -58,6 +62,7 @@ A fast-paced arena PvP minigame plugin for **PaperMC**, inspired by Hypixel's *S
 | `/autospectate <player\|off>` | `/autospec`, `/aspec`, `/as` | Automatically spectate a player whenever their match starts |
 | `/leave` | `/lobby`, `/hub`, `/l`, `/gg` | Return to the lobby |
 | `/practice [arena]` | — | Enter/leave the practice range |
+| `/settings` | `/prefs`, `/preferences` | Open personal preferences |
 | `/stats [player]` | — | View player and hero stats |
 | `/leaderboard` | `/lb`, `/elo` | View rankings |
 | `/charms` | `/charm`, `/bugcharms` | Open Bug's charm loadout menu |
@@ -74,8 +79,11 @@ A fast-paced arena PvP minigame plugin for **PaperMC**, inspired by Hypixel's *S
 | `/mappool <mode> <add\|remove>` | `/mp`, `/map_pool` | `heroes.mappool` | Manage which maps rotate in each mode |
 | `/forceready` | `/fr`, `/ready` | `heroes.forceready` | Reset ability cooldowns / charge ultimate |
 | `/forceend` | `/fe`, `/endgame` | `heroes.forceend` | Cancel an ongoing match without recording stats/Elo |
+| `/forcehero <player> <hero>` | `/forceselect` | `heroes.forcehero` | Forcibly select any hero for a player (bypasses unlocks and admin-only) |
 | `/token <give\|set\|check>` | `/tokens` | `heroes.token` | Manage hero unlock tokens |
 | `/unlock <player> <hero>` | `/unlockhero` | `heroes.unlock` | Unlock a hero for a player |
+| `/skin <grant\|revoke> <player> <hero> <skin>` | `/cosmetic` | `heroes.skin.admin`, `heroes.skin.preview` | Grant/revoke skin ownership or preview unowned skins (`/skin preview clear`) |
+| `/shards <give\|check> ...` | `/shard` | `heroes.shards.admin` | Give Skin Shards to a player or inspect their balances and pity |
 | `/heroesrestart <now\|drain>` | `/hrestart` | `heroes.restart` | Gracefully drain ranked games and restart the server |
 
 ---
@@ -104,7 +112,7 @@ To auto-copy the shaded jar directly into a local test server's `plugins/` folde
 src/main/java/me/stolyy/heroes/
 ├── Heroes.java        # Plugin entry point, command/listener/permission wiring
 ├── hero/              # Hero core (Hero, HeroBuilder, HeroConfig, HeroManager, HeroEventBus, HeroStats)
-│   ├── mechanics/     # Attributes, Energy, Jab, DoubleJump
+│   ├── mechanics/     # Attributes, Energy, Jab, DoubleJump, StatusEffects, LobbyMobility
 │   └── minion/        # MinionHero, MinionManager
 ├── ability/           # Ability contract, AbilityRegistry, Cooldown, CooldownManager, Ammo
 │   ├── template/      # BaseAbility, RangedAbility, Hitscan, Projectile, Cone, Dash, Shockwave, Tether, Aoe
@@ -112,7 +120,7 @@ src/main/java/me/stolyy/heroes/
 ├── control/           # Controller abstraction (PlayerController, BotController, BotLoadout)
 │   ├── ai/            # HeroBotAI, BotNavigation, BotCombat, BotRecovery, BotEvade, MovementActions, MinionBotAI
 │   └── strategy/      # Strategy, ConfigStrategy, Aggressive, Defensive, MidRange, DashSafety, JumpSafety
-├── game/              # Match loop (Game, GameManager, Team, GamePlayer, PracticeManager, MatchLog, ...)
+├── game/              # Match loop (Game, GameManager, Team, GamePlayer, PracticeManager, TeamBalancer, MatchLog, ...)
 │   ├── map/           # GameMap, GameMapManager, MapPool, StageSampler
 │   ├── queue/         # QueueManager, AutoQueue, AfkTracker
 │   ├── rules/         # GameModeConfig, GameModePreset, WinCondition, OnKillAction, BossSetup
@@ -125,6 +133,7 @@ src/main/java/me/stolyy/heroes/
 │   ├── effect/        # VisualEffect, SoundEffect, ParticleBuilder, *DisplayBuilder, ItemBuilder
 │   ├── glow/          # TeamGlow, GlowServiceProvider (GlowingEntities wrapper)
 │   └── ui/            # gui/ (menus), prompt/ (chat input), visual/ (scoreboards, leaderboards, tab)
+├── discord/           # DiscordBot (embedded JDA) and one class per slash command
 ├── npc/               # NpcService abstraction, CitizensNpcService, lobby & bot NPC types
 ├── command/           # admin/ and general/ command handlers
 ├── listener/          # Bukkit event handlers

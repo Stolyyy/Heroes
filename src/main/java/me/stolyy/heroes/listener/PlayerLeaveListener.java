@@ -2,7 +2,9 @@ package me.stolyy.heroes.listener;
 
 import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.game.queue.QueueManager;
+import me.stolyy.heroes.hero.mechanics.LobbyMobility;
 import me.stolyy.heroes.progression.PlayerStatsManager;
+import me.stolyy.heroes.vfx.cosmetic.CosmeticManager;
 import me.stolyy.heroes.vfx.ui.gui.GUIManager;
 import me.stolyy.heroes.party.PartyManager;
 import org.bukkit.entity.Player;
@@ -20,6 +22,8 @@ public class PlayerLeaveListener implements Listener {
         PartyManager.leaveParty(player);
         // Hero teardown happens inside GameManager.detach -> Game.removePlayer -> HeroManager.removePlayer.
         GameManager.detach(player);
+        LobbyMobility.reset(player);
+        CosmeticManager.clearAllPreviews(player.getUniqueId());
         PlayerStatsManager.unload(player.getUniqueId());
     }
 }

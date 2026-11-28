@@ -165,6 +165,17 @@ discord:
   error-webhook: ""          # exceptions caught in the game loop, with the game they happened in
   error-dedupe-minutes: 10   # same exception + top frame is posted at most once per this window
   error-max-per-hour: 20
+  status:
+    webhook: ""              # channel for the single live status message
+    update-seconds: 30
+    offline-text: "Server offline"
+  mastery-webhook: ""        # general channel; one post per hero mastered
+  bot:
+    token: ""                    # SECRET. Live config only, never commit a real value. Empty = bot off.
+    guild-id: ""                 # the Discord server the commands are registered on
+    channel-id: ""               # optional: restrict commands to this channel
+    command-cooldown-seconds: 3
+    games-lookback-months: 3
 
 restart:
   # Seconds of the final countdown before Bukkit.shutdown(); titles at 30/10/5/4/3/2/1.
@@ -185,3 +196,36 @@ lobby:
 poll:
   # /skipmap closes itself after this many seconds if the leader never runs /skipmap end
   timeout-seconds: 60
+
+# Custom-game auto-balance: rolling window (hours) of recent Custom match results used to rank players.
+team-balance:
+  session-window-hours: 12
+
+chat:
+  pings:
+    highlight-color: "&e&l"
+    sound:
+      sound: "entity.experience_orb.pickup"
+      volume: 1.0
+      pitch: 1.5
+      scope: PLAYER
+
+announcer:
+  # Each event is optional: no block, or a block with no sound, plays nothing.
+  # delay-ms waits that long after the event before playing, to line a clip up with what is on screen.
+  countdown:
+    delay-ms: 0
+    # sound:
+    #   sound: "heroes.announcer.countdown"   # one clip: "3, 2, 1, GO!"
+    #   volume: 1.0
+    #   scope: PLAYER
+  match-start:
+    delay-ms: 0
+  first-blood:
+    delay-ms: 0
+  last-life:
+    delay-ms: 0
+  victory:
+    delay-ms: 0
+  defeat:
+    delay-ms: 0

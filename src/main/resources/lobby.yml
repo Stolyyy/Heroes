@@ -409,3 +409,13 @@ sidebar:
 #       - "<gold><bold>SEASON 1</bold></gold>"
 #       - "<yellow>#1</yellow> <white>PlayerName</white> <gray>2143 elo</gray>"
 memorials: []
+
+# Skin Museum / cosmetic hall: one row per non-admin hero, spawned on enable (not rebuilt on
+# /balance reload — a restart picks up newly added skins). Set enabled: true after fitting coordinates.
+museum:
+  enabled: false
+  world: world
+  origin: { x: 0.5, y: 0.0, z: 0.5 }   # FILL: first pedestal of the first hero row
+  yaw: 180.0                           # FILL: which way every stand faces
+  skin-step: { x: 2.0, z: 0.0 }        # FILL: offset from one skin to the next within a row
+  hero-step: { x: 0.0, z: 3.0 }        # FILL: offset from one hero's row to the next

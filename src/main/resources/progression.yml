@@ -26,3 +26,12 @@ unlocks:
     - tinman
     - cryomancer
   starting-tokens: 2
+
+shards:
+  enabled: false            # drops only; the menu and consuming always work
+  base-chance: 0.08
+  pity-step: 0.01           # added per rolled match without a drop
+  rarity-weights:
+    normal: 80              # FILL
+    rare: 18                # FILL
+    legendary: 2            # FILL

@@ -1,14 +1,24 @@
 package me.stolyy.heroes.game;
 
 import me.stolyy.heroes.hero.HeroConfig;
+import me.stolyy.heroes.physics.Interactions;
 import me.stolyy.heroes.progression.EloCalculator;
 import me.stolyy.heroes.progression.HeroLevel;
 import me.stolyy.heroes.progression.PlayerStats;
 import me.stolyy.heroes.progression.PlayerStatsManager;
 import me.stolyy.heroes.progression.ProgressionConfig;
+import me.stolyy.heroes.progression.ShardKind;
+import me.stolyy.heroes.progression.SkinShards;
+import me.stolyy.heroes.util.GameConfigManager;
+import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
+import me.stolyy.heroes.vfx.effect.SoundBuilder;
+import me.stolyy.heroes.vfx.ui.visual.Broadcast;
+import me.stolyy.heroes.vfx.ui.visual.DiscordStatus;
+import me.stolyy.heroes.vfx.ui.visual.HeroNpcSkins;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 /** Tracks per-match XP, handles level-ups and tokens, and commits end-of-game W/L and ELO. */
 final class MatchRewards {
@@ -67,13 +78,21 @@ final class MatchRewards {
             else stats.recordLoss();
 
             if (p == null) continue;
-            boolean present = !game.getGamePlayer(uuid).leftGame();
+            GamePlayer gamePlayer = game.getGamePlayer(uuid);
+            if (game.gameMode() == GameMode.CUSTOM
+                    && gamePlayer.leftGame()
+                    && gamePlayer.kills() == 0
+                    && gamePlayer.damageDealt() <= 0.0) {
+                continue;
+            }
+            boolean present = !gamePlayer.leftGame();
             awardXp(p, scaleXp((present ? ProgressionConfig.getGameReward() : 0)
                     + (won ? ProgressionConfig.getWinReward() : 0)));
         }
 
         sendPersonalStats();
         sendXpSummaries();
+        rollShardDrops();
 
         if (game.gameMode().hasElo() && winningTeam != null) {
             updateElo(winningTeam);
@@ -81,6 +100,42 @@ final class MatchRewards {
 
         for (UUID uuid : game.originalTeamMap().keySet()) {
             PlayerStatsManager.saveStats(uuid);
+        }
+    }
+
+    private void rollShardDrops() {
+        if (!ProgressionConfig.isShardsEnabled()) return;
+
+        long realOriginalPlayers = game.originalTeamMap().entrySet().stream()
+                .filter(e -> e.getValue() != TeamColor.SPECTATOR)
+                .filter(e -> !game.isBotParticipant(e.getKey()))
+                .count();
+        if (realOriginalPlayers < 2) return;
+
+        double baseChance = ProgressionConfig.getShardBaseChance();
+        double pityStep = ProgressionConfig.getShardPityStep();
+
+        for (Map.Entry<UUID, TeamColor> entry : game.originalTeamMap().entrySet()) {
+            if (entry.getValue() == TeamColor.SPECTATOR) continue;
+            UUID uuid = entry.getKey();
+            if (game.isBotParticipant(uuid)) continue;
+            GamePlayer gamePlayer = game.getGamePlayer(uuid);
+            if (gamePlayer == null || gamePlayer.leftGame()) continue;
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null || !Interactions.isRealPlayer(p)) continue;
+
+            PlayerStats stats = PlayerStatsManager.getStats(p);
+            double chance = Math.min(1.0, baseChance + stats.getShardPity() * pityStep);
+            if (ThreadLocalRandom.current().nextDouble() < chance) {
+                HeroSkin.Rarity rarity = SkinShards.rollDropRarity();
+                stats.addShards(ShardKind.RANDOM, rarity, 1);
+                stats.resetShardPity();
+                p.sendMessage(GameConfigManager.getMessage("shards.drop",
+                        Map.of("rarity", SkinShards.formatRarity(rarity))));
+                SoundBuilder.of(Sound.ENTITY_EXPERIENCE_ORB_PICKUP).pitch(1.3f).play(p);
+            } else {
+                stats.incrementShardPity();
+            }
         }
     }
 
@@ -134,13 +189,23 @@ final class MatchRewards {
     }
 
     private void handleLevelUps(Player player, String heroName, List<Integer> newLevels, PlayerStats stats) {
+        String heroDisplay = HeroConfig.formatName(heroName);
         for (int level : newLevels) {
-            player.sendMessage(Component.text(HeroConfig.formatName(heroName) + " reached level " + level + "!",
+            player.sendMessage(Component.text(heroDisplay + " reached level " + level + "!",
                     NamedTextColor.AQUA));
             if (level == ProgressionConfig.getMasterSkinLevel()) {
+                stats.grantSkin(heroName, MASTER_SKIN_ID);
                 stats.setSkinForHero(heroName, MASTER_SKIN_ID);
-                player.sendMessage(Component.text("You mastered " + HeroConfig.formatName(heroName)
+                HeroNpcSkins.refresh(player, heroName);
+                player.sendMessage(Component.text("You mastered " + heroDisplay
                         + " — Master Skin unlocked!", NamedTextColor.LIGHT_PURPLE));
+                Broadcast.chat(GameConfigManager.getMessage("progression.master-skin-broadcast", Map.of(
+                        "player", player.getName(),
+                        "hero", heroDisplay,
+                        "level", String.valueOf(level))));
+                if (!HeroConfig.isAdminOnly(heroName)) {
+                    DiscordStatus.postMastery(player.getName(), heroDisplay, level);
+                }
             }
         }
     }

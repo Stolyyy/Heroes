@@ -18,6 +18,7 @@ prevention:
   jump_veto: true
   # Extra reach beyond jump trajectory allowed when jumping across a gap onto a target's platform.
   reach_margin: 2.0
+  headroom_max_check: 6.0    # FILL: blocks above the bot's head checked for a ceiling before a chase jump
 
 navigation:
   reissue_distance: 2.0
@@ -28,6 +29,8 @@ navigation:
   velocity_quiet_speed: 0.3
   jump_cooldown_ticks: 8
   chase_jump_height_threshold: 1.5
+  stepout_min_radius: 2.0    # FILL: nearest distance from the target's X/Z a step-out point may be
+  stepout_max_radius: 7.0    # FILL: how far out from under a platform the bot will look
 
 evade:
   exit_multiplier: 1.3

@@ -1,7 +1,9 @@
 package me.stolyy.heroes.progression;
 
-import me.stolyy.heroes.util.GameConfigManager;
 import me.stolyy.heroes.game.GameMode;
+import me.stolyy.heroes.hero.HeroConfig;
+import me.stolyy.heroes.util.GameConfigManager;
+import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -30,16 +32,20 @@ public class PlayerStats {
     private final Map<GameMode, ModeStats> modeStats;
     private final Set<String> equippedCharms;
 
-    // Unlock economy + per-hero skin choice (keyed by lowercase hero name).
+    // Unlock economy + per-hero skin choice/ownership + skin shards (keyed by lowercase hero name).
     private int tokenBalance;
     private final Set<String> unlockedHeroes = new HashSet<>();
     private final Map<String, String> selectedSkins = new HashMap<>();
+    private final Map<String, Set<String>> ownedSkins = new HashMap<>();
+    private final Map<ShardKind, Map<HeroSkin.Rarity, Integer>> shards = new EnumMap<>(ShardKind.class);
+    private int shardPity;
 
     // Global hero level/XP pool (mode-agnostic) — keyed by lowercase hero name.
     private final Map<String, HeroLevel> heroLevels = new HashMap<>();
 
     // Read by the async chat renderer, hence volatile.
     private volatile boolean seasonChampion;
+    private volatile boolean chatPingsEnabled = true;
 
     private GameMode currentMode;
     private String currentHero;
@@ -164,15 +170,19 @@ public class PlayerStats {
         return modeStats.values().stream().mapToDouble(ModeStats::totalVoidDamage).sum();
     }
 
-    /** Smash Level = sum of every hero's global level. Pure computation. */
+    /** Smash Level = sum of every non-admin-only hero's global level. Pure computation. */
     public int smashLevel() {
-        return heroLevels.values().stream()
-                .mapToInt(HeroLevel::level)
+        return heroLevels.entrySet().stream()
+                .filter(entry -> !HeroConfig.isAdminOnly(entry.getKey()))
+                .mapToInt(entry -> entry.getValue().level())
                 .sum();
     }
 
     public boolean isSeasonChampion() { return seasonChampion; }
     public void setSeasonChampion(boolean seasonChampion) { this.seasonChampion = seasonChampion; }
+
+    public boolean isChatPingsEnabled() { return chatPingsEnabled; }
+    public void setChatPingsEnabled(boolean chatPingsEnabled) { this.chatPingsEnabled = chatPingsEnabled; }
 
     public int getTokenBalance() { return tokenBalance; }
     public void setTokenBalance(int tokenBalance) { this.tokenBalance = tokenBalance; }
@@ -195,14 +205,98 @@ public class PlayerStats {
 
     /** The player's chosen skin for a hero; 'default' when none chosen. */
     public String getSkinForHero(String heroName) {
-        return selectedSkins.getOrDefault(heroName.toLowerCase(), "default");
+        return selectedSkins.getOrDefault(heroName.toLowerCase(Locale.ROOT), "default");
     }
 
     public void setSkinForHero(String heroName, String skinId) {
-        selectedSkins.put(heroName.toLowerCase(), skinId);
+        String key = heroName.toLowerCase(Locale.ROOT);
+        selectedSkins.put(key, skinId != null ? skinId.toLowerCase(Locale.ROOT) : "default");
     }
 
     public Map<String, String> selectedSkins() { return selectedSkins; }
+
+    /** True when the player owns {@code skinId} for {@code heroName}. {@code default} is always owned. */
+    public boolean ownsSkin(String heroName, String skinId) {
+        String skin = skinId.toLowerCase(Locale.ROOT);
+        if (skin.equals("default")) return true;
+        Set<String> owned = ownedSkins.get(heroName.toLowerCase(Locale.ROOT));
+        return owned != null && owned.contains(skin);
+    }
+
+    /** Grants ownership of {@code skinId} for {@code heroName}. {@code default} is never stored. Returns true if newly granted. */
+    public boolean grantSkin(String heroName, String skinId) {
+        String skin = skinId.toLowerCase(Locale.ROOT);
+        if (skin.equals("default")) return false;
+        return ownedSkins.computeIfAbsent(heroName.toLowerCase(Locale.ROOT), k -> new HashSet<>()).add(skin);
+    }
+
+    /** Revokes ownership of {@code skinId} for {@code heroName}, resetting selection to {@code default} if equipped. */
+    public boolean revokeSkin(String heroName, String skinId) {
+        String hero = heroName.toLowerCase(Locale.ROOT);
+        String skin = skinId.toLowerCase(Locale.ROOT);
+        if (skin.equals("default")) return false;
+        Set<String> owned = ownedSkins.get(hero);
+        if (owned == null || !owned.remove(skin)) return false;
+        if (owned.isEmpty()) ownedSkins.remove(hero);
+        if (getSkinForHero(hero).equalsIgnoreCase(skin)) {
+            setSkinForHero(hero, "default");
+        }
+        return true;
+    }
+
+    public Map<String, Set<String>> ownedSkins() { return ownedSkins; }
+
+    public int getShardCount(ShardKind kind, HeroSkin.Rarity rarity) {
+        Map<HeroSkin.Rarity, Integer> byRarity = shards.get(kind);
+        return byRarity != null ? byRarity.getOrDefault(rarity, 0) : 0;
+    }
+
+    public void setShardCount(ShardKind kind, HeroSkin.Rarity rarity, int count) {
+        if (count <= 0) {
+            Map<HeroSkin.Rarity, Integer> byRarity = shards.get(kind);
+            if (byRarity != null) {
+                byRarity.remove(rarity);
+                if (byRarity.isEmpty()) shards.remove(kind);
+            }
+            return;
+        }
+        shards.computeIfAbsent(kind, k -> new EnumMap<>(HeroSkin.Rarity.class)).put(rarity, count);
+    }
+
+    public void addShards(ShardKind kind, HeroSkin.Rarity rarity, int amount) {
+        if (amount <= 0) return;
+        setShardCount(kind, rarity, getShardCount(kind, rarity) + amount);
+    }
+
+    public boolean removeShards(ShardKind kind, HeroSkin.Rarity rarity, int amount) {
+        if (amount <= 0) return false;
+        int current = getShardCount(kind, rarity);
+        if (current < amount) return false;
+        setShardCount(kind, rarity, current - amount);
+        return true;
+    }
+
+    /**
+     * Atomically checks {@code fromKind}/{@code fromRarity} has at least {@code cost} shards and
+     * applies both the deduction and the {@code toKind}/{@code toRarity} grant in one operation so
+     * rapid clicks cannot go negative or create free shards.
+     */
+    public synchronized boolean exchangeShards(ShardKind fromKind, HeroSkin.Rarity fromRarity, int cost,
+                                               ShardKind toKind, HeroSkin.Rarity toRarity, int gain) {
+        if (cost <= 0 || gain <= 0) return false;
+        int current = getShardCount(fromKind, fromRarity);
+        if (current < cost) return false;
+        setShardCount(fromKind, fromRarity, current - cost);
+        setShardCount(toKind, toRarity, getShardCount(toKind, toRarity) + gain);
+        return true;
+    }
+
+    public Map<ShardKind, Map<HeroSkin.Rarity, Integer>> shards() { return shards; }
+
+    public int getShardPity() { return shardPity; }
+    public void setShardPity(int shardPity) { this.shardPity = Math.max(0, shardPity); }
+    public void incrementShardPity() { this.shardPity++; }
+    public void resetShardPity() { this.shardPity = 0; }
 
     public int getElo(GameMode mode) {
         return elo.getOrDefault(mode, GameConfigManager.getStartingElo());

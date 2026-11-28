@@ -400,6 +400,71 @@ public class WallDetection {
                 || block.getRelative(BlockFace.WEST).getType().isSolid();
     }
 
+    /**
+     * True if a standing entity box of {@code width x height} at {@code feetLoc} is free of block
+     * collision geometry (using {@link #HITBOX_MARGIN} so resting flush against a surface is clear).
+     */
+    public static boolean isStandingClear(World world, Location feetLoc, double width, double height) {
+        if (!isValidLocation(feetLoc) || world == null) return false;
+        double halfW = Math.max(0.05, width * 0.5 - HITBOX_MARGIN);
+        double minY = feetLoc.getY() + HITBOX_MARGIN;
+        double maxY = feetLoc.getY() + Math.max(HITBOX_MARGIN * 2, height - HITBOX_MARGIN);
+        BoundingBox box = new BoundingBox(
+                feetLoc.getX() - halfW, minY, feetLoc.getZ() - halfW,
+                feetLoc.getX() + halfW, maxY, feetLoc.getZ() + halfW);
+        return !overlapsCollision(world, box);
+    }
+
+    /**
+     * Walks {@code origin} along {@code back} in {@code stepSize} increments up to
+     * {@code maxDistance} and returns the first {@link #isStandingClear} position, or null if none.
+     */
+    public static Location retreatBoxFromSolid(World world, Location origin, Vector back,
+                                               double maxDistance, double stepSize,
+                                               double width, double height) {
+        if (isStandingClear(world, origin, width, height)) return origin.clone();
+        if (back == null || back.lengthSquared() < 1.0E-9) return null;
+
+        Vector step = back.clone().normalize().multiply(stepSize);
+        Location probe = origin.clone();
+        for (double walked = stepSize; walked <= maxDistance + 1.0E-6; walked += stepSize) {
+            probe.add(step);
+            if (isStandingClear(world, probe, width, height)) return probe;
+        }
+        return null;
+    }
+
+    /**
+     * Sweeps a standing box of {@code width x height} from {@code from} to {@code to} in
+     * {@code stepSize} increments. Returns null when the full segment is clear, or the furthest
+     * clear position just before collision geometry is reached.
+     */
+    public static Location sweepClearPath(World world, Location from, Location to,
+                                          double width, double height, double stepSize) {
+        if (world == null || !isValidLocation(from) || !isValidLocation(to)) return null;
+        Vector delta = to.toVector().subtract(from.toVector());
+        double dist = delta.length();
+        if (dist < 1.0E-6) {
+            return isStandingClear(world, to, width, height) ? null : from.clone();
+        }
+
+        Vector dir = delta.clone().divide(new Vector(dist, dist, dist));
+        Location lastClear = isStandingClear(world, from, width, height) ? from.clone() : null;
+        for (double walked = stepSize; walked <= dist + 1.0E-6; walked += stepSize) {
+            double clampedWalk = Math.min(walked, dist);
+            Location probe = from.clone().add(dir.clone().multiply(clampedWalk));
+            if (!isStandingClear(world, probe, width, height)) {
+                if (lastClear != null) return lastClear;
+                Location retreated = retreatBoxFromSolid(
+                        world, from, dir.clone().multiply(-1), 2.0, stepSize, width, height);
+                return retreated != null ? retreated : from.clone();
+            }
+            lastClear = probe;
+            if (clampedWalk >= dist) break;
+        }
+        return null;
+    }
+
     private static BoundingBox trappedBox(Entity entity) {
         return entity.getBoundingBox().expand(-HITBOX_MARGIN);
     }

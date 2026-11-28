@@ -124,6 +124,52 @@ material — no hero currently does).
 
 ---
 
+## 2.5. Worn armor — `equipment/*.json` (and optional item models)
+
+Chest, legs, and boots render on the player body (and on lobby hero display NPCs via
+`CosmeticManager.buildArmorEquipment`) through Minecraft's `equippable` data component rather
+than `custom_model_data`.
+
+**Hero YML syntax (optional, per piece under `skins.<skin>.armor.<chest|legs|boots>`):**
+```yaml
+chest:
+  material: CHAINMAIL_CHESTPLATE
+  equipment: cryomancer_masterskin   # sets equippable.asset_id (default namespace: minecraft)
+  model: true                        # optional: also sets custom_model_data <hero>_chest_<skin>
+```
+
+**Naming convention:** `<hero>_<skin>` (lowercase asset key, e.g. `cryomancer_masterskin`).
+Invalid keys throw an error at load/equip time naming the hero, skin, and piece.
+
+**Resource pack folder layout** (default `minecraft` namespace, matching `sponge.json` / `stick.json` / `stone.json`):
+- Equipment definition: `assets/minecraft/equipment/<hero>_<skin>.json`
+  ```json
+  {
+    "layers": {
+      "humanoid": [
+        { "texture": "minecraft:<hero>_<skin>" }
+      ],
+      "humanoid_leggings": [
+        { "texture": "minecraft:<hero>_<skin>" }
+      ]
+    }
+  }
+  ```
+- Body layer texture (chest + boots): `assets/minecraft/textures/entity/equipment/humanoid/<hero>_<skin>.png`
+- Leggings layer texture (legs): `assets/minecraft/textures/entity/equipment/humanoid_leggings/<hero>_<skin>.png`
+- Optional inventory/item model (`model: true`): add `<hero>_chest_<skin>`, `<hero>_legs_<skin>`,
+  and `<hero>_boots_<skin>` cases to `resourcepack/<material>.json` (e.g. `chainmail_chestplate.json`).
+
+**Skins needing an equipment set:**
+
+| Key | Base armor | Status |
+|---|---|---|
+| **cryomancer_masterskin** (and/or `cryomancer_default`) | `CHAINMAIL_*` (live config; #19) | **MISSING** — both Cryomancer skins currently share vanilla chainmail |
+
+*(Add rows here as other non-leather or custom-patterned hero skins opt in to `equipment:`.)*
+
+---
+
 ## 3. Ability visuals / projectiles / displays — `stone.json`
 
 All `model:` blocks in ability `visuals:` spawn ItemDisplays whose ItemStack is **STONE**
@@ -347,10 +393,6 @@ material" simplification — one selector file instead of ~45.
   **bug → `bug_head_default` MISSING** — the Bug NPC currently shows a plain sponge.
 - **Announcer NPC**: holds a plain BOOK — no model key, nothing needed.
 - **Leaderboard**: TextDisplay entity stack — no models involved.
-- **`NpcCosmeticHelper` is dead code** (zero call sites). Its `buildWeapon` would emit the
-  legacy key shape `<hero>_hand_<skin>` (note `hand`, not the live `item` texture) on STICK,
-  and `buildHelmet` duplicates CosmeticManager's head logic. If NPC weapons ever get wired
-  up, update it to `_item_` first — do NOT create `hero_hand_*` pack entries.
 
 ---
 

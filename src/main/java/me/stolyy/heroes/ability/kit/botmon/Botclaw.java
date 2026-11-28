@@ -1,5 +1,6 @@
 package me.stolyy.heroes.ability.kit.botmon;
 
+import me.stolyy.heroes.game.PracticeManager;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.ability.Ability;
 import me.stolyy.heroes.ability.AbilityType;
@@ -85,14 +86,19 @@ public class Botclaw extends CompositeAbility {
             return false;
         }
         Location eye = hero.getController().getEyeLocation();
-        RayTraceResult result = WallDetection.rayTraceBlock(eye, eye.getDirection(), grappleRange);
-        return result != null && result.getHitBlock() != null;
+        double reach = PracticeManager.clampPracticeRange(hero, eye, eye.getDirection(), grappleRange);
+        if (reach <= 0) return false;
+        RayTraceResult result = WallDetection.rayTraceBlock(eye, eye.getDirection(), reach);
+        return result != null && result.getHitBlock() != null
+                && PracticeManager.isWithinPracticeBounds(hero, result.getHitPosition().toLocation(eye.getWorld()));
     }
 
     @Override
     public void perform(Hero hero) {
         Location eye = hero.getController().getEyeLocation();
-        RayTraceResult result = WallDetection.rayTraceBlock(eye, eye.getDirection(), grappleRange);
+        double reach = PracticeManager.clampPracticeRange(hero, eye, eye.getDirection(), grappleRange);
+        if (reach <= 0) return;
+        RayTraceResult result = WallDetection.rayTraceBlock(eye, eye.getDirection(), reach);
         if (result == null || result.getHitBlock() == null) return;
 
         targetLocation = result.getHitPosition().toLocation(eye.getWorld());

@@ -52,6 +52,7 @@ A fast-paced arena PvP minigame plugin for **PaperMC**, inspired by Hypixel's *S
 | Command | Aliases | Description |
 |---|---|---|
 | `/setcharacter [hero]` | `/hero`, `/sethero` | Open hero select GUI or pick a hero by name |
+| `/skin [hero] [skin]` | `/cosmetic` | Open a hero's skin menu or equip an owned skin |
 | `/join <mode> [map]` | `/queue`, `/q`, `/play` | Join `1v1`, `2v2`, `custom`, or a preset lobby |
 | `/autoqueue <1v1\|2v2\|stop>` | `/aq` | Automatically requeue after ranked games |
 | `/party <subcommand>` | `/p` | Create/manage parties and ready checks |
@@ -80,6 +81,7 @@ A fast-paced arena PvP minigame plugin for **PaperMC**, inspired by Hypixel's *S
 | `/forcehero <player> <hero>` | `/forceselect` | `heroes.forcehero` | Forcibly select any hero for a player (bypasses unlocks and admin-only) |
 | `/token <give\|set\|check>` | `/tokens` | `heroes.token` | Manage hero unlock tokens |
 | `/unlock <player> <hero>` | `/unlockhero` | `heroes.unlock` | Unlock a hero for a player |
+| `/skin <grant\|revoke> <player> <hero> <skin>` | `/cosmetic` | `heroes.skin.admin` | Grant or revoke a player's ownership of a hero skin |
 | `/heroesrestart <now\|drain>` | `/hrestart` | `heroes.restart` | Gracefully drain ranked games and restart the server |
 
 ---

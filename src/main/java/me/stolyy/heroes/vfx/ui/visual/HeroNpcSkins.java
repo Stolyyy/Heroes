@@ -60,8 +60,7 @@ public final class HeroNpcSkins {
     }
 
     private static void apply(Player viewer, String heroName, LivingEntity npc) {
-        String skinId = PlayerStatsManager.getStats(viewer).getSkinForHero(heroName);
-        HeroSkin skin = CosmeticManager.resolveSkin(heroName, skinId);
+        HeroSkin skin = CosmeticManager.resolveOwnedSkin(PlayerStatsManager.getStats(viewer), heroName);
         if (skin == null) return;
         viewer.sendEquipmentChange(npc, CosmeticManager.buildArmorEquipment(heroName, skin));
     }

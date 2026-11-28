@@ -7,6 +7,7 @@ import me.stolyy.heroes.control.PlayerController;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroConfig;
 import me.stolyy.heroes.hero.minion.MinionHero;
+import me.stolyy.heroes.progression.PlayerStats;
 import me.stolyy.heroes.progression.PlayerStatsManager;
 import me.stolyy.heroes.util.ColorParser;
 import me.stolyy.heroes.vfx.effect.ItemBuilder;
@@ -19,11 +20,13 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class CosmeticManager {
@@ -41,26 +44,65 @@ public class CosmeticManager {
      * Looks up a named skin section in the hero's YML ({@code skins.<skinId>}).
      * Returns null when the hero has no such skin — callers keep the current skin.
      */
-    public static HeroSkin getSkinById(Hero hero, String skinId) {
-        YamlConfiguration config = HeroConfig.getConfig(hero.getName());
+    public static @Nullable HeroSkin getSkinById(Hero hero, String skinId) {
+        return findSkin(heroConfigKey(hero.getName()), skinId);
+    }
+
+    /** Looks up a skin by hero config key and skin id, returning null if absent. */
+    public static @Nullable HeroSkin findSkin(String heroId, String skinId) {
+        if (heroId == null || skinId == null) return null;
+        YamlConfiguration config = HeroConfig.getConfig(heroId);
         if (config == null) return null;
-        ConfigurationSection section = config.getConfigurationSection("skins." + skinId);
+        String normalized = skinId.toLowerCase(Locale.ROOT);
+        ConfigurationSection section = config.getConfigurationSection("skins." + normalized);
         if (section == null) return null;
-        return new HeroSkin(skinId, section);
+        return new HeroSkin(normalized, section);
+    }
+
+    /** Returns every non-hidden skin declared on {@code heroId}, in YML order. */
+    public static List<HeroSkin> selectableSkins(String heroId) {
+        YamlConfiguration config = HeroConfig.getConfig(heroId);
+        if (config == null) return List.of();
+        ConfigurationSection skins = config.getConfigurationSection("skins");
+        if (skins == null) return List.of();
+        List<HeroSkin> result = new ArrayList<>();
+        for (String skinId : skins.getKeys(false)) {
+            ConfigurationSection section = skins.getConfigurationSection(skinId);
+            if (section == null || section.getBoolean("hidden", false)) continue;
+            result.add(new HeroSkin(skinId.toLowerCase(Locale.ROOT), section));
+        }
+        return result;
+    }
+
+    /**
+     * Resolves {@code stats}' selected skin for {@code heroId}, enforcing ownership and non-hidden
+     * rules. If the saved selection is missing, hidden, or unowned, resets it to {@code default}.
+     */
+    public static @Nullable HeroSkin resolveOwnedSkin(PlayerStats stats, String heroId) {
+        String key = heroId.toLowerCase(Locale.ROOT);
+        String selected = stats.getSkinForHero(key);
+        HeroSkin chosen = findSkin(key, selected);
+        if (chosen == null || chosen.isHidden() || !stats.ownsSkin(key, chosen.getId())) {
+            if (!"default".equalsIgnoreCase(selected)) {
+                stats.setSkinForHero(key, "default");
+            }
+            return findSkin(key, "default");
+        }
+        return chosen;
     }
 
     /** Resolves a hero's skin section by ID, falling back to {@code skins.default} if missing. */
-    public static HeroSkin resolveSkin(String heroId, String skinId) {
-        YamlConfiguration config = HeroConfig.getConfig(heroId);
-        if (config == null) return null;
-        String effectiveId = skinId;
-        ConfigurationSection section = effectiveId != null ? config.getConfigurationSection("skins." + effectiveId) : null;
-        if (section == null) {
-            effectiveId = "default";
-            section = config.getConfigurationSection("skins.default");
+    public static @Nullable HeroSkin resolveSkin(String heroId, String skinId) {
+        HeroSkin skin = findSkin(heroId, skinId);
+        return skin != null ? skin : findSkin(heroId, "default");
+    }
+
+    private static String heroConfigKey(String heroName) {
+        if (HeroConfig.exists(heroName)) return heroName.toLowerCase(Locale.ROOT);
+        for (String key : HeroConfig.getAvailableNames()) {
+            if (HeroConfig.formatName(key).equalsIgnoreCase(heroName)) return key;
         }
-        if (section == null) return null;
-        return new HeroSkin(effectiveId, section);
+        return heroName.toLowerCase(Locale.ROOT);
     }
 
     /** Builds the four armor slots (HEAD/CHEST/LEGS/FEET) for {@code skin}, using empty items when unarmored. */
@@ -92,8 +134,9 @@ public class CosmeticManager {
         // Always resolve the player's saved skin unconditionally so transient ability skins cannot
         // survive a respawn or hero swap if a revert hook is skipped or delayed.
         if (controller instanceof PlayerController pc) {
-            String skinId = PlayerStatsManager.getStats(pc.getPlayer()).getSkinForHero(hero.getName());
-            HeroSkin chosen = getSkinById(hero, skinId);
+            String heroKey = heroConfigKey(hero.getName());
+            PlayerStats stats = PlayerStatsManager.getStats(pc.getPlayer());
+            HeroSkin chosen = resolveOwnedSkin(stats, heroKey);
             if (chosen != null) hero.setSkin(chosen);
         }
 

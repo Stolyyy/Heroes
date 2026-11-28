@@ -147,7 +147,12 @@ public class PlayerStatsManager {
     public static void saveStats(UUID playerId) {
         PlayerStats stats = cache.get(playerId);
         if (stats == null) return;
+        saveStats(stats);
+    }
 
+    /** Persists a stats instance (cached or offline-loaded) to disk and refreshes the board snapshot. */
+    public static void saveStats(PlayerStats stats) {
+        UUID playerId = stats.playerId();
         File file = new File(statsFolder, playerId + ".yml");
         YamlConfiguration config = new YamlConfiguration();
         serializeStats(stats, config);
@@ -156,7 +161,9 @@ public class PlayerStatsManager {
         // keeps the index current for a player about to be evicted from the cache on quit.
         // On the async autosave thread this reads the same live fields serializeStats just read;
         // no new exposure beyond the pre-existing autosave pattern.
-        boardIndex.put(playerId, BoardEntry.of(stats));
+        if (stats.lastKnownName() != null) {
+            boardIndex.put(playerId, BoardEntry.of(stats));
+        }
 
         try {
             config.save(file);
@@ -196,6 +203,11 @@ public class PlayerStatsManager {
         config.set("unlocked-heroes", new ArrayList<>(stats.getUnlockedHeroes()));
         for (Map.Entry<String, String> skinEntry : stats.selectedSkins().entrySet()) {
             config.set("selected-skins." + skinEntry.getKey(), skinEntry.getValue());
+        }
+        for (Map.Entry<String, Set<String>> ownedEntry : stats.ownedSkins().entrySet()) {
+            if (!ownedEntry.getValue().isEmpty()) {
+                config.set("owned-skins." + ownedEntry.getKey(), new ArrayList<>(ownedEntry.getValue()));
+            }
         }
 
         for (Map.Entry<GameMode, Integer> entry : stats.elo().entrySet()) {
@@ -256,6 +268,14 @@ public class PlayerStatsManager {
         if (skinsSection != null) {
             for (String heroName : skinsSection.getKeys(false)) {
                 stats.setSkinForHero(heroName, skinsSection.getString(heroName));
+            }
+        }
+        ConfigurationSection ownedSkinsSection = config.getConfigurationSection("owned-skins");
+        if (ownedSkinsSection != null) {
+            for (String heroName : ownedSkinsSection.getKeys(false)) {
+                for (String skinId : ownedSkinsSection.getStringList(heroName)) {
+                    stats.grantSkin(heroName, skinId);
+                }
             }
         }
 
@@ -324,6 +344,14 @@ public class PlayerStatsManager {
                     Heroes.getInstance().getLogger().warning(
                             "Ignoring unknown GameMode '" + modeName + "' in mode stats for " + playerId);
                 }
+            }
+        }
+
+        // Migration for older player files: any hero already at or above the master level owns masterskin.
+        int masterLevel = ProgressionConfig.getMasterSkinLevel();
+        for (Map.Entry<String, HeroLevel> entry : stats.heroLevels().entrySet()) {
+            if (entry.getValue().level() >= masterLevel) {
+                stats.grantSkin(entry.getKey(), "masterskin");
             }
         }
 

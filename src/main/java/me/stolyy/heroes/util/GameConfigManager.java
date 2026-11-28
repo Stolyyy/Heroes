@@ -7,6 +7,7 @@ import me.stolyy.heroes.vfx.effect.SoundEffect;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Location;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -14,17 +15,24 @@ import org.bukkit.util.Vector;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
  * Central loader and typed accessor for {@code game-config.yml} and {@code messages.yml}.
  */
 public class GameConfigManager {
+    public record AnnouncerCue(int delayMs, SoundEffect sound) {
+        public static final AnnouncerCue SILENT = new AnnouncerCue(0, SoundEffect.NONE);
+    }
+
     private static volatile FileConfiguration gameConfig;
     private static volatile FileConfiguration messagesConfig;
     private static List<PracticeArena> practiceArenas;
     private static SoundEffect chatPingSound;
+    private static Map<String, AnnouncerCue> announcerCues = Map.of();
 
     /** Loads (or extracts defaults for) {@code game-config.yml}, {@code messages.yml}, and {@code templates.yml}. */
     public static void reload() {
@@ -34,6 +42,28 @@ public class GameConfigManager {
         practiceArenas = null;
         chatPingSound = null;
         TemplateConfig.reload();
+        announcerCues = loadAnnouncerCues(gameConfig);
+    }
+
+    private static Map<String, AnnouncerCue> loadAnnouncerCues(FileConfiguration cfg) {
+        ConfigurationSection root = cfg.getConfigurationSection("announcer");
+        if (root == null) return Map.of();
+        Map<String, AnnouncerCue> parsed = new HashMap<>();
+        for (String eventKey : root.getKeys(false)) {
+            ConfigurationSection eventSec = Configs.requireSection(root, eventKey);
+            int delayMs = Configs.requireInt(eventSec, "delay-ms");
+            if (delayMs < 0) {
+                throw new IllegalStateException("announcer." + eventKey + ".delay-ms must be >= 0, got " + delayMs);
+            }
+            SoundEffect sound = SoundEffect.optional(eventSec, "sound");
+            parsed.put(eventKey.toLowerCase(Locale.ROOT), new AnnouncerCue(delayMs, sound));
+        }
+        return parsed;
+    }
+
+    /** Returns the parsed announcer cue for {@code eventKey}, or {@link AnnouncerCue#SILENT} when unconfigured. */
+    public static AnnouncerCue getAnnouncerCue(String eventKey) {
+        return announcerCues.getOrDefault(eventKey.toLowerCase(Locale.ROOT), AnnouncerCue.SILENT);
     }
 
     private static FileConfiguration loadOrCreateConfig(Heroes plugin, String fileName) {

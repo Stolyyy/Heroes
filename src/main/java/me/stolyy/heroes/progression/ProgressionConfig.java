@@ -2,11 +2,13 @@ package me.stolyy.heroes.progression;
 
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.util.Configs;
+import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Loads progression.yml — XP curve, reward amounts, token cadence, master-skin
@@ -46,4 +48,11 @@ public class ProgressionConfig {
 
     public static List<String> getStartingHeroes() { return config.getStringList("unlocks.starting-heroes"); }
     public static int getStartingTokens() { return Configs.requireInt(config, "unlocks.starting-tokens"); }
+
+    public static boolean isShardsEnabled() { return Configs.requireBoolean(config, "shards.enabled"); }
+    public static double getShardBaseChance() { return Configs.requireDouble(config, "shards.base-chance"); }
+    public static double getShardPityStep() { return Configs.requireDouble(config, "shards.pity-step"); }
+    public static int getShardRarityWeight(HeroSkin.Rarity rarity) {
+        return Configs.requireInt(config, "shards.rarity-weights." + rarity.name().toLowerCase(Locale.ROOT));
+    }
 }

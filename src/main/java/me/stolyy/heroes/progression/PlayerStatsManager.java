@@ -3,6 +3,7 @@ package me.stolyy.heroes.progression;
 import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.game.GameMode;
 import me.stolyy.heroes.physics.Interactions;
+import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.vfx.ui.visual.BoardDisplay;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
@@ -209,6 +210,16 @@ public class PlayerStatsManager {
                 config.set("owned-skins." + ownedEntry.getKey(), new ArrayList<>(ownedEntry.getValue()));
             }
         }
+        for (Map.Entry<ShardKind, Map<HeroSkin.Rarity, Integer>> kindEntry : stats.shards().entrySet()) {
+            String kindKey = kindEntry.getKey().storageKey();
+            for (Map.Entry<HeroSkin.Rarity, Integer> rarityEntry : kindEntry.getValue().entrySet()) {
+                if (rarityEntry.getValue() > 0) {
+                    config.set("shards." + kindKey + "." + rarityEntry.getKey().name().toLowerCase(Locale.ROOT),
+                            rarityEntry.getValue());
+                }
+            }
+        }
+        config.set("shard-pity", stats.getShardPity());
 
         for (Map.Entry<GameMode, Integer> entry : stats.elo().entrySet()) {
             config.set("elo." + entry.getKey().name(), entry.getValue());
@@ -275,6 +286,32 @@ public class PlayerStatsManager {
             for (String heroName : ownedSkinsSection.getKeys(false)) {
                 for (String skinId : ownedSkinsSection.getStringList(heroName)) {
                     stats.grantSkin(heroName, skinId);
+                }
+            }
+        }
+        stats.setShardPity(config.getInt("shard-pity", 0));
+        ConfigurationSection shardsSection = config.getConfigurationSection("shards");
+        if (shardsSection != null) {
+            for (String kindKey : shardsSection.getKeys(false)) {
+                ShardKind kind;
+                try {
+                    kind = ShardKind.valueOf(kindKey.toUpperCase(Locale.ROOT));
+                } catch (IllegalArgumentException e) {
+                    Heroes.getInstance().getLogger().warning(
+                            "Ignoring unknown shard kind '" + kindKey + "' in stats for " + playerId);
+                    continue;
+                }
+                ConfigurationSection raritySection = shardsSection.getConfigurationSection(kindKey);
+                if (raritySection == null) continue;
+                for (String rarityKey : raritySection.getKeys(false)) {
+                    try {
+                        HeroSkin.Rarity rarity = HeroSkin.Rarity.valueOf(rarityKey.toUpperCase(Locale.ROOT));
+                        int count = raritySection.getInt(rarityKey, 0);
+                        if (count > 0) stats.setShardCount(kind, rarity, count);
+                    } catch (IllegalArgumentException e) {
+                        Heroes.getInstance().getLogger().warning(
+                                "Ignoring unknown shard rarity '" + rarityKey + "' in stats for " + playerId);
+                    }
                 }
             }
         }

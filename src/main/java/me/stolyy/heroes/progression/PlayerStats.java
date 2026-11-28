@@ -3,6 +3,7 @@ package me.stolyy.heroes.progression;
 import me.stolyy.heroes.game.GameMode;
 import me.stolyy.heroes.hero.HeroConfig;
 import me.stolyy.heroes.util.GameConfigManager;
+import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -31,11 +32,13 @@ public class PlayerStats {
     private final Map<GameMode, ModeStats> modeStats;
     private final Set<String> equippedCharms;
 
-    // Unlock economy + per-hero skin choice/ownership (keyed by lowercase hero name).
+    // Unlock economy + per-hero skin choice/ownership + skin shards (keyed by lowercase hero name).
     private int tokenBalance;
     private final Set<String> unlockedHeroes = new HashSet<>();
     private final Map<String, String> selectedSkins = new HashMap<>();
     private final Map<String, Set<String>> ownedSkins = new HashMap<>();
+    private final Map<ShardKind, Map<HeroSkin.Rarity, Integer>> shards = new EnumMap<>(ShardKind.class);
+    private int shardPity;
 
     // Global hero level/XP pool (mode-agnostic) — keyed by lowercase hero name.
     private final Map<String, HeroLevel> heroLevels = new HashMap<>();
@@ -242,6 +245,43 @@ public class PlayerStats {
     }
 
     public Map<String, Set<String>> ownedSkins() { return ownedSkins; }
+
+    public int getShardCount(ShardKind kind, HeroSkin.Rarity rarity) {
+        Map<HeroSkin.Rarity, Integer> byRarity = shards.get(kind);
+        return byRarity != null ? byRarity.getOrDefault(rarity, 0) : 0;
+    }
+
+    public void setShardCount(ShardKind kind, HeroSkin.Rarity rarity, int count) {
+        if (count <= 0) {
+            Map<HeroSkin.Rarity, Integer> byRarity = shards.get(kind);
+            if (byRarity != null) {
+                byRarity.remove(rarity);
+                if (byRarity.isEmpty()) shards.remove(kind);
+            }
+            return;
+        }
+        shards.computeIfAbsent(kind, k -> new EnumMap<>(HeroSkin.Rarity.class)).put(rarity, count);
+    }
+
+    public void addShards(ShardKind kind, HeroSkin.Rarity rarity, int amount) {
+        if (amount <= 0) return;
+        setShardCount(kind, rarity, getShardCount(kind, rarity) + amount);
+    }
+
+    public boolean removeShards(ShardKind kind, HeroSkin.Rarity rarity, int amount) {
+        if (amount <= 0) return false;
+        int current = getShardCount(kind, rarity);
+        if (current < amount) return false;
+        setShardCount(kind, rarity, current - amount);
+        return true;
+    }
+
+    public Map<ShardKind, Map<HeroSkin.Rarity, Integer>> shards() { return shards; }
+
+    public int getShardPity() { return shardPity; }
+    public void setShardPity(int shardPity) { this.shardPity = Math.max(0, shardPity); }
+    public void incrementShardPity() { this.shardPity++; }
+    public void resetShardPity() { this.shardPity = 0; }
 
     public int getElo(GameMode mode) {
         return elo.getOrDefault(mode, GameConfigManager.getStartingElo());

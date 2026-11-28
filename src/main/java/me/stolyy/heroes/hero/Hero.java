@@ -31,6 +31,7 @@ public class Hero {
     private final String name;
     private final HeroStats baseStats;
     private HeroSkin skin;
+    private HeroSkin baseSkin;
     private Controller controller;
 
     // Mechanics / Components
@@ -272,6 +273,9 @@ public class Hero {
     public HeroStats getBaseStats() { return baseStats; }
     public HeroSkin getSkin() { return skin; }
     public void setSkin(HeroSkin skin) { this.skin = skin; }
+    /** The skin fixed when this hero was built for its controller; transient ability skins revert to it. */
+    public HeroSkin getBaseSkin() { return baseSkin; }
+    public void setBaseSkin(HeroSkin baseSkin) { this.baseSkin = baseSkin; }
     public SoundEffect getWinSound() { return winSound; }
     public void setWinSound(SoundEffect winSound) { this.winSound = winSound; }
     public Controller getController() { return controller; }

@@ -792,6 +792,7 @@ gui:
     previewing-lore: "<light_purple>Previewing (until logout)"
     preview-hint-lore: "<light_purple>Right-click to preview"
     changed: "<green>{hero} skin set to {skin}."
+    next-game: "<gray>It shows from your next game; your current match is unchanged."
     previewed: "<light_purple>Previewing {hero} skin {skin} (session only — clears on logout)."
     preview-cleared: "<green>Cleared all active skin previews."
     preview-none: "<yellow>You have no active skin previews."

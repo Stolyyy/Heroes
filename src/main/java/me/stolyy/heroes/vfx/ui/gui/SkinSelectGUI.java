@@ -1,6 +1,7 @@
 package me.stolyy.heroes.vfx.ui.gui;
 
 import me.stolyy.heroes.command.general.SkinCommand;
+import me.stolyy.heroes.game.GameManager;
 import me.stolyy.heroes.hero.HeroConfig;
 import me.stolyy.heroes.progression.PlayerStats;
 import me.stolyy.heroes.progression.PlayerStatsManager;
@@ -50,6 +51,7 @@ public class SkinSelectGUI extends GUI {
         player.sendMessage(GuiText.component("gui.skins.changed",
                 "hero", HeroConfig.formatName(heroName),
                 "skin", skin.getDisplayName()));
+        sendNextGameNotice(player);
         SoundBuilder.of(Sound.ENTITY_PLAYER_LEVELUP).pitch(1.2f).play(player);
     }
 
@@ -60,7 +62,18 @@ public class SkinSelectGUI extends GUI {
         player.sendMessage(GuiText.component("gui.skins.previewed",
                 "hero", HeroConfig.formatName(heroName),
                 "skin", skin.getDisplayName()));
+        sendNextGameNotice(player);
         SoundBuilder.of(Sound.ENTITY_PLAYER_LEVELUP).pitch(1.4f).play(player);
+    }
+
+    /**
+     * The live hero's skin is fixed when the hero is built (CosmeticManager.apply), so a pick made
+     * while attached to a game only shows from the next one. Say so, as hero selection does.
+     */
+    private static void sendNextGameNotice(Player player) {
+        if (GameManager.isPlayerInGame(player)) {
+            player.sendMessage(GuiText.component("gui.skins.next-game"));
+        }
     }
 
     @Override

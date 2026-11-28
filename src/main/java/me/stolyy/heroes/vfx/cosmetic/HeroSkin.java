@@ -1,16 +1,39 @@
 package me.stolyy.heroes.vfx.cosmetic;
 
+import me.stolyy.heroes.util.Configs;
 import me.stolyy.heroes.vfx.effect.ItemBuilder;
+import me.stolyy.heroes.vfx.ui.GuiText;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class HeroSkin {
+    public enum Rarity {
+        NORMAL,
+        RARE,
+        LEGENDARY;
+
+        public static Rarity parse(String raw, String skinId) {
+            try {
+                return Rarity.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalStateException("Unknown rarity '" + raw + "' on skin '" + skinId
+                        + "' (expected normal, rare, or legendary)");
+            }
+        }
+    }
+
     private final String id;
     private final ConfigurationSection config;
+    private final boolean hidden;
+    private final @Nullable Rarity rarity;
+    private final @Nullable String configuredName;
     private final Map<String, ConfigurationSection> abilityOverrides = new HashMap<>();
     // Named per-piece cosmetic slots so sub-entities re-texture with the owner's skin.
     private final Map<String, ConfigurationSection> pieceOverrides = new HashMap<>();
@@ -18,6 +41,25 @@ public class HeroSkin {
     public HeroSkin(String id, ConfigurationSection config) {
         this.id = id;
         this.config = config;
+        this.hidden = config.getBoolean("hidden", false);
+        this.configuredName = config.getString("name");
+
+        boolean exemptFromRarity = id.equalsIgnoreCase("default")
+                || id.equalsIgnoreCase("masterskin")
+                || hidden;
+        if (exemptFromRarity) {
+            if (config.contains("rarity")) {
+                throw new IllegalStateException("Skin '" + id + "' must not declare 'rarity' "
+                        + "(default, masterskin, and hidden skins cannot have a rarity)");
+            }
+            this.rarity = null;
+        } else {
+            if (!config.contains("rarity")) {
+                throw new IllegalStateException("Skin '" + id + "' is missing required 'rarity' "
+                        + "(normal, rare, or legendary)");
+            }
+            this.rarity = Rarity.parse(Configs.requireString(config, "rarity"), id);
+        }
 
         ConfigurationSection visualSec = config.getConfigurationSection("ability_visuals");
         if (visualSec != null) {
@@ -35,6 +77,21 @@ public class HeroSkin {
     }
 
     public String getId() { return id; }
+
+    public boolean isHidden() { return hidden; }
+
+    public @Nullable Rarity getRarity() { return rarity; }
+
+    /** Configured display name ({@code skins.<id>.name}), or the prettified id (with master-name for masterskin). */
+    public String getDisplayName() {
+        if (configuredName != null && !configuredName.isEmpty()) return configuredName;
+        if (id.equalsIgnoreCase("masterskin")) return GuiText.raw("gui.skins.master-name");
+        return Arrays.stream(id.split("_"))
+                .filter(part -> !part.isEmpty())
+                .map(part -> part.substring(0, 1).toUpperCase(Locale.ROOT)
+                        + part.substring(1).toLowerCase(Locale.ROOT))
+                .collect(Collectors.joining(" "));
+    }
 
     public ConfigurationSection getAbilityOverride(String abilityName) {
         return abilityOverrides.get(abilityName.toLowerCase());

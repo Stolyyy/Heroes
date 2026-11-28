@@ -150,6 +150,7 @@ final class MatchRewards {
             player.sendMessage(Component.text(heroDisplay + " reached level " + level + "!",
                     NamedTextColor.AQUA));
             if (level == ProgressionConfig.getMasterSkinLevel()) {
+                stats.grantSkin(heroName, MASTER_SKIN_ID);
                 stats.setSkinForHero(heroName, MASTER_SKIN_ID);
                 HeroNpcSkins.refresh(player, heroName);
                 player.sendMessage(Component.text("You mastered " + heroDisplay

@@ -31,10 +31,11 @@ public class PlayerStats {
     private final Map<GameMode, ModeStats> modeStats;
     private final Set<String> equippedCharms;
 
-    // Unlock economy + per-hero skin choice (keyed by lowercase hero name).
+    // Unlock economy + per-hero skin choice/ownership (keyed by lowercase hero name).
     private int tokenBalance;
     private final Set<String> unlockedHeroes = new HashSet<>();
     private final Map<String, String> selectedSkins = new HashMap<>();
+    private final Map<String, Set<String>> ownedSkins = new HashMap<>();
 
     // Global hero level/XP pool (mode-agnostic) — keyed by lowercase hero name.
     private final Map<String, HeroLevel> heroLevels = new HashMap<>();
@@ -201,14 +202,46 @@ public class PlayerStats {
 
     /** The player's chosen skin for a hero; 'default' when none chosen. */
     public String getSkinForHero(String heroName) {
-        return selectedSkins.getOrDefault(heroName.toLowerCase(), "default");
+        return selectedSkins.getOrDefault(heroName.toLowerCase(Locale.ROOT), "default");
     }
 
     public void setSkinForHero(String heroName, String skinId) {
-        selectedSkins.put(heroName.toLowerCase(), skinId);
+        String key = heroName.toLowerCase(Locale.ROOT);
+        selectedSkins.put(key, skinId != null ? skinId.toLowerCase(Locale.ROOT) : "default");
     }
 
     public Map<String, String> selectedSkins() { return selectedSkins; }
+
+    /** True when the player owns {@code skinId} for {@code heroName}. {@code default} is always owned. */
+    public boolean ownsSkin(String heroName, String skinId) {
+        String skin = skinId.toLowerCase(Locale.ROOT);
+        if (skin.equals("default")) return true;
+        Set<String> owned = ownedSkins.get(heroName.toLowerCase(Locale.ROOT));
+        return owned != null && owned.contains(skin);
+    }
+
+    /** Grants ownership of {@code skinId} for {@code heroName}. {@code default} is never stored. Returns true if newly granted. */
+    public boolean grantSkin(String heroName, String skinId) {
+        String skin = skinId.toLowerCase(Locale.ROOT);
+        if (skin.equals("default")) return false;
+        return ownedSkins.computeIfAbsent(heroName.toLowerCase(Locale.ROOT), k -> new HashSet<>()).add(skin);
+    }
+
+    /** Revokes ownership of {@code skinId} for {@code heroName}, resetting selection to {@code default} if equipped. */
+    public boolean revokeSkin(String heroName, String skinId) {
+        String hero = heroName.toLowerCase(Locale.ROOT);
+        String skin = skinId.toLowerCase(Locale.ROOT);
+        if (skin.equals("default")) return false;
+        Set<String> owned = ownedSkins.get(hero);
+        if (owned == null || !owned.remove(skin)) return false;
+        if (owned.isEmpty()) ownedSkins.remove(hero);
+        if (getSkinForHero(hero).equalsIgnoreCase(skin)) {
+            setSkinForHero(hero, "default");
+        }
+        return true;
+    }
+
+    public Map<String, Set<String>> ownedSkins() { return ownedSkins; }
 
     public int getElo(GameMode mode) {
         return elo.getOrDefault(mode, GameConfigManager.getStartingElo());

@@ -784,7 +784,12 @@ gui:
     selected-lore: "<green>Selected"
     select-lore: "<yellow>Click to select"
     locked-lore: "<red>Unlocks at hero level {level}"
+    locked-unowned-lore: "<red>Locked"
     changed: "<green>{hero} skin set to {skin}."
+    rarity:
+      normal: "<white>Normal"
+      rare: "<aqua>Rare"
+      legendary: "<gold>Legendary"
 
   bot:
     title: "Bot: {bot}"
@@ -881,3 +886,20 @@ status:
     root: "&6&l⬇ ROOTED &f{seconds}s"
     disable: "&d&l✦ DISABLED &f{seconds}s"
     grabbed: "&c&l✊ GRABBED"
+
+# /skin Command Messages
+skin:
+  usage: "&eUsage: /skin [hero] [skin]"
+  admin-usage: "&eUsage: /skin <grant|revoke> <player> <hero> <skin>"
+  no-hero-selected: "&cSelect a hero first, or specify one: /skin <hero>"
+  unknown-hero: "&cHero not found: {hero}"
+  unknown-skin: "&cSkin not found for {hero}: {skin}"
+  locked: "&cYou do not own the {skin} skin for {hero}."
+  player-not-found: "&cPlayer not found: {player}"
+  default-permanent: "&cThe default skin is always owned and cannot be granted or revoked."
+  already-owned: "&e{player} already owns {skin} for {hero}."
+  not-owned: "&e{player} does not own {skin} for {hero}."
+  granted: "&aGranted {skin} for {hero} to {player}."
+  granted-notify: "&6You received the &e{skin} &6skin for &e{hero}&6!"
+  revoked: "&aRevoked {skin} for {hero} from {player}."
+  revoked-notify: "&cYour {skin} skin for {hero} was revoked."

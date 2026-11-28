@@ -1,7 +1,6 @@
 package me.stolyy.heroes.game;
 
 import me.stolyy.heroes.Heroes;
-import me.stolyy.heroes.game.rules.WinCondition;
 import me.stolyy.heroes.hero.Hero;
 import me.stolyy.heroes.hero.HeroManager;
 import me.stolyy.heroes.physics.Interactions;
@@ -40,7 +39,6 @@ final class MatchAnnouncer {
         MATCH_START("match-start", false),
         FIRST_BLOOD("first-blood", false),
         LAST_LIFE("last-life", false),
-        MATCH_POINT("match-point", false),
         VICTORY("victory", true),
         DEFEAT("defeat", true);
 
@@ -59,7 +57,6 @@ final class MatchAnnouncer {
     private final Game game;
     private final List<BukkitTask> pendingTasks = new ArrayList<>();
     private boolean firstBloodAnnounced;
-    private boolean matchPointAnnounced;
     private boolean cleaned;
 
     MatchAnnouncer(Game game) {
@@ -89,13 +86,6 @@ final class MatchAnnouncer {
             Player p = Bukkit.getPlayer(targetId);
             return p != null ? List.of(p) : List.of();
         });
-    }
-
-    void checkMatchPoint() {
-        if (matchPointAnnounced || game.gameState() != GameState.IN_PROGRESS) return;
-        if (!isMatchPoint()) return;
-        matchPointAnnounced = true;
-        announce(Event.MATCH_POINT, game::onlinePlayers);
     }
 
     void onMatchEnd(Team winningTeam) {
@@ -160,37 +150,6 @@ final class MatchAnnouncer {
             if (p != null) out.add(p);
         }
         return out;
-    }
-
-    private boolean isMatchPoint() {
-        WinCondition condition = game.modeConfig().winCondition();
-        if (condition == WinCondition.KILL_TARGET) {
-            int limit = game.modeConfig().killLimit();
-            if (limit <= 1) return false;
-            for (Team team : game.getTeams().values()) {
-                if (team.color() == TeamColor.SPECTATOR) continue;
-                if (WinCondition.teamKills(game, team.color()) == limit - 1) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        if (condition == WinCondition.LAST_TEAM_STANDING && game.modeConfig().deathOutcome().consumesLife()) {
-            List<Team> activeTeams = game.getTeams().values().stream()
-                    .filter(t -> t.color() != TeamColor.SPECTATOR)
-                    .filter(t -> t.playerUUIDs().stream().anyMatch(game.aliveIds()::contains))
-                    .toList();
-            if (activeTeams.size() != 2) return false;
-            for (Team team : activeTeams) {
-                int totalLives = team.playerUUIDs().stream()
-                        .filter(game.aliveIds()::contains)
-                        .mapToInt(uuid -> game.getGamePlayer(uuid).currentLives())
-                        .sum();
-                if (totalLives == 1) return true;
-            }
-            return false;
-        }
-        return false;
     }
 
     // --- Kill feed & end-of-game summaries ---

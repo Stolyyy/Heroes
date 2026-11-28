@@ -479,11 +479,7 @@ public class Game {
 
         MapSkipPoll.endForLeader(uuid);
         rosterChanged();
-        if (gameState == GameState.IN_PROGRESS || gameState == GameState.STARTING) {
-            if (!checkEnd() && gameState == GameState.IN_PROGRESS) {
-                announcer.checkMatchPoint();
-            }
-        }
+        if (gameState == GameState.IN_PROGRESS || gameState == GameState.STARTING) checkEnd();
     }
 
     /**
@@ -589,11 +585,7 @@ public class Game {
 
     public void removeBot(UUID botUUID) {
         detachBot(botUUID);
-        if (gameState == GameState.IN_PROGRESS || gameState == GameState.STARTING) {
-            if (!checkEnd() && gameState == GameState.IN_PROGRESS) {
-                announcer.checkMatchPoint();
-            }
-        }
+        if (gameState == GameState.IN_PROGRESS || gameState == GameState.STARTING) checkEnd();
     }
 
     /**
@@ -763,9 +755,7 @@ public class Game {
             }
         }
         visuals.update();
-        if (!checkEnd()) {
-            announcer.checkMatchPoint();
-        }
+        checkEnd();
     }
 
     private void rescueVictimOnMatchEnd(Player player) {

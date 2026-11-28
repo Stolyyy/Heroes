@@ -225,8 +225,6 @@ announcer:
     delay-ms: 0
   last-life:
     delay-ms: 0
-  match-point:
-    delay-ms: 0
   victory:
     delay-ms: 0
   defeat:

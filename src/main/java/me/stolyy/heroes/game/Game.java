@@ -159,6 +159,7 @@ public class Game {
         }
         PlayerVisibility.refreshGlow(this);
         AutoSpectate.onGameStarting(this);
+        announcer.onCountdownStart();
 
         BukkitTask startTask = Bukkit.getScheduler().runTaskLater(Heroes.getInstance(), () -> {
             if (gameState != GameState.STARTING) return;
@@ -166,6 +167,7 @@ public class Game {
             startedAt = System.currentTimeMillis();
             secondsLeft = settings.timer();
             visuals.update();
+            announcer.onMatchStart();
 
             activeTasks.add(Bukkit.getScheduler().runTaskTimer(Heroes.getInstance(), () -> {
                 if (gameState != GameState.IN_PROGRESS) return;
@@ -256,6 +258,7 @@ public class Game {
 
                 if (winningTeam != null) {
                     announcer.playWinSound(winningTeam);
+                    announcer.onMatchEnd(winningTeam);
                     Map<String, String> endPlaceholders = announcer.buildEndPlaceholders(winningTeam);
                     visuals.win(winningTeam, endPlaceholders);
                     announcer.sendSummaryToLosers(winningTeam, endPlaceholders);
@@ -284,6 +287,7 @@ public class Game {
         activeTasks.forEach(BukkitTask::cancel);
         activeTasks.clear();
         visuals.cancelTasks();
+        announcer.cancelTasks();
         crystals.clear();
     }
 
@@ -413,6 +417,7 @@ public class Game {
     }
 
     public void cleanupWorld() {
+        announcer.markCleaned();
         stopMatchTasks();
         WorldInstances.deleteWorld(settings.map());
         GameManager.unregisterLive(this);
@@ -474,7 +479,11 @@ public class Game {
 
         MapSkipPoll.endForLeader(uuid);
         rosterChanged();
-        if (gameState == GameState.IN_PROGRESS || gameState == GameState.STARTING) checkEnd();
+        if (gameState == GameState.IN_PROGRESS || gameState == GameState.STARTING) {
+            if (!checkEnd() && gameState == GameState.IN_PROGRESS) {
+                announcer.checkMatchPoint();
+            }
+        }
     }
 
     /**
@@ -580,7 +589,11 @@ public class Game {
 
     public void removeBot(UUID botUUID) {
         detachBot(botUUID);
-        if (gameState == GameState.IN_PROGRESS || gameState == GameState.STARTING) checkEnd();
+        if (gameState == GameState.IN_PROGRESS || gameState == GameState.STARTING) {
+            if (!checkEnd() && gameState == GameState.IN_PROGRESS) {
+                announcer.checkMatchPoint();
+            }
+        }
     }
 
     /**
@@ -729,6 +742,7 @@ public class Game {
 
         if (killer != null) {
             GamePlayer killerGp = credit.recordKill(killer.getUniqueId(), player, killer.getName(), false);
+            announcer.onCreditedKill();
             if (killerGp != null) {
                 modeConfig.onKill().apply(killerGp, this);
                 if (checkEnd()) {
@@ -744,9 +758,14 @@ public class Game {
             eliminateParticipant(player, hero, deathLocation);
         } else {
             beginRespawn(player, gamePlayer, hero, killer, deathLocation);
+            if (modeConfig.deathOutcome().consumesLife() && gamePlayer.currentLives() == 1) {
+                announcer.onLastLife(player);
+            }
         }
         visuals.update();
-        checkEnd();
+        if (!checkEnd()) {
+            announcer.checkMatchPoint();
+        }
     }
 
     private void rescueVictimOnMatchEnd(Player player) {

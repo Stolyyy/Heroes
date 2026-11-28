@@ -209,3 +209,25 @@ chat:
       volume: 1.0
       pitch: 1.5
       scope: PLAYER
+
+announcer:
+  # Each event is optional: no block, or a block with no sound, plays nothing.
+  # delay-ms waits that long after the event before playing, to line a clip up with what is on screen.
+  countdown:
+    delay-ms: 0
+    # sound:
+    #   sound: "heroes.announcer.countdown"   # one clip: "3, 2, 1, GO!"
+    #   volume: 1.0
+    #   scope: PLAYER
+  match-start:
+    delay-ms: 0
+  first-blood:
+    delay-ms: 0
+  last-life:
+    delay-ms: 0
+  match-point:
+    delay-ms: 0
+  victory:
+    delay-ms: 0
+  defeat:
+    delay-ms: 0

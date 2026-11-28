@@ -276,6 +276,21 @@ public class PlayerStats {
         return true;
     }
 
+    /**
+     * Atomically checks {@code fromKind}/{@code fromRarity} has at least {@code cost} shards and
+     * applies both the deduction and the {@code toKind}/{@code toRarity} grant in one operation so
+     * rapid clicks cannot go negative or create free shards.
+     */
+    public synchronized boolean exchangeShards(ShardKind fromKind, HeroSkin.Rarity fromRarity, int cost,
+                                               ShardKind toKind, HeroSkin.Rarity toRarity, int gain) {
+        if (cost <= 0 || gain <= 0) return false;
+        int current = getShardCount(fromKind, fromRarity);
+        if (current < cost) return false;
+        setShardCount(fromKind, fromRarity, current - cost);
+        setShardCount(toKind, toRarity, getShardCount(toKind, toRarity) + gain);
+        return true;
+    }
+
     public Map<ShardKind, Map<HeroSkin.Rarity, Integer>> shards() { return shards; }
 
     public int getShardPity() { return shardPity; }

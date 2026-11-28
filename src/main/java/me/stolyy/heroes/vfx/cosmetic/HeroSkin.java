@@ -19,6 +19,15 @@ public class HeroSkin {
         RARE,
         LEGENDARY;
 
+        /** Next rarity tier for shard upgrades, or {@code null} for {@link #LEGENDARY}. */
+        public @Nullable Rarity next() {
+            return switch (this) {
+                case NORMAL -> RARE;
+                case RARE -> LEGENDARY;
+                case LEGENDARY -> null;
+            };
+        }
+
         public static Rarity parse(String raw, String skinId) {
             try {
                 return Rarity.valueOf(raw.trim().toUpperCase(Locale.ROOT));

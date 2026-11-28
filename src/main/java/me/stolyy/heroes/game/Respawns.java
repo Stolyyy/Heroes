@@ -90,7 +90,7 @@ final class Respawns {
 
         Hero hero = HeroManager.getHero(player);
         hero.status().clear(hero);
-        CosmeticManager.apply(hero.getController(), hero);
+        CosmeticManager.reapply(hero.getController(), hero);
 
         PlayerVisibility.refreshGlow(game);
         game.modeConfig().onRespawn().apply(player, game);

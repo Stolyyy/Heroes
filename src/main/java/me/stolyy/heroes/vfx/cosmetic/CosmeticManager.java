@@ -203,15 +203,30 @@ public class CosmeticManager {
         return builder.build();
     }
 
+    /**
+     * Resolves the skin for a hero that was just built for {@code controller} (match start, hero
+     * swap, practice entry) and fixes it as the hero's base skin. Like the hero pick, a skin
+     * chosen mid-match takes effect in the next game: respawns go through {@link #reapply}, which
+     * restores the base skin instead of reading the selection again.
+     */
     public static void apply(Controller controller, Hero hero) {
-        // Always resolve the player's saved skin unconditionally so transient ability skins cannot
-        // survive a respawn or hero swap if a revert hook is skipped or delayed.
         if (controller instanceof PlayerController pc) {
             String heroKey = heroConfigKey(hero.getName());
             HeroSkin chosen = resolveEffectiveSkin(pc.getPlayer(), heroKey);
             if (chosen != null) hero.setSkin(chosen);
         }
+        hero.setBaseSkin(hero.getSkin());
 
+        applyCurrentSkin(controller, hero);
+    }
+
+    /**
+     * Re-applies the skin the hero was built with. Called on respawn so a transient ability skin
+     * cannot survive it if a revert hook is skipped or delayed, without picking up a skin the
+     * player selected after the hero was built.
+     */
+    public static void reapply(Controller controller, Hero hero) {
+        hero.setSkin(hero.getBaseSkin());
         applyCurrentSkin(controller, hero);
     }
 

@@ -130,6 +130,25 @@ public class CosmeticManager {
         return equipment;
     }
 
+    /** Builds the hero's primary held item for {@code skin} (used by the lobby Skin Museum). */
+    public static ItemStack buildPrimaryItem(String heroId, HeroSkin skin) {
+        String assetHero = HeroConfig.assetKey(heroId);
+        ConfigurationSection handOverride = skin.getHandOverride();
+        Material material = handOverride != null
+                ? parseMaterial(handOverride.getString("material"), Material.STICK)
+                : Material.STICK;
+        ItemBuilder builder = ItemBuilder.from(material).unbreakable(true);
+        if (handOverride != null) {
+            builder.modelData(
+                    handOverride.getString("hero", assetHero),
+                    handOverride.getString("texture", "item"),
+                    handOverride.getString("skin", "default"));
+        } else {
+            builder.modelData(assetHero, "item", skin.getId());
+        }
+        return builder.build();
+    }
+
     public static void apply(Controller controller, Hero hero) {
         // Always resolve the player's saved skin unconditionally so transient ability skins cannot
         // survive a respawn or hero swap if a revert hook is skipped or delayed.

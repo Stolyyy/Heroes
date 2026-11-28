@@ -18,16 +18,20 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public class CosmeticManager {
     public static final int SLOT_PRIMARY = 0;
@@ -39,6 +43,38 @@ public class CosmeticManager {
     public static final int INV_TOP_START = 9;
     public static final int CHARM_CLEAR_START = 10;
     public static final int INV_TOP_END = 17;
+
+    // Session-only admin skin previews: player UUID -> (lowercase hero key -> lowercase skin id).
+    // Cleared on player quit and plugin disable; never written to player stats files.
+    private static final Map<UUID, Map<String, String>> SKIN_PREVIEWS = new HashMap<>();
+
+    public static void setPreview(UUID playerId, String heroId, String skinId) {
+        SKIN_PREVIEWS.computeIfAbsent(playerId, k -> new HashMap<>())
+                .put(heroId.toLowerCase(Locale.ROOT), skinId.toLowerCase(Locale.ROOT));
+    }
+
+    public static @Nullable String getPreview(UUID playerId, String heroId) {
+        Map<String, String> byHero = SKIN_PREVIEWS.get(playerId);
+        return byHero != null ? byHero.get(heroId.toLowerCase(Locale.ROOT)) : null;
+    }
+
+    public static boolean clearPreview(UUID playerId, String heroId) {
+        Map<String, String> byHero = SKIN_PREVIEWS.get(playerId);
+        if (byHero == null) return false;
+        boolean removed = byHero.remove(heroId.toLowerCase(Locale.ROOT)) != null;
+        if (byHero.isEmpty()) SKIN_PREVIEWS.remove(playerId);
+        return removed;
+    }
+
+    /** Clears all session previews for {@code playerId} and returns the hero keys that were cleared. */
+    public static Set<String> clearAllPreviews(UUID playerId) {
+        Map<String, String> removed = SKIN_PREVIEWS.remove(playerId);
+        return removed != null ? Set.copyOf(removed.keySet()) : Set.of();
+    }
+
+    public static void clearPreviews() {
+        SKIN_PREVIEWS.clear();
+    }
 
     /**
      * Looks up a named skin section in the hero's YML ({@code skins.<skinId>}).
@@ -91,6 +127,24 @@ public class CosmeticManager {
         return chosen;
     }
 
+    /**
+     * Resolves {@code player}'s active skin for {@code heroId}: a session-only admin preview takes
+     * precedence (skipping ownership, still rejecting hidden skins); otherwise delegates to
+     * {@link #resolveOwnedSkin}.
+     */
+    public static @Nullable HeroSkin resolveEffectiveSkin(Player player, String heroId) {
+        String key = heroId.toLowerCase(Locale.ROOT);
+        String previewId = getPreview(player.getUniqueId(), key);
+        if (previewId != null) {
+            HeroSkin preview = findSkin(key, previewId);
+            if (preview != null && !preview.isHidden()) {
+                return preview;
+            }
+            clearPreview(player.getUniqueId(), key);
+        }
+        return resolveOwnedSkin(PlayerStatsManager.getStats(player), key);
+    }
+
     /** Resolves a hero's skin section by ID, falling back to {@code skins.default} if missing. */
     public static @Nullable HeroSkin resolveSkin(String heroId, String skinId) {
         HeroSkin skin = findSkin(heroId, skinId);
@@ -135,8 +189,7 @@ public class CosmeticManager {
         // survive a respawn or hero swap if a revert hook is skipped or delayed.
         if (controller instanceof PlayerController pc) {
             String heroKey = heroConfigKey(hero.getName());
-            PlayerStats stats = PlayerStatsManager.getStats(pc.getPlayer());
-            HeroSkin chosen = resolveOwnedSkin(stats, heroKey);
+            HeroSkin chosen = resolveEffectiveSkin(pc.getPlayer(), heroKey);
             if (chosen != null) hero.setSkin(chosen);
         }
 

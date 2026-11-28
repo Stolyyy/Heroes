@@ -5,7 +5,6 @@ import me.stolyy.heroes.Heroes;
 import me.stolyy.heroes.npc.NpcManager;
 import me.stolyy.heroes.npc.NpcServiceProvider;
 import me.stolyy.heroes.physics.Interactions;
-import me.stolyy.heroes.progression.PlayerStatsManager;
 import me.stolyy.heroes.vfx.cosmetic.CosmeticManager;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import org.bukkit.Bukkit;
@@ -60,7 +59,7 @@ public final class HeroNpcSkins {
     }
 
     private static void apply(Player viewer, String heroName, LivingEntity npc) {
-        HeroSkin skin = CosmeticManager.resolveOwnedSkin(PlayerStatsManager.getStats(viewer), heroName);
+        HeroSkin skin = CosmeticManager.resolveEffectiveSkin(viewer, heroName);
         if (skin == null) return;
         viewer.sendEquipmentChange(npc, CosmeticManager.buildArmorEquipment(heroName, skin));
     }

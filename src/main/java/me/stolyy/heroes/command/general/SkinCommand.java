@@ -10,6 +10,7 @@ import me.stolyy.heroes.util.GameConfigManager;
 import me.stolyy.heroes.vfx.cosmetic.CosmeticManager;
 import me.stolyy.heroes.vfx.cosmetic.HeroSkin;
 import me.stolyy.heroes.vfx.effect.SoundBuilder;
+import me.stolyy.heroes.vfx.ui.GuiText;
 import me.stolyy.heroes.vfx.ui.gui.GUIManager;
 import me.stolyy.heroes.vfx.ui.gui.SkinSelectGUI;
 import me.stolyy.heroes.vfx.ui.visual.HeroNpcSkins;
@@ -25,14 +26,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * {@code /skin [hero] [skin]} (alias {@code /cosmetic}) — opens the skin menu or equips an owned
- * skin directly, plus admin subcommands {@code /skin grant|revoke <player> <hero> <skin>} behind
- * {@value #ADMIN_PERMISSION}.
+ * skin directly, supports session-only admin previews behind {@value #PREVIEW_PERMISSION}
+ * ({@code /skin preview clear} or selecting an unowned skin), and exposes admin subcommands
+ * {@code /skin grant|revoke <player> <hero> <skin>} behind {@value #ADMIN_PERMISSION}.
  */
 public class SkinCommand extends HeroesCommand {
     public static final String ADMIN_PERMISSION = "heroes.skin.admin";
+    public static final String PREVIEW_PERMISSION = "heroes.skin.preview";
 
     public SkinCommand() {
         super("skin", "Select or manage hero skins", "/skin [hero] [skin]",
@@ -41,7 +45,7 @@ public class SkinCommand extends HeroesCommand {
 
     @Override
     public List<String> extraPermissions() {
-        return List.of(ADMIN_PERMISSION);
+        return List.of(ADMIN_PERMISSION, PREVIEW_PERMISSION);
     }
 
     @Override
@@ -57,6 +61,27 @@ public class SkinCommand extends HeroesCommand {
 
         if (!(sender instanceof Player player)) {
             sender.sendMessage(Component.text("This command can only be used by players.", NamedTextColor.RED));
+            return;
+        }
+
+        if (args.length >= 1 && args[0].equalsIgnoreCase("preview")) {
+            if (!player.hasPermission(PREVIEW_PERMISSION)) {
+                player.sendMessage(Component.text("You do not have permission to use this command.", NamedTextColor.RED));
+                return;
+            }
+            if (args.length == 2 && args[1].equalsIgnoreCase("clear")) {
+                Set<String> cleared = CosmeticManager.clearAllPreviews(player.getUniqueId());
+                if (cleared.isEmpty()) {
+                    player.sendMessage(GuiText.component("gui.skins.preview-none"));
+                } else {
+                    for (String heroId : cleared) {
+                        HeroNpcSkins.refresh(player, heroId);
+                    }
+                    player.sendMessage(GuiText.component("gui.skins.preview-cleared"));
+                }
+            } else {
+                player.sendMessage(GuiText.component("gui.skins.preview-usage"));
+            }
             return;
         }
 
@@ -93,6 +118,10 @@ public class SkinCommand extends HeroesCommand {
 
             PlayerStats stats = PlayerStatsManager.getStats(player);
             if (!stats.ownsSkin(heroName, skin.getId())) {
+                if (player.hasPermission(PREVIEW_PERMISSION)) {
+                    SkinSelectGUI.applyPreview(player, heroName, skin);
+                    return;
+                }
                 SoundBuilder.of(Sound.ENTITY_VILLAGER_NO).play(player);
                 player.sendMessage(GameConfigManager.getMessage("skin.locked", Map.of(
                         "hero", HeroConfig.formatName(heroName),
@@ -183,6 +212,7 @@ public class SkinCommand extends HeroesCommand {
     protected List<String> complete(CommandSender sender, String[] args) {
         boolean isOp = !(sender instanceof Player p) || p.isOp();
         boolean isAdmin = sender.hasPermission(ADMIN_PERMISSION);
+        boolean canPreview = sender.hasPermission(PREVIEW_PERMISSION);
 
         if (args.length == 1) {
             List<String> options = new ArrayList<>();
@@ -200,10 +230,16 @@ public class SkinCommand extends HeroesCommand {
                 options.add("grant");
                 options.add("revoke");
             }
+            if (canPreview) {
+                options.add("preview");
+            }
             return TabComplete.startsWith(options, args[0]);
         }
 
         String first = args[0].toLowerCase(Locale.ROOT);
+        if (canPreview && first.equals("preview")) {
+            return args.length == 2 ? TabComplete.startsWith(List.of("clear"), args[1]) : Collections.emptyList();
+        }
         if (isAdmin && (first.equals("grant") || first.equals("revoke"))) {
             if (args.length == 2) {
                 return TabComplete.onlinePlayers(args[1]);

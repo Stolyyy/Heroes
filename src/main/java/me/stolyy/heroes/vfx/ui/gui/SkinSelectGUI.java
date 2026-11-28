@@ -1,5 +1,6 @@
 package me.stolyy.heroes.vfx.ui.gui;
 
+import me.stolyy.heroes.command.general.SkinCommand;
 import me.stolyy.heroes.hero.HeroConfig;
 import me.stolyy.heroes.progression.PlayerStats;
 import me.stolyy.heroes.progression.PlayerStatsManager;
@@ -41,14 +42,25 @@ public class SkinSelectGUI extends GUI {
         this.returnTo = returnTo;
     }
 
-    /** Persists the player's owned skin choice, refreshes lobby NPCs, and plays the confirmation feedback. */
+    /** Clears any session preview for {@code heroName}, persists the owned selection, refreshes NPCs, and plays feedback. */
     public static void applySelection(Player player, String heroName, HeroSkin skin) {
+        CosmeticManager.clearPreview(player.getUniqueId(), heroName);
         PlayerStatsManager.getStats(player).setSkinForHero(heroName, skin.getId());
         HeroNpcSkins.refresh(player, heroName);
         player.sendMessage(GuiText.component("gui.skins.changed",
                 "hero", HeroConfig.formatName(heroName),
                 "skin", skin.getDisplayName()));
         SoundBuilder.of(Sound.ENTITY_PLAYER_LEVELUP).pitch(1.2f).play(player);
+    }
+
+    /** Activates a session-only preview for an unowned skin without touching ownership or saved selection. */
+    public static void applyPreview(Player player, String heroName, HeroSkin skin) {
+        CosmeticManager.setPreview(player.getUniqueId(), heroName, skin.getId());
+        HeroNpcSkins.refresh(player, heroName);
+        player.sendMessage(GuiText.component("gui.skins.previewed",
+                "hero", HeroConfig.formatName(heroName),
+                "skin", skin.getDisplayName()));
+        SoundBuilder.of(Sound.ENTITY_PLAYER_LEVELUP).pitch(1.4f).play(player);
     }
 
     @Override
@@ -59,6 +71,8 @@ public class SkinSelectGUI extends GUI {
         PlayerStats stats = PlayerStatsManager.getStats(player);
         HeroSkin resolved = CosmeticManager.resolveOwnedSkin(stats, heroName);
         String selected = resolved != null ? resolved.getId() : "default";
+        String previewed = CosmeticManager.getPreview(player.getUniqueId(), heroName);
+        boolean canPreview = player.hasPermission(SkinCommand.PREVIEW_PERMISSION);
         int masterLevel = ProgressionConfig.getMasterSkinLevel();
 
         int slot = 0;
@@ -68,12 +82,15 @@ public class SkinSelectGUI extends GUI {
             String skinId = skin.getId();
             boolean owned = stats.ownsSkin(heroName, skinId);
             boolean isSelected = skinId.equalsIgnoreCase(selected);
+            boolean isPreviewed = previewed != null && skinId.equalsIgnoreCase(previewed);
 
             List<Component> lore = new ArrayList<>();
             if (skin.getRarity() != null) {
                 lore.add(GuiText.component("gui.skins.rarity." + skin.getRarity().name().toLowerCase(Locale.ROOT)));
             }
-            if (isSelected) {
+            if (isPreviewed) {
+                lore.add(GuiText.component("gui.skins.previewing-lore"));
+            } else if (isSelected) {
                 lore.add(GuiText.component("gui.skins.selected-lore"));
             } else if (owned) {
                 lore.add(GuiText.component("gui.skins.select-lore"));
@@ -82,14 +99,21 @@ public class SkinSelectGUI extends GUI {
             } else {
                 lore.add(GuiText.component("gui.skins.locked-unowned-lore"));
             }
+            if (!owned && !isPreviewed && canPreview) {
+                lore.add(GuiText.component("gui.skins.preview-hint-lore"));
+            }
 
-            ItemStack item = ItemBuilder.from(owned ? Material.SPONGE : Material.GRAY_DYE)
-                    .name(GuiText.component(owned ? "gui.skins.item-name-owned" : "gui.skins.item-name-locked",
-                            "skin", skin.getDisplayName()))
+            Material material = (owned || isPreviewed) ? Material.SPONGE : Material.GRAY_DYE;
+            String nameKey = isPreviewed
+                    ? "gui.skins.item-name-preview"
+                    : owned ? "gui.skins.item-name-owned" : "gui.skins.item-name-locked";
+
+            ItemStack item = ItemBuilder.from(material)
+                    .name(GuiText.component(nameKey, "skin", skin.getDisplayName()))
                     .lore(lore)
                     .modelData(HeroConfig.assetKey(heroName), "head", skinId)
                     .build();
-            if (isSelected) highlightItem(item);
+            if (isPreviewed || (isSelected && previewed == null)) highlightItem(item);
 
             inventoryItems.put(slot, item);
             slotToSkin.put(slot, skin);
@@ -111,10 +135,20 @@ public class SkinSelectGUI extends GUI {
 
         HeroSkin skin = slotToSkin.get(slot);
         if (skin == null) return;
-        if (lockedSlots.contains(slot) || !PlayerStatsManager.getStats(player).ownsSkin(heroName, skin.getId())) {
+
+        boolean owned = PlayerStatsManager.getStats(player).ownsSkin(heroName, skin.getId());
+        if (!owned) {
+            if (event.isRightClick() && player.hasPermission(SkinCommand.PREVIEW_PERMISSION)) {
+                applyPreview(player, heroName, skin);
+                populate();
+                update();
+                return;
+            }
             playError();
-            populate();
-            update();
+            if (!lockedSlots.contains(slot)) {
+                populate();
+                update();
+            }
             return;
         }
 

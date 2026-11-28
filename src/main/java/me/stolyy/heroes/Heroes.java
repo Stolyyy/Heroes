@@ -59,6 +59,7 @@ import me.stolyy.heroes.util.BotConfig;
 import me.stolyy.heroes.util.BotNameManager;
 import me.stolyy.heroes.util.GameConfigManager;
 import me.stolyy.heroes.util.GameModeConfigManager;
+import me.stolyy.heroes.vfx.cosmetic.CosmeticManager;
 import me.stolyy.heroes.vfx.effect.AbstractDisplayBuilder;
 import me.stolyy.heroes.vfx.effect.BloodTrail;
 import me.stolyy.heroes.vfx.effect.DisplayTags;
@@ -195,6 +196,7 @@ public final class Heroes extends JavaPlugin {
         TeamGlow.shutdown();
         PlayerStatsManager.shutdown();
         HeroConfig.clear();
+        CosmeticManager.clearPreviews();
         BloodTrail.clear();
         AbstractDisplayBuilder.sweepOrphans();
         Bukkit.getScheduler().cancelTasks(this);

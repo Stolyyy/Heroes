@@ -312,6 +312,9 @@ visual:
     level-value: "<yellow> - Lv. {value}"
     level-label: "<gold>Level Leaderboard: {view}"
     level-overall: "Overall"
+  museum:
+    line-1: "<white><bold>{skin}</bold></white>"
+    line-2: "<gray>{hero}</gray> {rarity}"
 
 # GUIs (MiniMessage)
 gui:

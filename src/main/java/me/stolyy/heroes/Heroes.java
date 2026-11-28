@@ -75,6 +75,7 @@ import me.stolyy.heroes.vfx.ui.visual.HeroNpcSkins;
 import me.stolyy.heroes.vfx.ui.visual.LevelBoardSource;
 import me.stolyy.heroes.vfx.ui.visual.LobbyScoreboard;
 import me.stolyy.heroes.vfx.ui.visual.MemorialDisplays;
+import me.stolyy.heroes.vfx.ui.visual.SkinMuseum;
 import me.stolyy.heroes.vfx.ui.visual.TabList;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -100,6 +101,7 @@ public final class Heroes extends JavaPlugin {
     private static Heroes instance;
     private static Location lobbyLocation;
     private static MemorialDisplays memorialDisplays;
+    private static SkinMuseum skinMuseum;
 
     public static Heroes getInstance() {
         return instance;
@@ -156,6 +158,7 @@ public final class Heroes extends JavaPlugin {
         NpcManager.initialize();
         HeroNpcLevelTags.initialize();
         HeroNpcSkins.initialize();
+        SkinMuseum.initialize();
         PracticeManager.initialize();
         DiscordStatus.start();
         DiscordBot.start();
@@ -164,11 +167,13 @@ public final class Heroes extends JavaPlugin {
         new BoardDisplay<>(new EloBoardSource(), DisplayTags.LEADERBOARD);
         new BoardDisplay<>(new LevelBoardSource(), DisplayTags.LEVEL_LEADERBOARD);
         memorialDisplays = new MemorialDisplays();
+        skinMuseum = new SkinMuseum();
         Bukkit.getScheduler().runTaskLater(this, () -> {
             NpcManager.spawnLobbyNpcs();
             HeroNpcSkins.refreshAll();
             BoardDisplay.spawnAll();
             memorialDisplays.spawn();
+            skinMuseum.spawn();
             PracticeManager.spawnDummies();
         }, 20L);
 
@@ -192,6 +197,7 @@ public final class Heroes extends JavaPlugin {
         SpawnProtection.clear();
         BoardDisplay.despawnAll();
         if (memorialDisplays != null) memorialDisplays.despawn();
+        if (skinMuseum != null) skinMuseum.despawn();
         HeroNpcLevelTags.clearAll();
         NpcManager.clear();
         TeamGlow.shutdown();

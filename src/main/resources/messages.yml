@@ -871,6 +871,27 @@ gui:
       - "<gray>Configure your preferences"
       - ""
       - "<yellow>Click to open!"
+    shards-name: "<light_purple>Skin Shards"
+    shards-lore:
+      - "<gray>Open shards to unlock random"
+      - "<gray>skins for your heroes!"
+      - ""
+      - "<yellow>Click to open!"
+
+  shards:
+    title: "Skin Shards"
+    rarity-normal-name: "<white>Normal Skin Shard"
+    rarity-rare-name: "<aqua>Rare Skin Shard"
+    rarity-legendary-name: "<gold>Legendary Skin Shard"
+    owned-lore: "<gray>Owned: <white>{count}"
+    pool-lore: "<gray>Skins left in pool: <white>{pool}"
+    consume-lore: "<yellow>Click to open for a random skin"
+    none-lore: "<red>You have no shards of this rarity"
+    empty-pool-lore: "<red>No unowned skins left in this pool"
+    combine-placeholder-name: "<gray>Combine Shards"
+    select-placeholder-name: "<gray>Selection Shards"
+    coming-soon-lore:
+      - "<dark_gray>Coming soon"
 
 # Discord Webhook Messages
 discord:
@@ -910,3 +931,20 @@ skin:
   granted-notify: "&6You received the &e{skin} &6skin for &e{hero}&6!"
   revoked: "&aRevoked {skin} for {hero} from {player}."
   revoked-notify: "&cYour {skin} skin for {hero} was revoked."
+
+# /shards Command & Drop Messages
+shards:
+  usage: "&eUsage: /shards"
+  admin-usage: "&eUsage: /shards <give <player> <random|hero|skin> <normal|rare|legendary> [amount] | check <player>>"
+  drop: "&d✦ You received a &f{rarity} &dSkin Shard! Use &e/shards &dto open it."
+  consumed: "&aUnlocked &e{skin} &a({rarity}) for &e{hero}&a!"
+  none: "&cYou do not have any {rarity} Skin Shards."
+  empty-pool: "&cYou have no unowned {rarity} skins left on your unlocked heroes. Your shard was kept."
+  player-not-found: "&cPlayer not found: {player}"
+  unknown-kind: "&cUnknown shard kind: {kind} (expected random, hero, or skin)"
+  unknown-rarity: "&cUnknown shard rarity: {rarity} (expected normal, rare, or legendary)"
+  invalid-amount: "&cInvalid positive integer amount: {amount}"
+  given: "&aGave {amount} {rarity} {kind} shard(s) to {player}."
+  given-notify: "&dYou received {amount} &f{rarity} {kind} &dSkin Shard(s)!"
+  check-header: "&eShards for &f{player} &7(pity: {pity})"
+  check-line: "&7- &f{kind}: &f{normal} Normal &7| &b{rare} Rare &7| &6{legendary} Legendary"

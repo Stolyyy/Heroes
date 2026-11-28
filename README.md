@@ -53,6 +53,7 @@ A fast-paced arena PvP minigame plugin for **PaperMC**, inspired by Hypixel's *S
 |---|---|---|
 | `/setcharacter [hero]` | `/hero`, `/sethero` | Open hero select GUI or pick a hero by name |
 | `/skin [hero] [skin]` | `/cosmetic` | Open a hero's skin menu or equip an owned skin |
+| `/shards` | `/shard` | Open the Skin Shards menu to view and redeem shards |
 | `/join <mode> [map]` | `/queue`, `/q`, `/play` | Join `1v1`, `2v2`, `custom`, or a preset lobby |
 | `/autoqueue <1v1\|2v2\|stop>` | `/aq` | Automatically requeue after ranked games |
 | `/party <subcommand>` | `/p` | Create/manage parties and ready checks |
@@ -82,6 +83,7 @@ A fast-paced arena PvP minigame plugin for **PaperMC**, inspired by Hypixel's *S
 | `/token <give\|set\|check>` | `/tokens` | `heroes.token` | Manage hero unlock tokens |
 | `/unlock <player> <hero>` | `/unlockhero` | `heroes.unlock` | Unlock a hero for a player |
 | `/skin <grant\|revoke> <player> <hero> <skin>` | `/cosmetic` | `heroes.skin.admin`, `heroes.skin.preview` | Grant/revoke skin ownership or preview unowned skins (`/skin preview clear`) |
+| `/shards <give\|check> ...` | `/shard` | `heroes.shards.admin` | Give Skin Shards to a player or inspect their balances and pity |
 | `/heroesrestart <now\|drain>` | `/hrestart` | `heroes.restart` | Gracefully drain ranked games and restart the server |
 
 ---
